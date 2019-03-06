@@ -9,12 +9,15 @@ L_C_BRACE = '{'
 R_C_BRACE = '}'
 COMMA = ','
 BAR = '|'
+DOLLAR = '$'
 
-NON_TERM = '$'
 WHITESPACE_RE = "^\s*"
 PRED_NAME_RE = "^[\w_]*"
-TYPED_LAMBDA_NAME_RE = "^(lambda|λ)\s*(?P<args>[\w:\s,]*)\."
-NON_TERM_RE = "^\$(?P<name>\w+)"
+# Ex: $1, $4321
+LAMBDA_ARG_RE = "^\$(?P<name>\d*)"
+TYPED_LAMBDA_NAME_RE = "^(lambda|λ)\s*(?P<args>[$\w:\s,]*)\."
+# Ex: $expandme123
+NON_TERM_RE = "^\$(?P<name>[a-zA-Z]\w+)"
 TEXT_FRAG_RE = "^['?!,.\w\s]*"
 # Ex: {test} {test 1} {test?}
 WILDCARD_RE = "^{(?P<inner>(?P<name>\w*)\s*(?P<type>(room|placement|beacon|male|female|known|alike|\d))?[\s{}\w]*(?P<obfuscated>\?)?)}"
@@ -58,6 +61,9 @@ class WildCard(NonTerminal):
 
 
 class TextFragment:
+    """
+    Represents a span of fully ground text.
+    """
     def __init__(self, text):
         self.text = text.strip()
     def to_human_readable(self):
@@ -97,7 +103,7 @@ class Constant(object):
     def to_human_readable(self):
         return self.name
     def __str__(self):
-        return "Constant({})".format(self.name)
+        return "{}".format(self.name)
     def __hash__(self):
         return hash(self.__str__())
     def __eq__(self, other):
@@ -111,6 +117,18 @@ class TemplateConstant(Constant):
         return isinstance(other, TemplateConstant) and self.name == other.name
 
 
+class Variable(object):
+    def __init__(self, name):
+        self.name = int(name)
+    def to_human_readable(self):
+        return str(self.name)
+    def __str__(self):
+        return "${}".format(self.name)
+    def __hash__(self):
+        return hash(self.__str__())
+    def __eq__(self, other):
+        return isinstance(other, Variable) and self.name == other.name
+
 class Predicate(object):
     """
     Logical predicate. Function applied to arguments that returns true or false.
@@ -121,8 +139,8 @@ class Predicate(object):
     def __str__(self):
         arg_str = ""
         for value in self.values:
-            arg_str += str(value) + ", "
-        return "{}({})".format(self.name, arg_str[:-2])
+            arg_str += str(value) + " "
+        return "( {} {} )".format(self.name, arg_str[:-1])
     def to_human_readable(self):
         arg_str = ""
         for value in self.values:
@@ -160,13 +178,13 @@ class Lambda:
     def to_human_readable(self):
         arg_string = ""
         for name, type in zip(self.name, self.types):
-            arg_string += name + ":" + type + ", "
+            arg_string += str(name) + ":" + type + ", "
         return "λ{}({})".format(arg_string[:-2], self.body.to_human_readable())
     def __str__(self):
         arg_string = ""
         for name, type in zip(self.name, self.types):
-            arg_string += name + ":" + type + ", "
-        return "λ{}({})".format(arg_string[:-2], str(self.body))
+            arg_string += "$" + str(name) + " " + type + " "
+        return "( λ {} {} )".format(arg_string[:-1], str(self.body))
     def __hash__(self):
         return hash(self.__str__())
     def __eq__(self, other):
@@ -223,7 +241,6 @@ class SemanticTemplate(object):
 
     def to_human_readable(self):
         return self.root.to_human_readable()
-
 
 
 # The GPSR grammars all have this as their root

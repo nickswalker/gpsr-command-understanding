@@ -39,6 +39,6 @@ with open(pairs_out_path, "w") as f:
     for sentence, parse in sentence_parse_pairs:
         sentence_string = tokens_to_text(sentence)
         f.write(sentence_string + '\n')
-        parse_string = parse.to_human_readable() if parse else "None"
+        parse_string = str(parse) if parse else "None"
         f.write(parse_string + '\n')
         f.write('\n')

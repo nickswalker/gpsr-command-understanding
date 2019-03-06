@@ -2,8 +2,7 @@ import copy
 
 from gpsr_semantic_parser.util import combine_adjacent_text_fragments
 from gpsr_semantic_parser.types import NonTerminal, TextFragment
-from Queue import Queue
-
+from queue import Queue
 
 def generate_sentences(start_symbols, production_rules):
     """
@@ -68,7 +67,7 @@ def generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rul
             if semantics:
                 # We should've hit all the replacements. If not, there was probably a formatting issue with the template
                 if len(semantics.unfilled_template_names) != 0:
-                    print semantics.unfilled_template_names
+                    print(semantics.unfilled_template_names)
                     assert False
             elif yield_requires_semantics:
                 # This won't be a pair without semantics, so we'll just skip it

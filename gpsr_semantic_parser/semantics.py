@@ -1,8 +1,9 @@
 from gpsr_semantic_parser.grammar import tokenize
 from gpsr_semantic_parser.util import combine_adjacent_text_fragments
-from gpsr_semantic_parser.types import String, Lambda, WildCard, Predicate, Constant, TYPED_LAMBDA_NAME_RE, L_PAREN, R_PAREN, \
+from gpsr_semantic_parser.types import String, Lambda, WildCard, Predicate, Constant, TYPED_LAMBDA_NAME_RE, L_PAREN, \
+    R_PAREN, \
     L_C_BRACE, COMMA, WHITESPACE_RE, PRED_NAME_RE, WILDCARD_RE, SemanticTemplate, TemplateConstant, TemplatePredicate, \
-    WILDCARD_ALIASES, NON_TERM_RE, NON_TERM, NonTerminal
+    WILDCARD_ALIASES, NON_TERM_RE, DOLLAR, NonTerminal, LAMBDA_ARG_RE, Variable
 import re
 
 
@@ -18,7 +19,7 @@ def tokenize_semantics(raw_rule):
             types = []
             for arg in args:
                 name, type = arg.split(':')
-                names.append(name)
+                names.append(int(name.replace(DOLLAR,'')))
                 types.append(type)
             # We'll partially initialize to represent the token
             tokens.append(Lambda(names,types,None))
@@ -40,10 +41,15 @@ def tokenize_semantics(raw_rule):
         elif char == COMMA:
             tokens.append(COMMA)
             cursor += 1
-        elif char == NON_TERM:
+        elif char == DOLLAR:
             match = re.search(NON_TERM_RE, raw_rule[cursor:])
-            name = match.groupdict()["name"]
-            tokens.append(NonTerminal(name))
+            if match:
+                name = match.groupdict()["name"]
+                tokens.append(NonTerminal(name))
+            else:
+                match = re.search(LAMBDA_ARG_RE, raw_rule[cursor:])
+                name = int(match.groupdict()["name"])
+                tokens.append(Variable(name))
             cursor += match.end()
         elif char.isspace():
             match = re.search(WHITESPACE_RE, raw_rule[cursor:])
@@ -83,8 +89,10 @@ def parse_tokens_recursive(root, tokens):
     elif isinstance(root, WildCard):
         return TemplateConstant(root.name), 1
     elif isinstance(root, String):
-        # A string without parens is a variable or constant
+        # A string without parens is a  constant
         return Constant(root.name), 1
+    elif isinstance(root, Variable):
+        return Variable(root.name), 1
     elif isinstance(root, NonTerminal):
         # TODO: Figure out how to implement nonterm substitution
         raise NotImplementedError()

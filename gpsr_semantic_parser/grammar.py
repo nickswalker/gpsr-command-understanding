@@ -1,6 +1,6 @@
 from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser
 
-from types import *
+from gpsr_semantic_parser.types import  *
 
 import re
 
@@ -15,7 +15,7 @@ def tokenize(raw_rule):
     cursor = 0
     while cursor != len(raw_rule):
         char = raw_rule[cursor]
-        if char == NON_TERM:
+        if char == DOLLAR:
             match = re.search(NON_TERM_RE, raw_rule[cursor:])
             name = match.groupdict()["name"]
             tokens.append(NonTerminal(name))
