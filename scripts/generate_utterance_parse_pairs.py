@@ -2,15 +2,16 @@ import os
 import sys
 from os.path import join
 
-from gpsr_semantic_parser.grammar import load_wildcard_rules, parse_production_rules, get_wildcards, make_mock_wildcard_rules, tokenize
+from gpsr_semantic_parser.grammar import load_wildcard_rules, load_grammar, get_wildcards, make_mock_wildcard_rules, tokenize
 from gpsr_semantic_parser.types import ROOT_SYMBOL
-from gpsr_semantic_parser.generation import generate_sentences, generate_sentence_parse_pairs
+from gpsr_semantic_parser.generation import generate_sentences, generate_sentence_parse_pairs, \
+    generate_sentence_parse_pairs_exhaustive
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.util import merge_dicts, tokens_to_text
 
 grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources")
 
-rules = parse_production_rules([join(grammar_dir, path) for path in ["common_rules.txt", "gpsr_category_1_grammar.txt"]])
+rules = load_grammar([join(grammar_dir, path) for path in ["common_rules.txt", "gpsr_category_1_grammar.txt"]])
 groundable_terms = get_wildcards(rules)
 grounding_rules = make_mock_wildcard_rules(groundable_terms)
 # There are too many wildcard options for this to workable during testing

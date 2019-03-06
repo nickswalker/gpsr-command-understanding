@@ -1,4 +1,4 @@
-from gpsr_semantic_parser.types import TextFragment
+from gpsr_semantic_parser.types import TextFragment, BAR, L_PAREN, R_PAREN
 from types import *
 
 def merge_dicts(x, y):
@@ -66,3 +66,45 @@ def normalize(s):
         s = s.replace(p, '')
 
     return s.lower().strip()
+
+
+def expand_shorthand(prefix_tokens, remaining_tokens, state, all_expansions):
+    """
+    The grammar allows a shorthand for specifying alternate productions
+    This (is | will be | can be | should be) awesome ((someday | someday soon) | now)
+    :param prefix_tokens:
+    :param remaining_tokens:
+    :param state:
+    :param all_expansions:
+    :return:
+    """
+    if len(remaining_tokens) == 0:
+        all_expansions.append(prefix_tokens)
+        return all_expansions
+    for i, token in enumerate(remaining_tokens):
+        if token == BAR:
+            if state == "ALPH":
+                all_expansions.append(prefix_tokens + remaining_tokens[0:i])
+                return expand_shorthand(prefix_tokens, remaining_tokens[i + 1:], state, all_expansions)
+            elif state == "PAREN_START":
+                state_n = "PAREN_END"
+                prefix_n = prefix_tokens + remaining_tokens[0:i]
+                expand_shorthand(prefix_n, remaining_tokens[i + 1:], state_n, all_expansions)
+                # start another branch for production B in (A | B | ...)
+                return expand_shorthand(prefix_tokens, remaining_tokens[i + 1:], state, all_expansions)
+            elif state == "PAREN_END":
+                continue  # searching for )
+        elif token == L_PAREN:
+            state_n = "PAREN_START"
+            prefix_n = prefix_tokens + remaining_tokens[0:i]
+            return expand_shorthand(prefix_n, remaining_tokens[i + 1:], state_n, all_expansions)
+        elif token == R_PAREN:
+            if state == "PAREN_END":
+                state = "ALPH"
+                return expand_shorthand(prefix_tokens, remaining_tokens[i + 1:], state, all_expansions)
+            elif state == "PAREN_START":
+                state = "ALPH"
+                prefix_n = prefix_tokens + remaining_tokens[0:i]
+                return expand_shorthand(prefix_n, remaining_tokens[i + 1:], state, all_expansions)
+    all_expansions.append(prefix_tokens + remaining_tokens)
+    return all_expansions

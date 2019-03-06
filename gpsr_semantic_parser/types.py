@@ -35,6 +35,8 @@ WILDCARD_ALIASES = {"beacon": "location beacon",
 class NonTerminal(object):
     def __init__(self, name):
         self.name = name
+    def to_human_readable(self):
+        return "$" + self.name
     def __str__(self):
         return "NonTerminal({})".format(self.name)
     def __hash__(self):
@@ -69,7 +71,7 @@ class TextFragment:
     def to_human_readable(self):
         return self.text
     def __str__(self):
-        return "Frag({})".format(self.text)
+        return "\'{}\'".format(self.text)
     def __hash__(self):
         return hash(self.__str__())
     def __eq__(self, other):

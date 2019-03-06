@@ -1,9 +1,9 @@
 from gpsr_semantic_parser.grammar import tokenize
-from gpsr_semantic_parser.util import combine_adjacent_text_fragments
+from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand
 from gpsr_semantic_parser.types import String, Lambda, WildCard, Predicate, Constant, TYPED_LAMBDA_NAME_RE, L_PAREN, \
     R_PAREN, \
     L_C_BRACE, COMMA, WHITESPACE_RE, PRED_NAME_RE, WILDCARD_RE, SemanticTemplate, TemplateConstant, TemplatePredicate, \
-    WILDCARD_ALIASES, NON_TERM_RE, DOLLAR, NonTerminal, LAMBDA_ARG_RE, Variable
+    WILDCARD_ALIASES, NON_TERM_RE, DOLLAR, NonTerminal, LAMBDA_ARG_RE, Variable, BAR
 import re
 
 
@@ -51,6 +51,9 @@ def tokenize_semantics(raw_rule):
                 name = int(match.groupdict()["name"])
                 tokens.append(Variable(name))
             cursor += match.end()
+        elif char == BAR:
+            tokens.append(BAR)
+            cursor += 1
         elif char.isspace():
             match = re.search(WHITESPACE_RE, raw_rule[cursor:])
             cursor += match.end()
@@ -94,8 +97,8 @@ def parse_tokens_recursive(root, tokens):
     elif isinstance(root, Variable):
         return Variable(root.name), 1
     elif isinstance(root, NonTerminal):
-        # TODO: Figure out how to implement nonterm substitution
-        raise NotImplementedError()
+        #Todo: does this work?
+        return TemplateConstant(root.name), 1
     else:
         assert False
 
@@ -108,11 +111,27 @@ def parse_tokens(tokens):
     return parsed
 
 
+def parse_rule(line, rule_dict):
+    prod, semantics = line.split("=")
+    prod = tokenize(prod.strip())
+    prod = combine_adjacent_text_fragments(prod)
+    expanded_prod_heads = expand_shorthand([], prod, "ALPH", [])
+    expanded_prod_heads = [combine_adjacent_text_fragments(x) for x in expanded_prod_heads]
+    sem = semantics.strip()
+    sem = tokenize_semantics(sem)
+
+    for head in expanded_prod_heads:
+        parsed_sem = parse_tokens(sem)
+        rule_dict[tuple(head)] = SemanticTemplate(parsed_sem)
+
+
 def load_semantics(semantics_file_paths):
     """
     :param semantics_file_paths:
     :return: dictionary mapping productions in grammar to semantics for planner
     """
+    if isinstance(semantics_file_paths, str):
+        semantics_file_paths = [semantics_file_paths]
     prod_to_semantics = {}
     for semantics_file_path in semantics_file_paths:
         with open(semantics_file_path) as f:
@@ -120,11 +139,6 @@ def load_semantics(semantics_file_paths):
                 cleaned = line.strip()
                 if len(cleaned) == 0 or cleaned[0] == '#':
                     continue
-                prod, semantics = cleaned.split("=")
-                prod = tokenize(prod.strip())
-                prod = combine_adjacent_text_fragments(prod)
-                sem = semantics.strip()
-                sem = tokenize_semantics(sem)
-                parsed_sem = parse_tokens(sem)
-                prod_to_semantics[tuple(prod)] = SemanticTemplate(parsed_sem)
+                parse_rule(cleaned, prod_to_semantics)
+
     return prod_to_semantics

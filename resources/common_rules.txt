@@ -33,9 +33,9 @@ $deliver  = $goplace, $vbfind the $object, and $place
 # Find people
 #
 ##############################################################################
-#$fndppl   = $talk to $whowhere
-#$fndppl   = $findp in the {room} and $talk
-#$fndppl   = $goroom, $findp, and $talk
+$fndppl   = $talk to $whowhere
+$fndppl   = $findp in the {room} and $talk
+$fndppl   = $goroom, $findp, and $talk
 
 
 

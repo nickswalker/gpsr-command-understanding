@@ -1,3 +1,4 @@
+from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand
 from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser
 
 from gpsr_semantic_parser.types import  *
@@ -71,57 +72,17 @@ def parse_production_rule(line):
     rhs_raw = expansion.strip()
     rhs_tokens = tokenize(rhs_raw)
     rhs_list_expanded = expand_shorthand([], rhs_tokens, "ALPH", [])
-
+    rhs_list_expanded = [combine_adjacent_text_fragments(x) for x in rhs_list_expanded]
     return lhs, rhs_list_expanded
 
 
-def expand_shorthand(prefix_tokens, remaining_tokens, state, all_expansions):
-    """
-    The grammar allows a shorthand for specifying alternate productions
-    This (is | will be | can be | should be) awesome ((someday | someday soon) | now)
-    :param prefix_tokens:
-    :param remaining_tokens:
-    :param state:
-    :param all_expansions:
-    :return:
-    """
-    if len(remaining_tokens) == 0:
-        all_expansions.append(prefix_tokens)
-        return all_expansions
-    for i, token in enumerate(remaining_tokens):
-        if token == BAR:
-            if state == "ALPH":
-                all_expansions.append(prefix_tokens + remaining_tokens[0:i])
-                return expand_shorthand(prefix_tokens, remaining_tokens[i + 1:], state, all_expansions)
-            elif state == "PAREN_START":
-                state_n = "PAREN_END"
-                prefix_n = prefix_tokens + remaining_tokens[0:i]
-                expand_shorthand(prefix_n, remaining_tokens[i + 1:], state_n, all_expansions)
-                # start another branch for production B in (A | B | ...)
-                return expand_shorthand(prefix_tokens, remaining_tokens[i + 1:], state, all_expansions)
-            elif state == "PAREN_END":
-                continue  # searching for )
-        elif token == L_PAREN:
-            state_n = "PAREN_START"
-            prefix_n = prefix_tokens + remaining_tokens[0:i]
-            return expand_shorthand(prefix_n, remaining_tokens[i + 1:], state_n, all_expansions)
-        elif token == R_PAREN:
-            if state == "PAREN_END":
-                state = "ALPH"
-                return expand_shorthand(prefix_tokens, remaining_tokens[i + 1:], state, all_expansions)
-            elif state == "PAREN_START":
-                state = "ALPH"
-                prefix_n = prefix_tokens + remaining_tokens[0:i]
-                return expand_shorthand(prefix_n, remaining_tokens[i + 1:], state, all_expansions)
-    all_expansions.append(prefix_tokens + remaining_tokens)
-    return all_expansions
-
-
-def parse_production_rules(grammar_file_paths):
+def load_grammar(grammar_file_paths):
     """
     :param grammar_file_paths: list of file paths
     :return: dictionary with NonTerminal key and values for all productions
     """
+    if isinstance(grammar_file_paths, str):
+        grammar_file_paths = [grammar_file_paths]
     production_rules = {}
     for grammar_file_path in grammar_file_paths:
         with open(grammar_file_path) as f:

@@ -1,6 +1,6 @@
 import copy
 
-from gpsr_semantic_parser.util import combine_adjacent_text_fragments
+from gpsr_semantic_parser.util import combine_adjacent_text_fragments, tokens_to_text
 from gpsr_semantic_parser.types import NonTerminal, TextFragment
 from queue import Queue
 
@@ -92,4 +92,68 @@ def generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rul
                 # Let's see if the  expansion is associated with any semantics
                 modified_semantics = semantics_rules.get(tuple(sentence_filled))
             frontier.put((sentence_filled, modified_semantics))
+            if not modified_semantics:
+                print(tokens_to_text(sentence_filled))
+
+def generate_sentence_parse_pairs_exhaustive(start_symbols, production_rules, semantics_rules):
+    """
+    Expand the start_symbols in _every possible ordering_ to ensure our annotations apply. Once we hit an annotation,
+    we can expand the children in any order
+    :param start_symbols:
+    :param production_rules:
+    :param semantics_rules: dict mapping a sequence of tokens to a semantic template
+    """
+    source = start_symbols
+    # Sometimes may want to pass a single symbol (like ROOT)
+    if not isinstance(start_symbols, list):
+        source = [start_symbols]
+    semantics = semantics_rules.get(tuple(source))
+    frontier = Queue()
+    frontier.put((source, semantics))
+    while not frontier.empty():
+        tokens, semantics = frontier.get()
+        replaced = False
+        for i, token in enumerate(tokens):
+            if not isinstance(token, NonTerminal) and token not in production_rules.keys():
+                continue
+            replace_i, replace_token = i, token
+            replaced = True
+            for production in production_rules[replace_token]:
+                sentence_filled = tokens[:replace_i] + production + tokens[replace_i + 1:]
+                # Normalize any chopped up text fragments to make sure we can pull semantics for these cases
+                sentence_filled = combine_adjacent_text_fragments(sentence_filled)
+                # If we've got semantics for this expansion already, see if the replacements apply to them
+                # For the basic annotation we provided, this should only happen when expanding ground terms
+                modified_semantics = None
+                if semantics:
+                    if replace_token.name in semantics.unfilled_template_names:
+                        modified_semantics = copy.deepcopy(semantics)
+                        modified_semantics.fill_template(replace_token.name, production[0])
+                        assert len(production) == 1
+                    else:
+                        modified_semantics = semantics
+                else:
+                    # Let's see if the expansion is associated with any semantics
+                    modified_semantics = semantics_rules.get(tuple(sentence_filled))
+                frontier.put((sentence_filled, modified_semantics))
+                #if not modified_semantics:
+                    #print(tokens_to_text(sentence_filled))
+            if semantics:
+                # Semantics attached to this branch means the ordering of all other expansions don't matter, so we're
+                # fine just having done the leftmost expansion
+                break
+
+        if not replaced:
+            # If we couldn't replace anything else, this sentence is done!
+            tokens = combine_adjacent_text_fragments(tokens)
+            if semantics:
+                # We should've hit all the replacements. If not, there was probably a formatting issue with the template
+                if len(semantics.unfilled_template_names) != 0:
+                    print()
+                    print(semantics.unfilled_template_names)
+                    raise RuntimeError("Did not expand {} in template {} for head {}".format(semantics.unfilled_template_names, str(semantics), tokens_to_text(tokens)))
+                yield (tokens, semantics)
+
+
+
 
