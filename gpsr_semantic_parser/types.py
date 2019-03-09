@@ -20,17 +20,17 @@ TYPED_LAMBDA_NAME_RE = "^(lambda|λ)\s*(?P<args>[$\w:\s,]*)\."
 NON_TERM_RE = "^\$(?P<name>[a-zA-Z]\w+)"
 TEXT_FRAG_RE = "^['?!,.\w\s]*"
 # Ex: {test} {test 1} {test?}
-WILDCARD_RE = "^{(?P<inner>(?P<name>\w*)\s*(?P<type>(room|placement|beacon|male|female|known|alike|\d))?[\s{}\w]*(?P<obfuscated>\?)?)}"
+WILDCARD_RE = "^{(?P<inner>(?P<name>\w*)\s*(?P<type>(room|placement|beacon|male|female|known|alike|\d*))?(?P<extra>[\s{}\w]*)(?P<obfuscated>\?)?)}"
 
 
-WILDCARD_ALIASES = {"beacon": "location beacon",
-"aobject": "object alike",
-"female": "name female",
-"kobject": "object known",
-"male": "name male",
-"placement": "location placement",
-"room": "location room",
-"sobject": "object special"}
+WILDCARD_ALIASES = {"beacon": ("location", "beacon"),
+"aobject": ("object" ,"alike"),
+"female": ("name", "female"),
+"kobject": ("object", "known"),
+"male": ("name", "male"),
+"placement": ("location", "placement"),
+"room": ("location", "room"),
+"sobject": ("object", "special")}
 
 class NonTerminal(object):
     def __init__(self, name):
@@ -50,16 +50,25 @@ class WildCard(NonTerminal):
     A nonterminal type representing some object, location, gesture, category, or name.
     Not fully modeled.
     """
-    def __init__(self, name, obfuscated=False):
+    def __init__(self, name, type, extra, obfuscated=False):
         self.obfuscated = obfuscated
+        self.type = type if type.strip() else None
+        self.extra = extra if extra.strip() else None
         super(WildCard, self).__init__(name)
     def __str__(self):
         obfuscated_str = '?' if self.obfuscated else ""
-        return "Wildcard({}{})".format(self.name, obfuscated_str)
+        type_str = self.type if self.type else ""
+        extra_str = self.extra if self.extra else ""
+        return "Wildcard({} {} {})".format(self.name, type_str, extra_str, obfuscated_str)
+    def to_human_readable(self):
+        obfuscated_str = '?' if self.obfuscated else ""
+        type_str = self.type if self.type else ""
+        extra_str = self.extra if self.extra else ""
+        return '{' + "{} {} {} {}".format(self.name, type_str, extra_str, obfuscated_str).strip() + '}'
     def __hash__(self):
         return hash(self.__str__())
     def __eq__(self, other):
-        return isinstance(other, WildCard) and self.name == other.name and self.obfuscated == other.obfuscated
+        return isinstance(other, WildCard) and self.name == other.name and self.type == other.type and self.extra == other.extra and self.obfuscated == other.obfuscated
 
 
 class TextFragment:
@@ -181,7 +190,8 @@ class Lambda:
         arg_string = ""
         for name, type in zip(self.name, self.types):
             arg_string += str(name) + ":" + type + ", "
-        return "λ{}({})".format(arg_string[:-2], self.body.to_human_readable())
+        body_str = self.body.to_human_readable() if self.body else ""
+        return "λ{}({})".format(arg_string[:-2], body_str)
     def __str__(self):
         arg_string = ""
         for name, type in zip(self.name, self.types):

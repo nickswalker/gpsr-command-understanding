@@ -3,13 +3,16 @@ import os
 import unittest
 
 from gpsr_semantic_parser.generation import generate_sentence_parse_pairs
-from gpsr_semantic_parser.grammar import load_grammar
+from gpsr_semantic_parser.grammar import load_grammar, tokenize
 from gpsr_semantic_parser.semantics import parse_tokens, parse_rule, load_semantics
 from gpsr_semantic_parser.types import String, Lambda, NonTerminal
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestSemanticsLoader(unittest.TestCase):
 
+
+    def test_tokenize(self):
+        tokenize("${placement 2}")
     def test_parse_tokens(self):
         #parse_tokens([String("bare_variable")])
         parse_tokens([String("test"), '(', String("value"), ')'])

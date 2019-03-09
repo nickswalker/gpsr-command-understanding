@@ -1,9 +1,9 @@
 from gpsr_semantic_parser.grammar import tokenize
-from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand
+from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand, tokens_to_str
 from gpsr_semantic_parser.types import String, Lambda, WildCard, Predicate, Constant, TYPED_LAMBDA_NAME_RE, L_PAREN, \
     R_PAREN, \
     L_C_BRACE, COMMA, WHITESPACE_RE, PRED_NAME_RE, WILDCARD_RE, SemanticTemplate, TemplateConstant, TemplatePredicate, \
-    WILDCARD_ALIASES, NON_TERM_RE, DOLLAR, NonTerminal, LAMBDA_ARG_RE, Variable, BAR
+    WILDCARD_ALIASES, NON_TERM_RE, DOLLAR, NonTerminal, LAMBDA_ARG_RE, Variable, BAR, R_C_BRACE
 import re
 
 
@@ -32,12 +32,27 @@ def tokenize_semantics(raw_rule):
             tokens.append(R_PAREN)
             cursor += 1
         elif char == L_C_BRACE:
-            match = re.search(WILDCARD_RE, raw_rule[cursor:])
+            # We'll grab a string where the braces are balanced
+            count = 1
+            end_cursor = cursor + 1
+            while count != 0:
+                if raw_rule[end_cursor] == L_C_BRACE:
+                    count += 1
+                elif raw_rule[end_cursor] == R_C_BRACE:
+                    count -= 1
+                end_cursor += 1
+            match = re.search(WILDCARD_RE, raw_rule[cursor:end_cursor])
             name = match.groupdict()["name"]
-            obfuscated = match.groupdict()["obfuscated"] is not None
-            name = WILDCARD_ALIASES.get(name, name)
-            tokens.append(WildCard(name,obfuscated))
-            cursor += match.end()
+
+            if name in WILDCARD_ALIASES.keys():
+                inner_string = match.group().replace(name, " ".join(WILDCARD_ALIASES[name]))
+                match = re.search(WILDCARD_RE, inner_string)
+            name = match.groupdict()["name"]
+            type = match.groupdict()["type"]
+            extra = match.groupdict()["extra"]
+            obfuscated = match.groupdict()["obfuscated"] != None
+            tokens.append(WildCard(name, type, extra, obfuscated))
+            cursor = end_cursor
         elif char == COMMA:
             tokens.append(COMMA)
             cursor += 1
@@ -60,7 +75,8 @@ def tokenize_semantics(raw_rule):
         else:
             match = re.search(PRED_NAME_RE, raw_rule[cursor:])
             tokens.append(String(match.group()))
-            assert match.end() > 0
+            if match.end() == 0:
+                raise RuntimeError("couldn't parse starting at {}: {}".format(cursor, raw_rule))
             cursor += match.end()
 
     return tokens
@@ -80,8 +96,7 @@ def parse_tokens_recursive(root, tokens):
         # Pop off right paren
         i += 2
         if isinstance(root, WildCard):
-            obfuscated_str = "?" if root.obfuscated else ""
-            return TemplatePredicate(root.name + obfuscated_str, arg_tokens), i
+            return TemplatePredicate(str(root), arg_tokens), i
         else:
             return Predicate(root.name, arg_tokens), i
     elif isinstance(root, Lambda):
@@ -90,7 +105,7 @@ def parse_tokens_recursive(root, tokens):
         # Pop off L_paren, contents, R_paren then move cursor one more to be at unseen token
         return Lambda(root.name, root.types, parsed_arg), 1 + last_processed_index + 2
     elif isinstance(root, WildCard):
-        return TemplateConstant(root.name), 1
+        return TemplateConstant(str(root)), 1
     elif isinstance(root, String):
         # A string without parens is a  constant
         return Constant(root.name), 1
@@ -98,16 +113,22 @@ def parse_tokens_recursive(root, tokens):
         return Variable(root.name), 1
     elif isinstance(root, NonTerminal):
         #Todo: does this work?
-        return TemplateConstant(root.name), 1
+        return TemplateConstant(str(root)), 1
     else:
-        assert False
+        raise RuntimeError("Unexpected token")
 
 
 def parse_tokens(tokens):
     if len(tokens) == 1:
         return tokens[0]
-    parsed, last_parsed = parse_tokens_recursive(tokens[0], tokens[1:])
-    assert last_parsed == len(tokens)
+    try:
+        parsed, last_parsed = parse_tokens_recursive(tokens[0], tokens[1:])
+        if last_parsed != len(tokens):
+            raise RuntimeError()
+    except RuntimeError as e:
+        print("Failed to parse: {}".format(tokens_to_str(tokens)))
+        raise e
+
     return parsed
 
 
@@ -121,6 +142,12 @@ def parse_rule(line, rule_dict):
     sem = tokenize_semantics(sem)
 
     for head in expanded_prod_heads:
+        # Check for any obvious errors in the annotation
+        for sem_token in sem:
+            if isinstance(sem_token, WildCard) or isinstance(sem_token, NonTerminal):
+                if sem_token not in head:
+                    raise RuntimeError("Semantics rely on non-terminal {} that doesn't occur in rule: {}".format(sem_token, line))
+
         parsed_sem = parse_tokens(sem)
         rule_dict[tuple(head)] = SemanticTemplate(parsed_sem)
 

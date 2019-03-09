@@ -44,7 +44,7 @@ $deliver  = $takefrom and $place
 ##############################################################################
 $fndppl   = Tell me the (name | gender | pose) of the person at the {beacon}
 $fndppl   = Tell me the (name | gender | pose) of the person in the {room}
-$fndppl   = tell me how many people in the {room} are ($pgenderp | $pose) 
+$fndppl   = Tell me how many people in the {room} are ($pgenderp | $pose)
 
 ##############################################################################
 #

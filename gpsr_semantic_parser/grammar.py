@@ -40,16 +40,28 @@ def tokenize(raw_rule):
                 elif raw_rule[end_cursor] == R_C_BRACE:
                     count -= 1
                 end_cursor += 1
-            match = re.search(WILDCARD_RE, raw_rule[cursor:end_cursor])
+            has_void = raw_rule.find("void", cursor, end_cursor)
+            if has_void != -1:
+                tokens.append(TextFragment(raw_rule[cursor:end_cursor]))
+                cursor = end_cursor
+                continue
+
+            has_meta = raw_rule.find("meta",cursor, end_cursor)
+            meta_removed = raw_rule[cursor: end_cursor]
+            if has_meta != -1:
+                meta_removed = raw_rule[cursor:has_meta] + "}"
+
+            match = re.search(WILDCARD_RE, meta_removed)
             name = match.groupdict()["name"]
 
             if name in WILDCARD_ALIASES.keys():
-                as_tokens = match.group().split(" ")
-                inner_string = match.group().replace(name, WILDCARD_ALIASES[name])
+                inner_string = match.group().replace(name, " ".join(WILDCARD_ALIASES[name]))
                 match = re.search(WILDCARD_RE, inner_string)
-            name = match.groupdict()["inner"]
+            name = match.groupdict()["name"]
+            type = match.groupdict()["type"]
+            extra = match.groupdict()["extra"]
             obfuscated = match.groupdict()["obfuscated"] != None
-            tokens.append(WildCard(name, obfuscated))
+            tokens.append(WildCard(name, type, extra, obfuscated))
             cursor = end_cursor
         elif char.isspace():
             match = re.search(WHITESPACE_RE, raw_rule[cursor:])
@@ -93,8 +105,6 @@ def load_grammar(grammar_file_paths):
                     continue
                 # print(line)
                 # parse into possible productions
-                if "{void" in line:
-                    continue
                 lhs, rhs_productions = parse_production_rule(line)
                 # print(lhs)
                 # print(rhs_productions)

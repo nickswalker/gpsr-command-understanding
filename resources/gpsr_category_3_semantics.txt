@@ -1,0 +1,17 @@
+Pour some cereals into the bowl = pour(λ$1:e.(is_a($1, cereal)), λ$2:e.(is_a($2, bowl)))
+#$cmancmd     = $goroom {void meta: All access doors to {room 1} bust be closed.}
+#$cmancmd     = $vbbtake the {kobject} to the {placement 2 meta: Block access to {placement 2} with a movable object or furniture}
+#$cmancmd     = $vbbring me the $abspos object $cmanobjsrc
+#$cmancmd     = $vbbring me the object $relpos the {object}  $cmanobjsrc
+#$cmancmd     = $vbbring me the $oprop (object | {category}) $cmanobjsrc
+
+
+#tell me which are the three $oprop objects on the {placement 1} = say(λ$1:e.(and($oprop($1, 3), at($1,{placement 1}))))
+#tell me which are the three $oprop objects on the {placement 1} = say(λ$1:e.(and($oprop($1, 3), is_a($1, {category}), at($1,{placement 1}))))
+
+
+#$fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $goroom
+#$fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbguide {pron} back = follow
+
+#$vbgopl to the {beacon 1}, meet {name 1}, and $vbfollow {pron} to the {beacon 1}
+#$vbgopl to the {beacon 1}, meet $errnoper, and $vbfollow {pron} to the {room 2}
