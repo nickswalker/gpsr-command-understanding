@@ -20,7 +20,7 @@ from allennlp.nn import util
 from allennlp.nn.beam_search import BeamSearch
 from allennlp.training.metrics import BLEU
 
-from gpsr_semantic_parser.metrics.token_sequence_accuracy import TokenSequenceAccuracy
+from gpsr_semantic_parser.models.token_sequence_accuracy import TokenSequenceAccuracy
 
 
 @Model.register("seq2seq")

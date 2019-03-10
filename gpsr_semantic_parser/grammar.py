@@ -1,4 +1,4 @@
-from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand
+from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand, merge_dicts
 from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser
 
 from gpsr_semantic_parser.types import  *
@@ -192,3 +192,20 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file):
     production_rules[WildCard('room', True)] = "room"
 
     return production_rules
+
+
+def prepare_rules(common_rules_path, category_path):
+    """
+    Prepare the production rules for a given GPSR category, making some
+    typical adjustments to make the grammar usable
+    :param common_rules_path:
+    :param category_path:
+    :return:
+    """
+    rules = load_grammar([common_rules_path, category_path])
+    rules[NonTerminal("whattosay")] = [[TextFragment("<whattosay>")]]
+    groundable_terms = get_wildcards(rules)
+    grounding_rules = make_mock_wildcard_rules(groundable_terms)
+    # There are too many wildcard options for this to workable during testing
+    #grounding_rules = load_wildcard_rules(join(grammar_dir, "objects.xml"),join(grammar_dir, "locations.xml"),join(grammar_dir, "names.xml"))
+    return merge_dicts(rules, grounding_rules)

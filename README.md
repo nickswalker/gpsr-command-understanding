@@ -2,7 +2,8 @@
 
 A semantic parser for the [RoboCup@Home](http://www.robocupathome.org/) _General Purpose Service Robot_ task.
 
-* [ ] Utterance to λ-calculus representation parser
+* [X] Utterance to λ-calculus representation parser
+* [ ] Utterance intention recognition model
 * [X] Lexer/parser for loading the released command generation CFG
 * [X] Tools for generating commands along with a λ-calculus representation
 
@@ -23,5 +24,20 @@ You can run them with
 
     allennlp train \
     experiments/seq2seq.json \
-    -s /tmp/seq2seq_output \
+    -s results/seq2seq \
     --include-package gpsr_semantic_parser
+
+You can monitor training with Tensorboard:
+
+    #TODO
+
+### Testing
+
+You can poke at a trained model through the browser using AllenNLP as well
+
+    python -m allennlp.service.server_simple \
+        --archive-path results/seq2seq/model.tar.gz \
+        --predictor  my_seq2seq\
+        --include-package gpsr_semantic_parser \
+        --title "GPSR Semantic Parser" \
+        --field-name command

@@ -1,7 +1,6 @@
 import operator
 
 from gpsr_semantic_parser.types import TextFragment, BAR, L_PAREN, R_PAREN
-from types import *
 
 
 def merge_dicts(x, y):
@@ -294,3 +293,5 @@ class Counter(dict):
                 continue
             addend[key] = -1 * y[key]
         return addend
+
+
