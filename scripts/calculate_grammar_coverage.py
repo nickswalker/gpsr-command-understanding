@@ -1,12 +1,9 @@
-import itertools
 import os
-import sys
 from os.path import join
 
 from gpsr_semantic_parser.grammar import prepare_rules
 from gpsr_semantic_parser.types import ROOT_SYMBOL
-from gpsr_semantic_parser.generation import generate_sentences, generate_sentence_parse_pairs, \
-    generate_sentence_parse_pairs_exhaustive, expand_all_semantics
+from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.util import tokens_to_str
 
@@ -29,30 +26,29 @@ cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
 cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
 
 
-sentences_out_path = "/tmp/all_sentences.txt"
-pairs_out_path = "/tmp/all_pairs.txt"
-if os.path.isfile(sentences_out_path):
-    os.remove(sentences_out_path)
-if os.path.isfile(pairs_out_path):
-    os.remove(pairs_out_path)
+cat1_sentences = set([tuple(x) for x in cat1_sentences])
+cat2_sentences = set([tuple(x) for x in cat2_sentences])
+cat3_sentences = set([tuple(x) for x in cat3_sentences])
 
-with open(sentences_out_path, "w") as f:
-    for sentence in cat1_sentences:
-        f.write(tokens_to_str(sentence) + '\n')
-    f.write("----\n")
-    for sentence in cat2_sentences:
-        f.write(tokens_to_str(sentence) + '\n')
-    f.write("----\n")
-    for sentence in cat3_sentences:
-        f.write(tokens_to_str(sentence) + '\n')
+cat1_with_parse = set([tuple(utterance) for utterance, _ in cat1_pairs])
+cat2_with_parse = set([tuple(utterance) for utterance, _ in cat2_pairs])
+cat3_with_parse = set([tuple(utterance) for utterance, _ in cat3_pairs])
 
+cat1_parseless = cat1_sentences.difference(cat1_with_parse)
+cat2_parseless = cat2_sentences.difference(cat2_with_parse)
+cat3_parseless = cat3_sentences.difference(cat3_with_parse)
+print("Coverage:")
+print("cat1 {0}/{1} {2:.1f}%".format(len(cat1_with_parse), len(cat1_sentences), 100.0 * len(cat1_with_parse) / len(cat1_sentences)))
+print("cat2 {0}/{1} {2:.1f}%".format(len(cat2_with_parse), len(cat2_sentences), 100.0 * len(cat2_with_parse) / len(cat2_sentences)))
+print("cat3 {0}/{1} {2:.1f}%".format(len(cat3_with_parse), len(cat3_sentences), 100.0 * len(cat3_with_parse) / len(cat3_sentences)))
 
-with open(pairs_out_path, "w") as f:
-    for sentence, parse in cat1_pairs:
-        f.write(tokens_to_str(sentence) + '\n' + str(parse) + '\n')
-    f.write("----\n")
-    for sentence, parse in cat2_pairs:
-        f.write(tokens_to_str(sentence) + '\n' + str(parse) + '\n')
-    f.write("----\n")
-    for sentence, parse in cat3_pairs:
-        f.write(tokens_to_str(sentence) + '\n' + str(parse) + '\n')
+print("No parses for:")
+print("Cat 1:")
+for sentence in cat1_parseless:
+    print(tokens_to_str(sentence))
+print("\nCat 2:")
+for sentence in cat2_parseless:
+    print(tokens_to_str(sentence))
+print("\nCat 3:")
+for sentence in cat3_parseless:
+    print(tokens_to_str(sentence))
