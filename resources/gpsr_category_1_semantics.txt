@@ -4,11 +4,30 @@
 #                       count(entities)
 #                         Note that count is treated specially by the grounder; it'll take the expression
 #                         for `entities` and count the number of satisfying groundings.
+#                       follow(person_entity)
+#                       go(location_entity)
+#                       guide(person_entity, location_entity)
 #                       is_a(entity, string)
 #                       location(entity)
 #                       name(entity, name_str)
 #                       person(entity)
 #                       say(string[, person_entity])
+#                       sequence(command_predicate, command_predicate, [...])
+#                           A special predicate that the system will evaluate by running the constituents
+#                           in order.
+#           Preposition predicates:
+#                       above(entity, reference)
+#                       below(entity, reference)
+#                       left_of(entity, reference)
+#                       on_top_of(entity, reference)
+#                       right_of(entity, reference)
+#           Superlatives:
+#                       biggest(entity, [int: in_top_k])
+#                       smallest(entity, [int: in_top_k])
+#                       heaviest(entity, [int: in_top_k])
+#                       lightest(entity, [int: in_top_k])
+#                       thinnest(entity, [int: in_top_k])
+#
 # Commands: bring(object_entity[, person_entity)
 #           find(entity)
 #           put(object_entity, location_entity)

@@ -13,3 +13,11 @@ Tell me how many {category} there are on the {placement} = count(λ$1:e.(and(is_
 #Tell me what's the $oprop object on the {placement} = say(λ$1:e.(and($oprop($1), at($1,{placement}))))
 #Tell me what's the $oprop {category} on the {placement} = say(λ$1:e.(and($oprop($1), is_a($1, {category}), at($1,{placement}))))
 $vbfind the {category} in the {room} = find(λ$1:e.(and(is_a($1, {category}), at($1, {room}))))
+
+
+### Following
+
+$vbfollow {name 1} from the {beacon 1} to the {room 2} = follow(λ$1:e.(and(person($1), named($1, {name 1}),at($1, {beacon 1}))))
+meet {name 1} at the {beacon 1} and $vbfollow {pron} $fllwhdst = follow(λ$1:e.(and(person($1), named($1, {name 1}),at($1, {beacon 1}))))
+meet {name 1} at the {beacon 1} and $vbfollow {pron} to the {room 2} = follow(λ$1:e.(and(person($1), named($1, {name 1}),at($1, {beacon 1}))))
+$vbgopl to the {beacon 1}, meet {name 1}, and $vbfollow {pron} $fllwhdst = follow(λ$1:e.(and(person($1), named($1, {name 1}),at($1, {beacon 1}))))
