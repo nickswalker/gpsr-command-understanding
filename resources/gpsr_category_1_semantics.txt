@@ -34,8 +34,12 @@
 #           say(named_entity[, person_entity)
 #           move(object_entity, to)
 
+##################
+# Find objects ($fndobj)
+##################
+
 $vbfind the $object in the {room} = find(λ$1:e.(and(is_a($1, $object), at($1, {room}))))
-Tell me how many $object there are on the {placement} = count(λ$1:e.(and(is_a($1, $object), at($1, {placement}))))
+Tell me how many $object there are on the {placement} = say(count(λ$1:e.(and(is_a($1, $object), at($1, {placement})))))
 
 $vbfind (someone | a person) in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), at($1, {room}))))
 $vbfind (someone | a person) in the {room} and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), at($1, {room}))))

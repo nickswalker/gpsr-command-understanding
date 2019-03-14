@@ -1,19 +1,23 @@
-Tell me the name of the person at the {beacon} = say(λ$1:e.(λ$2:e.(and(person($2), name($2, $1), at($2,{beacon})))))
-Tell me the gender of the person at the {beacon} = say(λ$1:e.(λ$2:e.(and(person($2), gender($2, $1), at($2,{beacon})))))
+##### Bring me
 
-Tell me the name of the person in the {room} = say(λ$1:e.(λ$2:e.(and(person($2), name($2, $1), at($2,{room})))))
+###########################################################
+# Tell me something about someone (information gathering)
+###########################################################
+
+Tell me the gender of the person at the {beacon} = say(λ$1:e.(λ$2:e.(and(person($2), gender($2, $1), at($2,{beacon})))))
 Tell me the gender of the person in the {room} = say(λ$1:e.(λ$2:e.(and(person($2), gender($2, $1), at($2,{room})))))
 
-Tell me the name of the person at the {room} = say(λ$1:e.(λ$2:e.(and(person($2), name($2, $1), at($2,{room})))))
 Tell me the gender of the person at the {room} = say(λ$1:e.(λ$2:e.(and(person($2), gender($2, $1), at($2,{room})))))
 Tell me the pose of the person at the {room} = say(λ$1:e.(λ$2:e.(and(person($2), pose($2, $1), at($2,{room})))))
 
-$vbfind the {aobject?} in the {room} = find(λ$1:e.(and(is_a($1, {aobject?}), at($1, {room}))))
 Tell me how many {category} there are on the {placement} = count(λ$1:e.(and(is_a($1, {category}), at($1, {placement}))))
-#Tell me what's the $oprop object on the {placement} = say(λ$1:e.(and($oprop($1), at($1,{placement}))))
-#Tell me what's the $oprop {category} on the {placement} = say(λ$1:e.(and($oprop($1), is_a($1, {category}), at($1,{placement}))))
+Tell me what's the $oprop object on the {placement} = say(λ$1:e.(and($oprop($1), at($1,{placement}))))
+Tell me what's the $oprop {category} on the {placement} = say(λ$1:e.(and($oprop($1), is_a($1, {category}), at($1,{placement}))))
 $vbfind the {category} in the {room} = find(λ$1:e.(and(is_a($1, {category}), at($1, {room}))))
 
+Tell me how many people in the {room} are (boys | men | male) = say(count(λ$1:e.(and(is_a($1, person), male($1), at($1, {room})))))
+
+Tell me how many people in the {room} are (girls | women | female) = say(count(λ$1:e.(and(is_a($1, person), male($1), at($1, {room})))))
 
 ### Following
 
