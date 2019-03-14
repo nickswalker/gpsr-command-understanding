@@ -83,7 +83,7 @@ def tokenize_semantics(raw_rule):
 
 
 def parse_tokens_recursive(root, tokens):
-    if (isinstance(root, String) or isinstance(root, WildCard))and tokens[0] == L_PAREN:
+    if (isinstance(root, String) or isinstance(root, WildCard) or isinstance(root, NonTerminal)) and tokens[0] == L_PAREN:
         arg_tokens = []
         i = 1
         while i < len(tokens) and tokens[i] != R_PAREN:
@@ -95,7 +95,7 @@ def parse_tokens_recursive(root, tokens):
             i += last_processed_index
         # Pop off right paren
         i += 2
-        if isinstance(root, WildCard):
+        if isinstance(root, WildCard) or isinstance(root, NonTerminal):
             return TemplatePredicate(str(root), arg_tokens), i
         else:
             return Predicate(root.name, arg_tokens), i

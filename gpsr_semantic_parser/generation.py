@@ -59,7 +59,7 @@ def generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rul
         tokens, semantics = frontier.get()
         for i, token in enumerate(tokens):
             replace_i, replace_token = None, None
-            if not isinstance(token, NonTerminal) and token not in production_rules.keys():
+            if token not in production_rules.keys():
                 continue
             replace_i, replace_token = i, token
             break
@@ -70,8 +70,7 @@ def generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rul
             if semantics:
                 # We should've hit all the replacements. If not, there was probably a formatting issue with the template
                 if len(semantics.unfilled_template_names) != 0:
-                    print(semantics.unfilled_template_names)
-                    assert False
+                    print("Unfilled placeholders: " + str(semantics.unfilled_template_names))
             elif yield_requires_semantics:
                 # This won't be a pair without semantics, so we'll just skip it
                 continue

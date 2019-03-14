@@ -1,6 +1,6 @@
 import operator
 
-from gpsr_semantic_parser.types import TextFragment, BAR, L_PAREN, R_PAREN
+from gpsr_semantic_parser.types import TextFragment, BAR, L_PAREN, R_PAREN, Void
 
 
 def merge_dicts(x, y):
@@ -9,11 +9,13 @@ def merge_dicts(x, y):
     return z
 
 
-def tokens_to_str(tokens):
+def tokens_to_str(tokens, show_void=False):
     output = ""
     for token in tokens:
         if isinstance(token, str):
             output += token + ' '
+        elif isinstance(token, Void) and not show_void:
+            continue
         else:
             output += token.to_human_readable() + ' '
     return output[:-1]
@@ -39,6 +41,9 @@ def combine_adjacent_text_fragments(tokens):
         token = tokens[i]
         if not isinstance(token, TextFragment):
             cleaned.append(token)
+            i += 1
+            continue
+        elif token.text == "":
             i += 1
             continue
         j = i + 1

@@ -42,7 +42,8 @@ def tokenize(raw_rule):
                 end_cursor += 1
             has_void = raw_rule.find("void", cursor, end_cursor)
             if has_void != -1:
-                tokens.append(TextFragment(raw_rule[cursor:end_cursor]))
+                # Just grab the stuff past the "void" and before the closing brace
+                tokens.append(Void(raw_rule[has_void + 4:end_cursor-1]))
                 cursor = end_cursor
                 continue
 
@@ -67,8 +68,13 @@ def tokenize(raw_rule):
             match = re.search(WHITESPACE_RE, raw_rule[cursor:])
             cursor += match.end()
         else:
-            match = re.search(TEXT_FRAG_RE, raw_rule[cursor:])
-            tokens.append(TextFragment(match.group()))
+            match = re.search(EMPTY_STR_RE, raw_rule[cursor:])
+            if match:
+                tokens.append(TextFragment(""))
+            else:
+                match = re.search(TEXT_FRAG_RE, raw_rule[cursor:])
+                assert "meta" not in match.group()
+                tokens.append(TextFragment(match.group()))
             assert match.end() > 0
             cursor += match.end()
 
@@ -194,7 +200,7 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file):
     return production_rules
 
 
-def prepare_rules(common_rules_path, category_path):
+def prepare_rules(common_rules_path, category_paths):
     """
     Prepare the production rules for a given GPSR category, making some
     typical adjustments to make the grammar usable
@@ -202,7 +208,9 @@ def prepare_rules(common_rules_path, category_path):
     :param category_path:
     :return:
     """
-    rules = load_grammar([common_rules_path, category_path])
+    if not isinstance(category_paths, list):
+        category_paths = [category_paths]
+    rules = load_grammar([common_rules_path] + category_paths)
     rules[NonTerminal("whattosay")] = [[TextFragment("<whattosay>")]]
     groundable_terms = get_wildcards(rules)
     grounding_rules = make_mock_wildcard_rules(groundable_terms)

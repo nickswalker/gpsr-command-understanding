@@ -19,6 +19,7 @@ TYPED_LAMBDA_NAME_RE = "^(lambda|λ)\s*(?P<args>[$\w:\s,]*)\."
 # Ex: $expandme123
 NON_TERM_RE = "^\$(?P<name>[a-zA-Z]\w+)"
 TEXT_FRAG_RE = "^['?!,.\w\s]*"
+EMPTY_STR_RE ="^\"\""
 # Ex: {test} {test 1} {test?}
 WILDCARD_RE = "^{(?P<inner>(?P<name>\w*)\s*(?P<type>(room|placement|beacon|male|female|known|alike|\d*))?(?P<extra>[\s{}\w]*)(?P<obfuscated>\?)?)}"
 
@@ -71,11 +72,12 @@ class WildCard(NonTerminal):
         return isinstance(other, WildCard) and self.name == other.name and self.type == other.type and self.extra == other.extra and self.obfuscated == other.obfuscated
 
 
-class TextFragment:
+class TextFragment(object):
     """
     Represents a span of fully ground text.
     """
     def __init__(self, text):
+        assert "void" not in text
         self.text = text.strip()
     def to_human_readable(self):
         return self.text
@@ -94,6 +96,21 @@ class TextFragment:
             return fragments[0]
         return TextFragment(str.join(" ", [frag.text for frag in fragments]))
 
+
+class Void(object):
+    """
+    This is a noop, metadata token that the generator may use
+    to provide instructions to the referee for the command. It does not
+    need to appear in the utterance given to the operator.
+    """
+    def __init__(self, contents):
+        self.contents = contents
+
+    def to_human_readable(self):
+        return "{void " + self.contents + "}"
+
+    def __str__(self):
+        return "\'{}\'".format(self.contents)
 
 class String:
     def __init__(self, name):

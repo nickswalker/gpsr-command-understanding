@@ -9,11 +9,17 @@ A semantic parser for the [RoboCup@Home](http://www.robocupathome.org/) _General
 
 ## Usage
 
+Set up a virtual environment using at least Python 3.6:
+
+    python3.6 -m virtualenv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+
 ### Generation
 
 The latest grammar and knowledgebase files (pulled from [the generator](https://github.com/kyordhel/GPSRCmdGen)) are provided in the resources directory. The grammar [format specification](https://github.com/kyordhel/GPSRCmdGen/wiki/Grammar-Format-Specification) will clarify how to interpret the files.
 
-See the scripts directory for examples.
+To produce the dataset, see `make_dataset.py`.
 
 ### Training
 

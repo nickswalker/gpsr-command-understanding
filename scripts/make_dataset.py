@@ -16,24 +16,24 @@ cat1_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_1_gramma
 cat2_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_2_grammar.txt"))
 cat3_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_3_grammar.txt"))
 cat1_semantics = load_semantics(join(grammar_dir, "gpsr_category_1_semantics.txt"))
-cat2_semantics = load_semantics(join(grammar_dir, "gpsr_category_2_semantics.txt"))
+cat2_semantics = load_semantics([join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
 cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))
 
-cat1_sentences = generate_sentences(ROOT_SYMBOL, cat1_rules)
-cat2_sentences = generate_sentences(ROOT_SYMBOL, cat2_rules)
-cat3_sentences = generate_sentences(ROOT_SYMBOL, cat3_rules)
 #sentence_parse_pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, cat1_rules, cat1_semantics)
 cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
 cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
 cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
 
+all_unique_pairs = {}
+for utterance, parse in itertools.chain(cat1_pairs, cat2_pairs, cat3_pairs):
+    all_unique_pairs[tokens_to_str(utterance)] = parse
 pairs_out_path = os.path.join(os.path.abspath(os.path.dirname(__file__) + "/.."), "data")
 train_out_path = os.path.join(pairs_out_path, "train.txt")
 val_out_path = os.path.join(pairs_out_path, "val.txt")
 
 # Cut the dataset 80/20 train/val
 # Randomize for the split, but then sort by utterance length before we save out so that things are easier to read
-all_pairs = list(itertools.chain(cat1_pairs, cat2_pairs, cat3_pairs))
+all_pairs = list(all_unique_pairs.items())
 random.Random(0).shuffle(all_pairs)
 split = int(0.80 * len(all_pairs))
 train, val = all_pairs[:split], all_pairs[split:]
@@ -41,8 +41,8 @@ train = sorted(train, key=lambda x: len(x[0]))
 val = sorted(val, key=lambda x: len(x[0]))
 with open(train_out_path, "w") as f:
     for sentence, parse in train:
-        f.write(tokens_to_str(sentence) + '\n' + str(parse) + '\n')
+        f.write(sentence + '\n' + str(parse) + '\n')
 
 with open(val_out_path, "w") as f:
     for sentence, parse in val:
-        f.write(tokens_to_str(sentence) + '\n' + str(parse) + '\n')
+        f.write(sentence + '\n' + str(parse) + '\n')
