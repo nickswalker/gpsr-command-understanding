@@ -13,19 +13,19 @@ grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources")
 common_path = join(grammar_dir, "common_rules.txt")
 
 cat1_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_1_grammar.txt"))
-cat2_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_2_grammar.txt"))
-cat3_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_3_grammar.txt"))
+#cat2_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_2_grammar.txt"))
+#cat3_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_3_grammar.txt"))
 cat1_semantics = load_semantics(join(grammar_dir, "gpsr_category_1_semantics.txt"))
-cat2_semantics = load_semantics([join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
-cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))
+#cat2_semantics = load_semantics([join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
+#cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))
 
 #sentence_parse_pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, cat1_rules, cat1_semantics)
 cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
-cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
-cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
+#cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
+#cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
 
 all_unique_pairs = {}
-for utterance, parse in itertools.chain(cat1_pairs, cat2_pairs, cat3_pairs):
+for utterance, parse in itertools.chain(cat1_pairs):
     all_unique_pairs[tokens_to_str(utterance)] = parse
 pairs_out_path = os.path.join(os.path.abspath(os.path.dirname(__file__) + "/.."), "data")
 train_out_path = os.path.join(pairs_out_path, "train.txt")
