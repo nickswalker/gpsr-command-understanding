@@ -30,11 +30,13 @@ cat1_sentences = set([tokens_to_str(x) for x in cat1_sentences])
 cat2_sentences = set([tokens_to_str(x) for x in cat2_sentences])
 cat2_sentences_unique = cat2_sentences.difference(cat1_sentences)
 cat3_sentences = set([tokens_to_str(x) for x in cat3_sentences])
+cat3_sentences_unique = cat3_sentences.difference(cat1_sentences).difference(cat2_sentences)
 
 cat1_with_parse = set([tokens_to_str(utterance) for utterance, _ in cat1_pairs])
 cat2_with_parse = set([tokens_to_str(utterance) for utterance, _ in cat2_pairs])
 cat2_with_parse_unique = cat2_with_parse.difference(cat1_sentences)
 cat3_with_parse = set([tokens_to_str(utterance) for utterance, _ in cat3_pairs])
+cat3_with_parse_unique = cat3_with_parse.difference(cat1_sentences).difference(cat2_sentences)
 
 cat1_parseless = cat1_sentences.difference(cat1_with_parse)
 cat2_parseless = cat2_sentences.difference(cat2_with_parse)
@@ -44,15 +46,17 @@ print("cat1 {0}/{1} {2:.1f}%".format(len(cat1_with_parse), len(cat1_sentences), 
 print("cat2 {0}/{1} {2:.1f}%".format(len(cat2_with_parse), len(cat2_sentences), 100.0 * len(cat2_with_parse) / len(cat2_sentences)))
 print("\t unique {0}/{1} {2:.1f}%".format(len(cat2_with_parse_unique), len(cat2_sentences_unique), 100.0 * len(cat2_with_parse_unique) / len(cat2_sentences_unique)))
 print("cat3 {0}/{1} {2:.1f}%".format(len(cat3_with_parse), len(cat3_sentences), 100.0 * len(cat3_with_parse) / len(cat3_sentences)))
+print("\t unique {0}/{1} {2:.1f}%".format(len(cat3_with_parse_unique), len(cat3_sentences_unique), 100.0 * len(cat3_with_parse_unique) / len(cat3_sentences_unique)))
 
 print("No parses for:")
 print("Cat 1:")
 
-for sentence in sorted(cat1_parseless):
-    print(sentence)
+#for sentence in sorted(cat1_parseless):
+#    print(sentence)
 print("\n---------------------------------------\nCat 2:")
 for sentence in sorted(cat2_parseless):
     print(sentence)
 print("\n---------------------------------------\nCat 3:")
 for sentence in sorted(cat3_parseless):
-    print(sentence)
+    pass
+    #print(sentence)

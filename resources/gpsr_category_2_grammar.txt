@@ -64,6 +64,6 @@ $fndobj   = $vbfind the {category} in the {room}
 #
 ##############################################################################
 ; Find people
-$pgenders = man | woman | boy | girl | (male person) | (female person)
+$pgenders = man | woman | boy | girl | male person | female person
 $pgenderp = men | women | boys | girls | male | female
 $pose     = sitting | standing | lying down
