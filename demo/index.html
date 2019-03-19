@@ -1,0 +1,46 @@
+
+<html>
+    <head>
+        <title>
+            GPSR Semantic Parser
+        </title>
+        <link rel="stylesheet" href="style.css"/>
+    </head>
+    <body>
+        <div class="pane-container">
+            <div class="pane model">
+                <div class="pane__left model__input">
+                    <div class="model__content">
+                        <h2><span>GPSR Semantic Parser</span></h2>
+                        <div class="model__content">
+                            
+        <div class="form__field">
+            <label for="input-command">command</label>
+            <input type="text" id="input-command" type="text" required value placeholder="input goes here">
+        </div>
+
+                            <div class="form__field form__field--btn">
+                                <button type="button" class="btn btn--icon-disclosure" onclick="predict()">Predict</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pane__right model__output model__output--empty">
+                    <div class="pane__thumb"></div>
+                    <div class="model__content">
+                        <div id="output" class="output">
+                            <div class="placeholder">
+                                <div class="placeholder__content">
+                                    <p>Run model to view results</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <!-- TODO: Make this actually visualize the tree: http://bl.ocks.org/d3noob/8329447 -->
+    <script src="script.js"></script>
+</html>
+

@@ -46,4 +46,5 @@ You can poke at a trained model through the browser using AllenNLP as well
         --predictor  my_seq2seq\
         --include-package gpsr_semantic_parser \
         --title "GPSR Semantic Parser" \
-        --field-name command
+        --field-name command \
+        --static-dir demo
