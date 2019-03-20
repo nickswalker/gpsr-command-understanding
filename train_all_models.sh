@@ -21,3 +21,4 @@ allennlp train "experiments/$elmo_seq2seq_freezed.json" -s "results/$elmo_seq2se
 allennlp train "experiments/$elmo_seq2seq_unfreezed.json" -s "results/$elmo_seq2seq_unfreezed" --include-package gpsr_semantic_parser
 allennlp train "experiments/$openai_seq2seq_freezed.json" -s "results/$openai_seq2seq_freezed" --include-package gpsr_semantic_parser
 allennlp train "experiments/$openai_seq2seq_unfreezed.json" -s "results/$openai_seq2seq_unfreezed" --include-package gpsr_semantic_parser
+allennlp train "experiments/$seq2seq.json" -s "results/$seq2seq" --include-package gpsr_semantic_parser
