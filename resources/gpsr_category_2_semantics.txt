@@ -51,18 +51,18 @@ $vbfind a (girl | woman | female person) in the {room 1} and answer a {question}
 $vbgopl to the {placement}, $vbfind a (boy | man | male person), and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), male($1), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a (girl | woman | female person), and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), female($1), at($1, {placement}))))
 
-$vbgopl to the {placement}, $vbfind a person {gesture}, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), {gesture}($1), at($1, {placement}))))
+$vbgopl to the {placement}, $vbfind a person {gesture}, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), is($1, {gesture}), at($1, {placement}))))
 
 $vbgopl to the {placement}, $vbfind a (boy | man | male person), and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), male($1), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a (girl | woman | female person), and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), female($1), at($1, {placement}))))
 
-$vbgopl to the {placement}, $vbfind a person {gesture}, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), {gesture}($1), at($1, {placement}))))
+$vbgopl to the {placement}, $vbfind a person {gesture}, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), is($1, {gesture}), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a person standing, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), standing($1), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a person lying down, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), lying($1), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a person sitting, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), sitting($1), at($1, {placement}))))
 
 
-$vbgopl to the {placement}, $vbfind a person {gesture}, and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), {gesture}($1), at($1, {placement}))))
+$vbgopl to the {placement}, $vbfind a person {gesture}, and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), is($1, {gesture}), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a person standing, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), standing($1), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a person lying down, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), lying($1), at($1, {placement}))))
 $vbgopl to the {placement}, $vbfind a person sitting, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), sitting($1), at($1, {placement}))))

@@ -4,17 +4,16 @@
 #                       count(entities)
 #                         Note that count is treated specially by the grounder; it'll take the expression
 #                         for `entities` and count the number of satisfying groundings.
-#                       follow(person_entity)
-#                       go(location_entity)
-#                       guide(person_entity, location_entity)
+#                       female(entity)
 #                       is_a(entity, string)
 #                       location(entity)
 #                       name(entity, name_str)
+#                       male(entity)
 #                       person(entity)
-#                       say(string[, person_entity])
 #                       sequence(command_predicate, command_predicate, [...])
 #                           A special predicate that the system will evaluate by running the constituents
 #                           in order.
+
 #           Preposition predicates:
 #                       above(entity, reference)
 #                       below(entity, reference)
@@ -30,9 +29,11 @@
 #
 # Commands: bring(object_entity[, person_entity)
 #           find(entity)
+#           follow(person_entity)
+#           go(location_entity)
+#           guide(person_entity, location_entity)
 #           put(object_entity, location_entity)
-#           say(named_entity[, person_entity)
-#           move(object_entity, to)
+#           say(string[, person_entity])
 
 ##################
 # Find objects ($fndobj)
@@ -63,9 +64,9 @@ $vbdeliver the $object to me = bring(λ$1:e.(is_a($1, $object)))
 $vbdeliver the $object to {name} at the {beacon 1} = bring( λ$1:e.(is_a($1, $object)),  λ$1:e.(and(person($1), name($1, {name}),at($1,{beacon 1}))))
 $vbgopl to the {placement 1}, $vbfind the $object, and $delivme =  bring(λ$1:e.(and(is_a($1, $object), at($1,{placement 1}))))
 $vbgopl to the {placement 1}, $vbfind the $object, and $vbdeliver it to {name} at the {beacon} = bring(λ$1:e.(and(is_a($1, $object), at($1,{placement 1}))),  λ$1:e.(and(person($1),name($1, {name}), at($1, {beacon}))))
-$vbgopl to the {placement 1}, $vbfind the $object, and $vbplace it on the {placement 2} = move( λ$1:e.(and(is_a($1, $object), at($1, {placement 1}))), {placement 2})
-$vbplace the $object on the {placement 2} = move( λ$1:e.(and(is_a($1, $object))), {placement 2})
+$vbgopl to the {placement 1}, $vbfind the $object, and $vbplace it on the {placement 2} = put( λ$1:e.(and(is_a($1, $object), at($1, {placement 1}))), {placement 2})
+$vbplace the $object on the {placement 2} = put( λ$1:e.(and(is_a($1, $object))), {placement 2})
 $vbtake the $object and $vbplace it on the {placement 2} = put(λ$1:e.(is_a($1, $object)), {placement 2})
 $vbtake the $object from the {placement 1} and $delivme = bring(λ$1:e.(and(is_a($1, $object), at($1,{placement 1}))))
 $vbtake the $object from the {placement 1} and $vbdeliver it to {name} at the {beacon} = bring(λ$1:e.(and(is_a($1, $object), at($1,{placement 1}))))
-$vbtake the $object from the {placement 1} and $vbplace it on the {placement 2} = move( λ$1:e.(and(is_a($1, $object), at($1, {placement 1}))), {placement 2})
+$vbtake the $object from the {placement 1} and $vbplace it on the {placement 2} = put( λ$1:e.(and(is_a($1, $object), at($1, {placement 1}))), {placement 2})

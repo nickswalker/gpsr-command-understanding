@@ -4,7 +4,7 @@
 
 (Could you please | Could you | Robot please | please | "" ) Pour some cereals into the bowl = pour(λ$1:e.(is_a($1, cereal)), λ$2:e.(is_a($2, bowl)))
 
-(Could you please | Could you | Robot please | please | "" ) $vbbtake the {kobject} to the {placement 2} = move( λ$1:e.(and($1, {kobject})), {placement 2})
+(Could you please | Could you | Robot please | please | "" ) $vbbtake the {kobject} to the {placement 2} = put( λ$1:e.(and($1, {kobject})), {placement 2})
 (Could you please | Could you | Robot please | please | "" ) $vbbring me the $abspos object $cmanobjsrc = bring()
 (Could you please | Could you | Robot please | please | "" ) $vbbring me the object at the left of the {object} from the {placement 2} = bring(λ$1:e.(λ$2:e.(and(is_a($2, {object}),left_of($1, $2)))), {placement 2})
 (Could you please | Could you | Robot please | please | "" ) $vbbring me the object at the right of the {object} from the {placement 2} = bring(λ$1:e.(λ$2:e.(and(is_a($2, {object}),right_of($1, $2)))), {placement 2})

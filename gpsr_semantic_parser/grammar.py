@@ -1,5 +1,5 @@
 from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand, merge_dicts
-from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser
+from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser
 
 from gpsr_semantic_parser.types import  *
 
@@ -150,10 +150,11 @@ def make_mock_wildcard_rules(wildcards):
     return grounding_rules
 
 
-def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file):
+def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
     object_parser = ObjectParser(objects_xml_file)
     locations_parser = LocationParser(locations_xml_file)
     names_parser = NameParser(names_xml_file)
+    gestures_parser = GesturesParser(gestures_xml_file)
 
     objects = object_parser.all_objects()
     objects = [[x] for x in objects]
@@ -165,6 +166,9 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file):
     locations = [[x] for x in locations]
     rooms = locations_parser.get_all_rooms()
     rooms = [[x] for x in rooms]
+    gestures = gestures_parser.get_gestures()
+    gestures = [[x] for x in gestures]
+
 
     production_rules = {}
     # add objects
@@ -196,6 +200,7 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file):
     production_rules[WildCard('placement', True)] = rooms
     production_rules[WildCard('beacon', True)] = rooms
     production_rules[WildCard('room', True)] = "room"
+    production_rules[WildCard('gesture')] = gestures
 
     return production_rules
 

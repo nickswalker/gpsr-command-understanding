@@ -127,6 +127,19 @@ class QuestionParser:
         return qa_dictionary
 
 
+class GesturesParser:
+    def __init__(self, gestures_xml_file):
+        self.tree = ET.parse(gestures_xml_file)
+
+    def get_gestures(self):
+        gestures = set()
+
+        root = self.tree.getroot()
+        for question in root.findall("./gesture"):
+            gestures.add(question["name"])
+        return gestures
+
+
 class NameParser:
     def __init__(self, names_xml_file):
         self.tree = ET.parse(names_xml_file)
