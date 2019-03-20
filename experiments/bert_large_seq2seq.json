@@ -8,7 +8,7 @@
       },
       "bert": {
         "type": "bert-pretrained",
-        "pretrained_model": "bert-base-uncased",
+        "pretrained_model": "bert-large-uncased",
         "max_pieces": 150,
       }
     },
@@ -28,8 +28,8 @@
       "type": "word"
     }
   },
-  "train_data_path": "data/train",
-  "validation_data_path": "data/val",
+  "train_data_path": "data/train.txt",
+  "validation_data_path": "data/val.txt",
   "model": {
     "type": "seq2seq",
     "source_embedder": {
@@ -42,7 +42,7 @@
       },
       "bert": {
         "type": "bert-pretrained",
-        "pretrained_model": "bert-base-uncased"
+        "pretrained_model": "bert-large-uncased"
       },
       "embedder_to_indexer_map": {
         "bert": ["bert", "bert-offsets"],
@@ -52,7 +52,7 @@
     },
     "encoder": {
       "type": "lstm",
-      "input_size": 868,
+      "input_size": 1124,
       "hidden_size": 200,
       "num_layers": 1,
       "bidirectional": true
@@ -86,7 +86,7 @@
     },
     "num_epochs": 150,
     "patience" : 30,
-    "cuda_device": 1,
+    "cuda_device": 0,
     "should_log_learning_rate": true,
     "should_log_parameter_statistics": false,
     "validation_metric": "+seq_acc"
