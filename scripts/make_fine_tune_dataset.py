@@ -30,8 +30,8 @@ test_out_path = os.path.join(pairs_out_path, "test.txt")
 all_pairs = list(all_unique_pairs.items())
 random.Random(0).shuffle(all_pairs)
 split1 = int(0.50 * len(all_pairs))
-split2 = int(0.80 * len(all_pairs))
 stuff, test = all_pairs[:split1], all_pairs[split1:]
+split2 = int(0.80 * len(stuff))
 train, val = stuff[:split2], stuff[split2:]
 
 train = sorted(train, key=lambda x: len(x[0]))
