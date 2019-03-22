@@ -5,6 +5,11 @@
       "source_tokens": {
         "type": "single_id",
         "namespace": "source_tokens"
+      },
+      "bert": {
+        "type": "bert-pretrained",
+        "pretrained_model": "bert-base-uncased",
+        "max_pieces": 150,
       }
     },
     "target_token_indexers": {
@@ -13,8 +18,17 @@
         "namespace": "tokens"
       }
     },
+    "source_tokenizer": {
+      "type": "word",
+      "word_splitter": {
+        "type": "bert-basic"
+      }
+    },
+    "target_tokenizer": {
+      "type": "word"
+    }
   },
-  "train_data_path": "data/train1.txt",
+  "train_data_path": "data/train5.txt",
   "validation_data_path": "data/val.txt",
   "iterator": {
     "type": "bucket",
@@ -32,6 +46,7 @@
       "warmup_steps": 1000,
       "model_size": 200
     },
+    "num_serialized_models_to_keep": 1,
     "num_epochs": 1,
     "patience" : 30,
     "cuda_device": 0,

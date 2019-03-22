@@ -5,6 +5,12 @@
       "source_tokens": {
         "type": "single_id",
         "namespace": "source_tokens"
+      },
+      "openai": {
+        "type": "openai_transformer_byte_pair",
+        "model_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/openai-transformer-lm-2018.07.23.tar.gz",
+        "n_ctx": 150,
+        "namespace": "openai_transformer"
       }
     },
     "target_token_indexers": {
@@ -13,8 +19,17 @@
         "namespace": "tokens"
       }
     },
+    "source_tokenizer": {
+      "type": "word",
+      "word_splitter": {
+        "type": "openai"
+      }
+    },
+    "target_tokenizer": {
+      "type": "word"
+    }
   },
-  "train_data_path": "data/train3.txt",
+  "train_data_path": "data/train4.txt",
   "validation_data_path": "data/val.txt",
   "iterator": {
     "type": "bucket",
@@ -32,6 +47,7 @@
       "warmup_steps": 1000,
       "model_size": 200
     },
+    "num_serialized_models_to_keep": 1,
     "num_epochs": 1,
     "patience" : 30,
     "cuda_device": 0,

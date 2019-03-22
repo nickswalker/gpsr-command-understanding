@@ -5,6 +5,9 @@
       "source_tokens": {
         "type": "single_id",
         "namespace": "source_tokens"
+      },
+      "elmo": {
+        "type": "elmo_characters"
       }
     },
     "target_token_indexers": {
@@ -32,6 +35,7 @@
       "warmup_steps": 1000,
       "model_size": 200
     },
+    "num_serialized_models_to_keep": 1,
     "num_epochs": 1,
     "patience" : 30,
     "cuda_device": 0,
