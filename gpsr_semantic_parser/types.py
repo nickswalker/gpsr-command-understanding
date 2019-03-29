@@ -244,6 +244,8 @@ class SemanticTemplate(object):
     def fill_template(self, name, value):
         self.root = self._fill_template_recursive(self.root, name, value)
         self.unfilled_template_names.remove(name)
+        if not (isinstance(value, str) or isinstance(value, TextFragment)):
+            self.unfilled_template_names.add(str(value))
 
     def _fill_template_recursive(self, node, name, value):
         if isinstance(node, Lambda):
@@ -252,14 +254,22 @@ class SemanticTemplate(object):
         elif isinstance(node, Predicate):
             modified = node
             if isinstance(node, TemplatePredicate):
-                if node.name == name:
-                    modified = Predicate(value, node.values)
+                if str(node.name) == name:
+                    if isinstance(value, str) or isinstance(value, TextFragment):
+                        modified = Predicate(value, node.values)
+                    else:
+                        modified = TemplatePredicate(value, node.values)
             for i, child in enumerate(modified.values):
                 modified.values[i] = self._fill_template_recursive(child, name, value)
             return modified
         elif isinstance(node, TemplateConstant):
-            if node.name == name:
-                return Constant(value)
+            if str(node.name) == name:
+                if isinstance(value, str) or isinstance(value, TextFragment):
+                    return Constant(value)
+                else:
+                    # If the value isn't already baked down, it could be expanded more. Leave as a template
+                    # so we can check in the future
+                    return TemplateConstant(value)
             else:
                 return node
         else:
