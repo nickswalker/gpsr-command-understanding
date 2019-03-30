@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+function usage {
+    cat <<- EOF
+    usage: test_all_models.sh results_path test_file
+
+    Runs allennlp evaluate on all results directories in a path.
+
+    Options:
+        -h --help                      Print this message
+EOF
+        exit 1
+}
+
+
+if [[ $# < 2 ]]; then
+    echo "Pass a path to a directory of experiments"
+    exit 1
+fi
+
+results_path=$1
+shift
+test_path=$1
+shift
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -h|--help)
+                usage
+        ;;
+        --)
+            # Get rid of --
+            shift
+            # The remainder are grabbag args to pass to the script
+            args="${args}$@"
+            break
+        ;;
+        *)
+           >&2 echo "Unknown argument: $1"
+           exit 1
+        ;;
+    esac
+    shift # move past argument
+done
+
+results_dirs=${results_path}/*
+test_name=$(basename $test_path)
+
+for dir in $results_dirs; do
+    name=$(basename $dir)
+    allennlp evaluate "${dir}/model.tar.gz" --output-file "${results_path}/evaluation_${test_name}" --include-package gpsr_semantic_parser
+done

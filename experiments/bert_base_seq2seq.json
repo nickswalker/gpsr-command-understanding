@@ -5,6 +5,11 @@
       "source_tokens": {
         "type": "single_id",
         "namespace": "source_tokens"
+      },
+      "bert": {
+        "type": "bert-pretrained",
+        "pretrained_model": "bert-base-uncased",
+        "max_pieces": 150,
       }
     },
     "target_token_indexers": {
@@ -13,8 +18,17 @@
         "namespace": "tokens"
       }
     },
+    "source_tokenizer": {
+      "type": "word",
+      "word_splitter": {
+        "type": "bert-basic"
+      }
+    },
+    "target_tokenizer": {
+      "type": "word"
+    }
   },
-  "train_data_path": "data/train3.txt",
+  "train_data_path": "data/train.txt",
   "validation_data_path": "data/val.txt",
   "model": {
     "type": "seq2seq",
@@ -23,12 +37,21 @@
         "type": "embedding",
         "vocab_namespace": "source_tokens",
         "embedding_dim": 100,
-        "trainable": true
-      }
+        "pretrained_file": "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.100d.txt.gz",
+      },
+      "bert": {
+        "type": "bert-pretrained",
+        "pretrained_model": "bert-base-uncased"
+      },
+      "embedder_to_indexer_map": {
+        "bert": ["bert", "bert-offsets"],
+        "source_tokens": ["source_tokens"]
+      },
+      "allow_unmatched_keys": true,
     },
     "encoder": {
       "type": "lstm",
-      "input_size": 100,
+      "input_size": 868,
       "hidden_size": 200,
       "num_layers": 1,
       "bidirectional": true
@@ -39,6 +62,7 @@
       "matrix_dim": 400
     },
     "target_embedding_dim": 100,
+    "target_namespace": "tokens",
     "beam_size": 5,
     "max_decoding_steps": 100,
     "use_bleu": true
@@ -59,10 +83,8 @@
       "warmup_steps": 1000,
       "model_size": 200
     },
-    "num_serialized_models_to_keep": 1,
-    "num_epochs": 1,
+    "num_epochs": 150,
     "patience" : 30,
-    "cuda_device": 0,
     "should_log_learning_rate": true,
     "should_log_parameter_statistics": false,
     "validation_metric": "+seq_acc"

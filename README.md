@@ -36,6 +36,11 @@ You can run them with
 You can monitor training with Tensorboard:
 
     #TODO
+    
+The `train_all_models` script will train every config back to back. It will pass through arguments that come after the `--`,
+so you can configure the experiment
+
+    ./scripts/train_all_models experiments -- -o "{train_data_path: 'data/1_2/train.txt', validation_data_path: 'data/1_2/val.txt'}"
 
 ### Testing
 

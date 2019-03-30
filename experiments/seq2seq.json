@@ -61,7 +61,6 @@
     },
     "num_epochs": 150,
     "patience" : 30,
-    "cuda_device": 0,
     "should_log_learning_rate": true,
     "should_log_parameter_statistics": false,
     "validation_metric": "+seq_acc"

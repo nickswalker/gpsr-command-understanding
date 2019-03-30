@@ -6,10 +6,11 @@
         "type": "single_id",
         "namespace": "source_tokens"
       },
-      "bert": {
-        "type": "bert-pretrained",
-        "pretrained_model": "bert-base-uncased",
-        "max_pieces": 150,
+      "openai": {
+        "type": "openai_transformer_byte_pair",
+        "model_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/openai-transformer-lm-2018.07.23.tar.gz",
+        "n_ctx": 150,
+        "namespace": "openai_transformer"
       }
     },
     "target_token_indexers": {
@@ -21,14 +22,14 @@
     "source_tokenizer": {
       "type": "word",
       "word_splitter": {
-        "type": "bert-basic"
+        "type": "openai"
       }
     },
     "target_tokenizer": {
       "type": "word"
     }
   },
-  "train_data_path": "data/train7.txt",
+  "train_data_path": "data/train.txt",
   "validation_data_path": "data/val.txt",
   "model": {
     "type": "seq2seq",
@@ -38,14 +39,16 @@
         "vocab_namespace": "source_tokens",
         "embedding_dim": 100,
         "pretrained_file": "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.100d.txt.gz",
-        "trainable": false
       },
-      "bert": {
-        "type": "bert-pretrained",
-        "pretrained_model": "bert-base-uncased"
+      "openai": {
+        "type": "openai_transformer_embedder",
+        "transformer": {
+          "model_path": "https://s3-us-west-2.amazonaws.com/allennlp/models/openai-transformer-lm-2018.07.23.tar.gz",
+          "n_ctx": "150"
+        }
       },
       "embedder_to_indexer_map": {
-        "bert": ["bert", "bert-offsets"],
+        "openai": ["openai", "openai-offsets"],
         "source_tokens": ["source_tokens"]
       },
       "allow_unmatched_keys": true,
@@ -84,10 +87,8 @@
       "warmup_steps": 1000,
       "model_size": 200
     },
-    "num_serialized_models_to_keep": 1,
-    "num_epochs": 1,
+    "num_epochs": 150,
     "patience" : 30,
-    "cuda_device": 0,
     "should_log_learning_rate": true,
     "should_log_parameter_statistics": false,
     "validation_metric": "+seq_acc"

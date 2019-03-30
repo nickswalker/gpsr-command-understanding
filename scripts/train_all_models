@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+function usage {
+    cat <<- EOF
+    usage: train_all_models.sh name experiments_dir_path
+
+    Runs allennlp train on all experiment files in a path.
+
+    Options:
+        -t --train-path                Absolute path to the training data
+        -v --val-path                  Absolute path to the validation data
+        -c --cpu                       Use the CPU (instead of GPU)
+        -h --help                      Print this message
+EOF
+        exit 1
+}
+
+
+if [[ $# < 1 ]]; then
+    echo "Pass a path to a directory of experiments"
+    exit 1
+fi
+
+use_cpu=0
+experiment_name=$1
+shift
+experiment_path=$1
+shift
+
+results_path=${experiment_path}/results_${experiment_name}
+mkdir -p $results_path
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        -t|--train-path)
+            train_path=$1
+        ;;
+        -v|--val-path)
+            validation_path=$1
+        ;;
+        -c|--cpu)
+            use_cpu=1
+        ;;
+        -h|--help)
+                usage
+        ;;
+        --)
+            # Get rid of --
+            shift
+            # The remainder are grabbag args to pass to the script
+            args="${args}$@"
+            break
+        ;;
+        *)
+           >&2 echo "Unknown argument: $1"
+           exit 1
+        ;;
+    esac
+    shift # move past argument
+done
+
+if [[ !$use_cpu ]]; then
+    echo
+    #args="${args} -c 0"
+fi
+
+experiment_files=${experiment_path}/*.json
+
+for file in ${experiment_files}; do
+    name=$(basename $file)
+    # remove .json extension
+    name="${name%.*}"
+    allennlp train "$file" -s "${results_path}/${name}" --include-package gpsr_semantic_parser "${args}"
+done

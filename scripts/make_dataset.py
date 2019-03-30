@@ -13,13 +13,15 @@ from gpsr_semantic_parser.grammar import prepare_rules
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train_percentage", default=.6, type=float)
-    parser.add_argument("--val_percentage", default=.2, type=float)
-    parser.add_argument("--test_percentage", default=.2)
-    parser.add_argument("--train_categories", default=[1, 2, 3], nargs='+', type=int)
-    parser.add_argument("--test_categories", default=[1, 2, 3], nargs='+', type=int)
-    parser.add_argument("--use_parse_split", action='store_true', default=False)
+    parser.add_argument("--train-percentage", default=.6, type=float)
+    parser.add_argument("--val-percentage", default=.2, type=float)
+    parser.add_argument("--test-percentage", default=.2)
+    parser.add_argument("--train-categories", default=[1, 2, 3], nargs='+', type=int)
+    parser.add_argument("--test-categories", default=[1, 2, 3], nargs='+', type=int)
+    parser.add_argument("--use-parse-split", action='store_true', default=False)
     parser.add_argument("--name", default=None)
+    parser.add_argument("--seed", default=0, required=False)
+    parser.add_argument("--incremental-datasets", action='store_true', required=False)
     args = parser.parse_args()
 
     different_test_dist = False
@@ -153,19 +155,16 @@ def main():
             for utterance, parse in cat3_unique_utterance_pair.items():
                 test_pairs.append((utterance, parse))
 
-
-
-
-    # Cut the dataset 60/20/20 train/val/test
     # Randomize for the split, but then sort by utterance length before we save out so that things are easier to read
-    random.Random(0).shuffle(train_pairs)
-    random.Random(0).shuffle(test_pairs)
+    random.Random(args.seed).shuffle(train_pairs)
+    random.Random(args.seed).shuffle(test_pairs)
 
     if args.test_categories == args.train_categories:
         # If we're training and testing on the same distributions, these should match exactly
         assert train_pairs == test_pairs
 
     if different_test_dist:
+        # Just one split for the first dist, then use all of test
         split1 = int(args.train_percentage * len(train_pairs))
         train, val, test = train_pairs[:split1], train_pairs[split1:], test_pairs
     else:
@@ -174,6 +173,8 @@ def main():
         train, val, test = train_pairs[:split1], train_pairs[split1:split2], train_pairs[split2:]
 
 
+    # Parse splits would have stored parse-(utterance list) pairs, so lets
+    # flatten out those lists if we need to.
     if args.use_parse_split:
         def flatten(original):
             flattened = []
@@ -185,14 +186,27 @@ def main():
         val = flatten(val)
         test = flatten(test)
 
-    train = sorted(train, key=lambda x: len(x[0]))
-    val = sorted(val, key=lambda x: len(x[0]))
-    test = sorted(test, key=lambda x: len(x[0]))
+    # With this switch, we'll simulate getting data one batch at a time
+    # so we can assess how quickly we improve
+    if args.incremental_datasets:
+        limit = 16
+        count = 1
+        while limit < len(train):
+            data_to_write = train[:limit]
+            data_to_write = sorted(data_to_write, key=lambda x: len(x[0]))
+            with open("".join(train_out_path.split(".")[:-1]) + str(count) + ".txt", "w") as f:
+                for sentence, parse in data_to_write:
+                    f.write(sentence + '\n' + str(parse) + '\n')
+            limit += 16
+            count += 1
 
+    train = sorted(train, key=lambda x: len(x[0]))
     with open(train_out_path, "w") as f:
         for sentence, parse in train:
             f.write(sentence + '\n' + str(parse) + '\n')
 
+    val = sorted(val, key=lambda x: len(x[0]))
+    test = sorted(test, key=lambda x: len(x[0]))
     with open(val_out_path, "w") as f:
         for sentence, parse in val:
             f.write(sentence + '\n' + str(parse) + '\n')
