@@ -8,7 +8,7 @@ from collections import defaultdict
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.util import tokens_to_str
-from gpsr_semantic_parser.grammar import prepare_rules
+from gpsr_semantic_parser.grammar import prepare_anonymized_rules
 
 
 def main():
@@ -54,9 +54,9 @@ def main():
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources")
     common_path = join(grammar_dir, "common_rules.txt")
 
-    cat1_rules = prepare_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
-    cat2_rules = prepare_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
-    cat3_rules = prepare_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
+    cat1_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
+    cat2_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
+    cat3_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
     cat1_semantics = load_semantics(join(grammar_dir, "gpsr_category_1_semantics.txt"))
     cat2_semantics = load_semantics(
         [join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])

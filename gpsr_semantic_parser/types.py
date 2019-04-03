@@ -51,16 +51,16 @@ class WildCard(NonTerminal):
     A nonterminal type representing some object, location, gesture, category, or name.
     Not fully modeled.
     """
-    def __init__(self, name, type, extra, obfuscated=False):
+    def __init__(self, name, type=None, extra=None, obfuscated=False):
         self.obfuscated = obfuscated
-        self.type = type if type.strip() else None
-        self.extra = extra if extra.strip() else None
+        self.type = type.strip() if type else None
+        self.extra = extra.strip() if extra else None
         super(WildCard, self).__init__(name)
     def __str__(self):
         obfuscated_str = '?' if self.obfuscated else ""
         type_str = self.type if self.type else ""
         extra_str = self.extra if self.extra else ""
-        return "Wildcard({} {} {})".format(self.name, type_str, extra_str, obfuscated_str)
+        return "Wildcard(" + '{} {} {}'.format(self.name, type_str, extra_str, obfuscated_str).strip() + ')'
     def to_human_readable(self):
         obfuscated_str = '?' if self.obfuscated else ""
         type_str = self.type if self.type else ""
@@ -94,7 +94,9 @@ class TextFragment(object):
     def join(fragments):
         if len(fragments) == 1:
             return fragments[0]
-        return TextFragment(str.join(" ", [frag.text for frag in fragments]))
+        joined = str.join(" ", [frag.text for frag in fragments])
+        joined = joined.replace(" , ", ", ")
+        return TextFragment(joined)
 
 
 class Void(object):
@@ -162,6 +164,7 @@ class Predicate(object):
     Logical predicate. Function applied to arguments that returns true or false.
     """
     def __init__(self, name, values):
+        assert isinstance(name, str)
         self.name = name
         self.values = values
     def __str__(self):
@@ -255,8 +258,10 @@ class SemanticTemplate(object):
             modified = node
             if isinstance(node, TemplatePredicate):
                 if str(node.name) == name:
-                    if isinstance(value, str) or isinstance(value, TextFragment):
+                    if isinstance(value, str):
                         modified = Predicate(value, node.values)
+                    elif isinstance(value, TextFragment):
+                        modified = Predicate(value.text, node.values)
                     else:
                         modified = TemplatePredicate(value, node.values)
             for i, child in enumerate(modified.values):

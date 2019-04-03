@@ -1,18 +1,18 @@
 import os
 from os.path import join
 
-from gpsr_semantic_parser.grammar import prepare_rules
+from gpsr_semantic_parser.grammar import prepare_anonymized_rules
 from gpsr_semantic_parser.types import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.util import tokens_to_str
 
-grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources")
+grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
 common_path = join(grammar_dir, "common_rules.txt")
 
-cat1_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_1_grammar.txt"))
-cat2_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_2_grammar.txt"))
-cat3_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_3_grammar.txt"))
+cat1_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
+cat2_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
+cat3_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
 cat1_semantics = load_semantics(join(grammar_dir, "gpsr_category_1_semantics.txt"))
 cat2_semantics = load_semantics([join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
 cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))
@@ -23,8 +23,10 @@ cat3_sentences = generate_sentences(ROOT_SYMBOL, cat3_rules)
 #sentence_parse_pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, cat1_rules, cat1_semantics)
 cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
 cat1_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat1_pairs}
+print("---------------")
 cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
 cat2_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat2_pairs}
+print("------------------------------")
 cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
 cat3_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat3_pairs}
 
@@ -73,7 +75,7 @@ print("combined {0}/{1} {2:.1f}%".format(len(combined_annotations), len(all_sent
 
 print("combined unique parses: {}".format(len(cat1_parses.union(cat2_parses).union(cat3_parses))))
 
-"""
+
 print("No parses for:")
 print("Cat 1:")
 for sentence in sorted(cat1_parseless):
@@ -83,4 +85,4 @@ for sentence in sorted(cat2_parseless):
     print(sentence)
 print("\n---------------------------------------\nCat 3:")
 for sentence in sorted(cat3_parseless):
-    print(sentence)"""
+    print(sentence)

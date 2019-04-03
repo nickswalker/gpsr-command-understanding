@@ -1,6 +1,6 @@
 import operator
 
-from gpsr_semantic_parser.types import TextFragment, BAR, L_PAREN, R_PAREN, Void
+from gpsr_semantic_parser.types import TextFragment, BAR, L_PAREN, R_PAREN, Void, WildCard, NonTerminal
 
 
 def merge_dicts(x, y):
@@ -8,6 +8,8 @@ def merge_dicts(x, y):
     z.update(y)    # modifies z with y's keys and values & returns None
     return z
 
+def assert_no_wildcards(token_sequence):
+    assert not any(isinstance(x, WildCard) or isinstance(x, NonTerminal) for x in token_sequence)
 
 def tokens_to_str(tokens, show_void=False):
     output = ""
@@ -17,7 +19,11 @@ def tokens_to_str(tokens, show_void=False):
         elif isinstance(token, Void) and not show_void:
             continue
         else:
-            output += token.to_human_readable() + ' '
+            to_str = token.to_human_readable()
+            if to_str[0] == ',':
+                output = output[:-1] + token.to_human_readable() + ' '
+            else:
+                output += token.to_human_readable() + ' '
     return output[:-1]
 
 
@@ -39,6 +45,7 @@ def combine_adjacent_text_fragments(tokens):
     i = 0
     while i < len(tokens):
         token = tokens[i]
+        # Not a fragment? Forward to output
         if not isinstance(token, TextFragment):
             cleaned.append(token)
             i += 1
@@ -46,6 +53,7 @@ def combine_adjacent_text_fragments(tokens):
         elif token.text == "":
             i += 1
             continue
+        # Otherwise, gather up the the next subsequence of fragments
         j = i + 1
         while j < len(tokens):
             next_token = tokens[j]

@@ -75,7 +75,8 @@ def tokenize(raw_rule):
                 match = re.search(TEXT_FRAG_RE, raw_rule[cursor:])
                 assert "meta" not in match.group()
                 tokens.append(TextFragment(match.group()))
-            assert match.end() > 0
+            if match.end() == 0:
+                raise RuntimeError("Couldn't parse {}".format(raw_rule))
             cursor += match.end()
 
     return tokens
@@ -138,19 +139,31 @@ def get_wildcards(production_rules):
     return groundable_terms
 
 
-def make_mock_wildcard_rules(wildcards):
+def make_anonymized_grounding_rules(wildcards, show_details=False):
     """
-    Generates a single substitution for each wildcard. Helpful for testing.
+    Generates a single special-token substitution for each wildcard.
     :param wildcards:
     :return:
     """
     grounding_rules = {}
     for term in wildcards:
-        grounding_rules[term] = [["<{}>".format(term.name)]]
+        if show_details:
+            prod = "<{}>".format(term.to_human_readable())
+        else:
+            prod = "<{}>".format(term.name)
+        grounding_rules[term] = [[prod]]
     return grounding_rules
 
 
 def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+    """
+    Loads in the grounding rules for all the wildcard classes.
+    :param objects_xml_file:
+    :param locations_xml_file:
+    :param names_xml_file:
+    :param gestures_xml_file:
+    :return:
+    """
     object_parser = ObjectParser(objects_xml_file)
     locations_parser = LocationParser(locations_xml_file)
     names_parser = NameParser(names_xml_file)
@@ -172,40 +185,57 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
 
     production_rules = {}
     # add objects
-    production_rules[WildCard('kobject')] = objects
-    production_rules[WildCard('aobject')] = objects
+    production_rules[WildCard('object', "known")] = objects
+    production_rules[WildCard('object', "alike")] = objects
     production_rules[WildCard('object')] = objects
     production_rules[WildCard('object1')] = objects
     production_rules[WildCard('object2')] = objects
-    production_rules[WildCard('object 1')] = objects
-    production_rules[WildCard('object 2')] = objects
-    production_rules[WildCard('category')] = "objects"
-    production_rules[WildCard('kobject', True)] = categories
-    production_rules[WildCard('aobject', True)] = categories
-    production_rules[WildCard('object', True)] = categories
+    production_rules[WildCard('object', '1')] = objects
+    production_rules[WildCard('object', '2')] = objects
+    production_rules[WildCard('category')] = [["objects"]]
+    production_rules[WildCard('object', 'known', obfuscated=True)] = categories
+    production_rules[WildCard('object', 'alike', obfuscated=True)] = categories
+    production_rules[WildCard('object', obfuscated=True)] = categories
     # add names
     production_rules[WildCard('name')] = names
-    production_rules[WildCard('name 1')] = names
-    production_rules[WildCard('name 2')] = names
+    production_rules[WildCard('name', '1')] = names
+    production_rules[WildCard('name', '2')] = names
     # add locations
-    production_rules[WildCard('placement')] = locations
-    production_rules[WildCard('placement 1')] = locations
-    production_rules[WildCard('placement 2')] = locations
-    production_rules[WildCard('beacon')] = locations
-    production_rules[WildCard('beacon 1')] = locations
-    production_rules[WildCard('beacon 2')] = locations
-    production_rules[WildCard('room')] = rooms
-    production_rules[WildCard('room 1')] = rooms
-    production_rules[WildCard('room 2')] = rooms
-    production_rules[WildCard('placement', True)] = rooms
-    production_rules[WildCard('beacon', True)] = rooms
-    production_rules[WildCard('room', True)] = "room"
+    production_rules[WildCard('location', 'placement')] = locations
+    production_rules[WildCard('location', 'placement', '1')] = locations
+    production_rules[WildCard('location', 'placement', '2')] = locations
+    production_rules[WildCard('location','beacon')] = locations
+    production_rules[WildCard('location','beacon', '1')] = locations
+    production_rules[WildCard('location','beacon','2')] = locations
+    production_rules[WildCard('location','room')] = rooms
+    production_rules[WildCard('location','room', '1')] = rooms
+    production_rules[WildCard('location','room', '2')] = rooms
+    production_rules[WildCard('location','placement', obfuscated=True)] = rooms
+    production_rules[WildCard('location','beacon', obfuscated=True)] = rooms
+    production_rules[WildCard('location','room', obfuscated=True)] = [["room"]]
     production_rules[WildCard('gesture')] = gestures
 
     return production_rules
 
 
-def prepare_rules(common_rules_path, category_paths):
+def prepare_rules(common_rules_path, category_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+    """
+        Prepare the production rules for a given GPSR category.
+        :param common_rules_path:
+        :param category_path:
+        :return:
+        """
+    if not isinstance(category_paths, list):
+        category_paths = [category_paths]
+    rules = load_grammar([common_rules_path] + category_paths)
+    grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
+    # This part of the grammar won't lend itself to any useful generalization from rephrasings
+    rules[WildCard("question")] = [["a question"]]
+    rules[WildCard("pron")] = [["them"]]
+    return merge_dicts(rules, grounding_rules)
+
+
+def prepare_anonymized_rules(common_rules_path, category_paths):
     """
     Prepare the production rules for a given GPSR category, making some
     typical adjustments to make the grammar usable
@@ -216,9 +246,14 @@ def prepare_rules(common_rules_path, category_paths):
     if not isinstance(category_paths, list):
         category_paths = [category_paths]
     rules = load_grammar([common_rules_path] + category_paths)
+    # $whattosay curiously doesn't pull from an XML file, but is instead baked into the grammar.
+    # We'll manually anonymize it here
     rules[NonTerminal("whattosay")] = [[TextFragment("<whattosay>")]]
+
+    # We'll use the indeterminate pronoun for convenience
+    rules[WildCard("pron")] = [["them"]]
     groundable_terms = get_wildcards(rules)
-    grounding_rules = make_mock_wildcard_rules(groundable_terms)
-    # There are too many wildcard options for this to workable during testing
-    #grounding_rules = load_wildcard_rules(join(grammar_dir, "objects.xml"),join(grammar_dir, "locations.xml"),join(grammar_dir, "names.xml"))
+    groundable_terms.add(WildCard("object", "1"))
+    groundable_terms.add(WildCard("category", "1"))
+    grounding_rules = make_anonymized_grounding_rules(groundable_terms, True)
     return merge_dicts(rules, grounding_rules)

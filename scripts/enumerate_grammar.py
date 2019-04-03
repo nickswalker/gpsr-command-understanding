@@ -3,19 +3,19 @@ import os
 import sys
 from os.path import join
 
-from gpsr_semantic_parser.grammar import prepare_rules
+from gpsr_semantic_parser.grammar import prepare_anonymized_rules
 from gpsr_semantic_parser.types import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences, generate_sentence_parse_pairs, \
     generate_sentence_parse_pairs_exhaustive, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.util import tokens_to_str
 
-grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources")
+grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
 common_path = join(grammar_dir, "common_rules.txt")
 
-cat1_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_1_grammar.txt"))
-cat2_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_2_grammar.txt"))
-cat3_rules = prepare_rules(common_path, join(grammar_dir,"gpsr_category_3_grammar.txt"))
+cat1_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
+cat2_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
+cat3_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
 cat1_semantics = load_semantics(join(grammar_dir, "gpsr_category_1_semantics.txt"))
 cat2_semantics = load_semantics([join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
 cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))

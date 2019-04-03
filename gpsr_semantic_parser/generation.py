@@ -70,7 +70,9 @@ def generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rul
             if semantics:
                 # We should've hit all the replacements. If not, there was probably a formatting issue with the template
                 if len(semantics.unfilled_template_names) != 0:
-                    print("Unfilled placeholders: " + str(semantics.unfilled_template_names))
+                    print("Unfilled placeholders {} \nin template {}".format(str(semantics.unfilled_template_names), str(semantics)))
+                    print("Won't accept these semantics")
+                    continue
             elif yield_requires_semantics:
                 # This won't be a pair without semantics, so we'll just skip it
                 continue
@@ -166,8 +168,6 @@ def generate_sentence_parse_pairs_exhaustive(start_symbols, production_rules, se
                         #print(frontier.qsize(), new_frontier.qsize())
                         frontier = new_frontier
 
-
-
                 frontier.put((sentence_filled, modified_semantics, new_path))
 
             if semantics:
@@ -204,12 +204,15 @@ def generate_sentence_parse_pairs_exhaustive(start_symbols, production_rules, se
                 print('-----')
                 pass
 
+
 def expand_all_semantics(production_rules, semantics_rules):
     """
     Expands all semantics rules
     :param production_rules:
     :param semantics_rules:
     """
+#    for utterance, parse in [list(semantics_rules.items())[-1]]:
     for utterance, parse in semantics_rules.items():
         yield from generate_sentence_parse_pairs(list(utterance), production_rules, semantics_rules, False)
+    return
 

@@ -136,7 +136,7 @@ class GesturesParser:
 
         root = self.tree.getroot()
         for question in root.findall("./gesture"):
-            gestures.add(question["name"])
+            gestures.add(question.attrib["name"])
         return gestures
 
 
