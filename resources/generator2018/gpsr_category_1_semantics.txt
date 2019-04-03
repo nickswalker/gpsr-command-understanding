@@ -40,6 +40,7 @@
 ##################
 
 $vbfind the $object in the {room} = find(λ$1:e.(and(is_a($1, $object), at($1, {room}))))
+$vbfind the {kobject?} in the {room} = find(λ$1:e.(and(is_a($1, {kobject?}), at($1, {room}))))
 Tell me how many $object there are on the {placement} = say(count(λ$1:e.(and(is_a($1, $object), at($1, {placement})))))
 
 $vbfind (someone | a person) in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), at($1, {room}))))
@@ -52,11 +53,17 @@ $vbgopl to the {room 1}, $vbfind (someone | a person), and $vbspeak $whattosay =
 $vbgopl to the {room 1}, $vbfind {name}, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), name($1, {name}), at($1, {room 1}))))
 $vbgopl to the {room 1}, $vbfind {name}, and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), name($1, {name}), at($1, {room 1}))))
 
+##############################
+# Find people ($fndppl)
+##############################
 # TODO: Make sure these "name of person at place" encodings actually make sense
 Tell me the name of the person at the {beacon} = say(λ$1:e.(λ$2:e.(and(person($2), name($2, $1), at($2,{beacon})))))
 Tell me the name of the person in the {room} = say(λ$1:e.(λ$2:e.(and(person($2), name($2, $1), at($2,{room})))))
 answer a {question} to {name} at the {beacon 1} = say(answer({question}),  λ$1:e.(and(person($1),name($1, {name}), at($1, {beacon 1}))))
 
+##############################
+# Manipulation ($deliver)
+##############################
 $vbbring me the $object = bring(λ$1:e.(is_a($1, $object)))
 $vbbring me the {kobject} from the {placement} = bring(λ$1:e.(and(is_a($1, {kobject}), at($1,{placement}))))
 $vbbring to {name} at the {beacon 1} the $object from the {placement} = bring(λ$1:e.(and(is_a($1, $object), at($1, {placement}))), λ$1:e.(and(person($1),at($1,{beacon 1}))))

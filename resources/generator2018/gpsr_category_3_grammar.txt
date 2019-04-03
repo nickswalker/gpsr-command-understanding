@@ -18,7 +18,9 @@ $cat3     = $followout
 #
 ##############################################################################
 ; Define an object type
-$object   = bowl | cloth | tray
+;$object   = bowl | cloth | tray
+; MODIFIED FOR GENERALITY
+$object = {object}
 
 ; Rule for finding a specific (named) person
 $findp    = $vbfind a $pgenders

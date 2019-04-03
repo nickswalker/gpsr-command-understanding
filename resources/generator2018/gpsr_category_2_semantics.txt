@@ -1,0 +1,101 @@
+##### Bring me
+
+###########################################################
+# Tell me something about someone (information gathering)
+###########################################################
+
+Tell me the gender of the person at the {beacon} = say(λ$1:e.(λ$2:e.(and(person($2), gender($2, $1), at($2,{beacon})))))
+Tell me the gender of the person in the {room} = say(λ$1:e.(λ$2:e.(and(person($2), gender($2, $1), at($2,{room})))))
+
+Tell me the gender of the person at the {room} = say(λ$1:e.(λ$2:e.(and(person($2), gender($2, $1), at($2,{room})))))
+Tell me the pose of the person at the {beacon} = say(λ$1:e.(λ$2:e.(and(person($2), pose($2, $1), at($2,{beacon})))))
+Tell me the pose of the person in the {room} = say(λ$1:e.(λ$2:e.(and(person($2), pose($2, $1), at($2,{room})))))
+
+Tell me how many {category} there are on the {placement} = count(λ$1:e.(and(is_a($1, {category}), at($1, {placement}))))
+Tell me what's the $oprop object on the {placement} = say(λ$1:e.(and($oprop($1), at($1,{placement}))))
+Tell me what's the $oprop {category} on the {placement} = say(λ$1:e.(and($oprop($1), is_a($1, {category}), at($1,{placement}))))
+$vbfind the {category} in the {room} = find(λ$1:e.(and(is_a($1, {category}), at($1, {room}))))
+$vbfind the {aobject?} in the {room} = find(λ$1:e.(and(is_a($1, {aobject?}), at($1, {room}))))
+
+Tell me how many people in the {room} are (boys | men | male) = say(count(λ$1:e.(and(is_a($1, person), male($1), at($1, {room})))))
+Tell me how many people in the {room} are (girls | women | female) = say(count(λ$1:e.(and(is_a($1, person), male($1), at($1, {room})))))
+
+Tell me how many people in the {room} are lying down = say(count(λ$1:e.(and(is_a($1, person), lying($1), at($1, {room})))))
+Tell me how many people in the {room} are sitting = say(count(λ$1:e.(and(is_a($1, person), sitting($1), at($1, {room})))))
+Tell me how many people in the {room} are standing = say(count(λ$1:e.(and(is_a($1, person), standing($1), at($1, {room})))))
+
+# May need to rethink pose predicates in order to do this...
+#Tell me the $pose of the person in the {room} = say(count(λ$1:e.(and(is_a($1, person), male($1), at($1, {room})))))
+
+###################################################################
+# Bring
+###################################################################
+
+$vbbring me the $object from the {placement} =  bring(λ$1:e.(is_a($1, $object)))
+$vbbring the $object from the {room} to the {placement 2} = put(λ$1:e.(and(is_a($1, $object), at($1,{room}))), {placement 2})
+$vbdeliver the $object to the person {gesture} in the {room} = bring(λ$1:e.(is_a($1, $object)), λ$1:e.(and(is($1,{gesture}),at($1,{room}))))
+
+$vbtake the $object from the {room} to the {placement 2} = put( λ$1:e.(and(is_a($1, $object), at($1, {room}))), {placement 2})
+
+###################################################################
+# Following
+###################################################################
+
+$vbfollow {name 1} from the {beacon 1} to the {room 2} = follow(λ$1:e.(and(person($1), named($1, {name 1}),at($1, {beacon 1}))))
+meet {name 1} at the {beacon 1} and $vbfollow {pron} ($fllwhdst | to the {room 2}) = follow(λ$1:e.(and(person($1), named($1, {name 1}),at($1, {beacon 1}))))
+$vbgopl to the {beacon 1}, meet {name 1}, and $vbfollow {pron} $fllwhdst = follow(λ$1:e.(and(person($1), named($1, {name 1}),at($1, {beacon 1}))))
+
+###################################################################
+# Guiding
+###################################################################
+
+$vbgopl to the {beacon 1}, meet {name 1}, and $vbguide {pron} to the {beacon 2} = guide(λ$1:e.(and(person($1), name($1, {name 1}), at($1, {beacon 1}))), {beacon 2})
+meet {name 1} at the {beacon 1} and $vbguide {pron} to the {beacon 2} = guide(λ$1:e.(and(person($1), name($1, {name 1}), at($1, {beacon 1}))), {beacon 2})
+
+$vbguide {name 1} from the {beacon 1} to the {beacon 2} = guide(λ$1:e.(and(person($1), name($1, {name 1}), at($1, {beacon 1}))), {beacon 2})
+
+$vbguide {name 1} to the {beacon 2}, you (can | may | will) find {pron} at the {beacon 1} =  guide(λ$1:e.(and(person($1), name($1, {name 1}), at($1, {beacon 1}))), {beacon 2})
+
+###################################################################
+# Find person speak
+###################################################################
+
+answer a {question} to the person {gesture} in the {room} = say(answer({question}), λ$1:e.(and(person($1), is($1, {gesture}), at($1, {room}))))
+$vbspeak $whattosay to the person {gesture} in the {room} = say($whattosay, λ$1:e.(and(person($1), is($1, {gesture}), at($1, {room}))))
+
+
+$vbfind a person {gesture} in the {room} and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), is($1, {gesture}), at($1, {room}))))
+
+$vbfind a person lying down in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), lying($1), at($1, {room}))))
+$vbfind a person lying down in the {room} and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), lying($1), at($1, {room}))))
+$vbfind a person sitting in the {room} and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), sitting($1), at($1, {room}))))
+$vbfind a person sitting in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), sitting($1), at($1, {room}))))
+$vbfind a person standing in the {room} and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), standing($1), at($1, {room}))))
+$vbfind a person standing in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), standing($1), at($1, {room}))))
+
+$vbfind a person {gesture} in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), is($1, {gesture}), at($1, {room}))))
+
+$vbfind a (boy | man | male person) in the {room} and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), male($1), at($1, {room}))))
+$vbfind a (boy | man | male person) in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), male($1), at($1, {room}))))
+
+$vbfind a (girl | woman | female person) in the {room} and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), female($1), at($1, {room}))))
+$vbfind a (girl | woman | female person) in the {room} and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), female($1), at($1, {room}))))
+
+$vbgopl to the {room 1}, $vbfind a (boy | man | male person), and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), male($1), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a (girl | woman | female person), and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), female($1), at($1, {room 1}))))
+
+$vbgopl to the {room 1}, $vbfind a person {gesture}, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), is($1, {gesture}), at($1, {room 1}))))
+
+$vbgopl to the {room 1}, $vbfind a (boy | man | male person), and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), male($1), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a (girl | woman | female person), and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), female($1), at($1, {room 1}))))
+
+$vbgopl to the {room 1}, $vbfind a person {gesture}, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), is($1, {gesture}), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a person standing, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), standing($1), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a person lying down, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), lying($1), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a person sitting, and $vbspeak $whattosay = say($whattosay, λ$1:e.(and(person($1), sitting($1), at($1, {room 1}))))
+
+
+$vbgopl to the {room 1}, $vbfind a person {gesture}, and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), is($1, {gesture}), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a person standing, and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), standing($1), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a person lying down, and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), lying($1), at($1, {room 1}))))
+$vbgopl to the {room 1}, $vbfind a person sitting, and answer a {question} = say(answer({question}), λ$1:e.(and(person($1), sitting($1), at($1, {room 1}))))
