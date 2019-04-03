@@ -3,6 +3,8 @@ import copy
 from gpsr_semantic_parser.util import combine_adjacent_text_fragments, tokens_to_str, productions_to_str, Counter
 from gpsr_semantic_parser.types import NonTerminal, TextFragment
 from queue import Queue
+import random
+
 
 def generate_sentences(start_symbols, production_rules):
     """
@@ -35,6 +37,63 @@ def generate_sentences(start_symbols, production_rules):
             # If we couldn't replace anything else, this sentence is done!
             tokens = combine_adjacent_text_fragments(tokens)
             yield tokens
+
+
+def generate_random_pair(start_symbols, production_rules, semantics_rules={}, generator=None):
+    """
+    Returns a single fully expanded production uniformly at random. Note that
+    the seed is fixed by default, so the sequence of random productions will be repeatable
+    :param start_symbols:
+    :param production_rules:
+    :return:
+    """
+    if generator:
+        random_generator = generator
+    else:
+        random_generator = random.Random()
+    source = start_symbols
+    assert not isinstance(start_symbols, tuple)
+    if not isinstance(start_symbols, list) and not isinstance(start_symbols, tuple):
+        source = [start_symbols]
+    semantics = semantics_rules.get(tuple(source))
+    replace_i, replace_token = None, None
+
+    state = (source, semantics)
+    while True:
+        tokens, semantics = state
+        for i, token in enumerate(tokens):
+            replace_i, replace_token = None, None
+            if token not in production_rules.keys():
+                continue
+            replace_i, replace_token = i, token
+            break
+
+        if not replace_token:
+            # If we couldn't replace anything else, this sentence is done!
+            tokens = combine_adjacent_text_fragments(tokens)
+            if semantics:
+                # We should've hit all the replacements. If not, there was probably a formatting issue with the template
+                if len(semantics.unfilled_template_names) != 0:
+                    print("Unfilled placeholders: " + str(semantics.unfilled_template_names))
+            return tokens, semantics
+
+        production = random_generator.choice(production_rules[replace_token])
+        sentence_filled = tokens[:replace_i] + production + tokens[replace_i + 1:]
+        # Normalize any chopped up text fragments to make sure we can pull semantics for these cases
+        sentence_filled = combine_adjacent_text_fragments(sentence_filled)
+        # If we've got semantics for this expansion already, see if the replacements apply to them
+        # For the basic annotation we provided, this should only happen when expanding ground terms
+        modified_semantics = None
+        if semantics:
+            if str(replace_token) in semantics.unfilled_template_names:
+                modified_semantics = copy.deepcopy(semantics)
+                modified_semantics.fill_template(str(replace_token), production[0])
+            else:
+                modified_semantics = semantics
+        else:
+            # Let's see if the  expansion is associated with any semantics
+            modified_semantics = semantics_rules.get(tuple(sentence_filled))
+        state = (sentence_filled, modified_semantics)
 
 
 def generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rules, yield_requires_semantics=True):
