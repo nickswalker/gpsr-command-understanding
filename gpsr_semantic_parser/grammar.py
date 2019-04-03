@@ -193,6 +193,7 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
     production_rules[WildCard('object', '1')] = objects
     production_rules[WildCard('object', '2')] = objects
     production_rules[WildCard('category')] = [["objects"]]
+    production_rules[WildCard('category', '1')] = [["objects"]]
     production_rules[WildCard('object', 'known', obfuscated=True)] = categories
     production_rules[WildCard('object', 'alike', obfuscated=True)] = categories
     production_rules[WildCard('object', obfuscated=True)] = categories
