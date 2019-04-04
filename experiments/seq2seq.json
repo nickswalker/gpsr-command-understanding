@@ -59,6 +59,7 @@
       "warmup_steps": 1000,
       "model_size": 200
     },
+    "num_serialized_models_to_keep": 1,
     "num_epochs": 150,
     "patience" : 30,
     "should_log_learning_rate": true,
