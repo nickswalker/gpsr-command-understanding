@@ -62,6 +62,7 @@ done
 
 if [[ !$use_cpu ]]; then
     echo
+    # Doesn't seem to be an argument in the current released version...
     #args="${args} -c 0"
 fi
 

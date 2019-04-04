@@ -1,7 +1,4 @@
 # coding: utf-8
-import copy
-from collections import defaultdict
-
 
 L_PAREN = '('
 R_PAREN = ')'

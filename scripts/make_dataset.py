@@ -51,7 +51,7 @@ def main():
 
     os.mkdir(pairs_out_path)
     
-    grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources")
+    grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
     common_path = join(grammar_dir, "common_rules.txt")
 
     cat1_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))

@@ -1,6 +1,6 @@
 from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
-from gpsr_semantic_parser.dataset_readers.seq2seq import Seq2SeqDatasetReader
+from gpsr_semantic_parser.models.seq2seq_data_reader import Seq2SeqDatasetReader
 
 class TestSeq2SeqReader(AllenNlpTestCase):
 

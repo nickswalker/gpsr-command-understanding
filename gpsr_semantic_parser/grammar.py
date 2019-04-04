@@ -231,12 +231,12 @@ def prepare_rules(common_rules_path, category_paths, objects_xml_file, locations
     rules = load_grammar([common_rules_path] + category_paths)
     grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
     # This part of the grammar won't lend itself to any useful generalization from rephrasings
-    rules[WildCard("question")] = [["a question"]]
+    rules[WildCard("question")] = [["question"]]
     rules[WildCard("pron")] = [["them"]]
     return merge_dicts(rules, grounding_rules)
 
 
-def prepare_anonymized_rules(common_rules_path, category_paths):
+def prepare_anonymized_rules(common_rules_path, category_paths, show_debug_details=False):
     """
     Prepare the production rules for a given GPSR category, making some
     typical adjustments to make the grammar usable
@@ -256,5 +256,5 @@ def prepare_anonymized_rules(common_rules_path, category_paths):
     groundable_terms = get_wildcards(rules)
     groundable_terms.add(WildCard("object", "1"))
     groundable_terms.add(WildCard("category", "1"))
-    grounding_rules = make_anonymized_grounding_rules(groundable_terms, True)
+    grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)
     return merge_dicts(rules, grounding_rules)
