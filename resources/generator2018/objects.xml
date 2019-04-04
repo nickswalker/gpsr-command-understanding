@@ -28,7 +28,8 @@
   </category>
   <category name="food" defaultLocation="cupboard" room="kitchen">
     <object name="choco flakes"  difficulty="high"     type="known"   canPour="true" />
-    <object name="Robo O's"      difficulty="high"     type="known"   canPour="true" />
+    <!-- Modified Cereal name to not be a potentially confusing pun/joke -->
+    <object name="cereal"      difficulty="high"     type="known"   canPour="true" />
     <object name="muesli"        difficulty="high"     type="known"   canPour="true" />
   </category>
 

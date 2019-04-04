@@ -2,21 +2,29 @@
 # Manipulation
 #####
 
-$vbtake the {object 1} from the {beacon 1} to the {beacon 2} = put(λ$1:e.(and(is_a($1, {object 1}), at($1, {beacon 1}))), {beacon 2})
+$polite $vbtake the {object 1} from the {beacon 1} to the {beacon 2} = put(λ$1:e.(and(is_a($1, {object 1}), at($1, {beacon 1}))), {beacon 2})
 
 # Note: Good example of underspecified command that has a well formed parse
-$vbtake the {object 1} to the {beacon 2} = put(λ$1:e.(is_a($1, {object 1})), {beacon 2})
-$vbtake the {object 1} to the {placement 2} = put(λ$1:e.(is_a($1, {object 1})), {placement 2})
+$polite $vbtake the {object 1} to the {beacon 2} = put(λ$1:e.(is_a($1, {object 1})), {beacon 2})
+$polite $vbtake the {object 1} to the {placement 2} = put(λ$1:e.(is_a($1, {object 1})), {placement 2})
 
 ######
 # Bring
 ######
 
-$vbbring me the {object 1} = bring(λ$1:e.(is_a($1, {object 1})))
-$vbbring {object?} to me = bring(λ$1:e.(is_a($1, {object?})))
-$vbbring me the {object?} = bring(λ$1:e.(is_a($1, {object?})))
-$vbbring {object?} to {name 1} = bring(λ$1:e.(is_a($1, {object?})), λ$1:e.(and(person($1),named($1, {name 1}))))
+$polite $vbdeliver me the {object 1} = bring(λ$1:e.(is_a($1, {object 1})))
+$polite $vbdeliver {object?} to me = bring(λ$1:e.(is_a($1, {object?})))
+$polite $vbdeliver me the {object?} = bring(λ$1:e.(is_a($1, {object?})))
+$polite $vbdeliver {object?} to {name 1} = bring(λ$1:e.(is_a($1, {object?})), λ$1:e.(and(person($1),named($1, {name 1}))))
+$polite $vbdeliver {object?} to the {gesture} person in the {room} = bring(λ$1:e.(is_a($1, {object?})), λ$1:e.(and(person($1),is($1, {gesture}))))
 
+
+#####
+# Manipulation
+##
+
+$polite $vbplace the {object 1} on the {placement 2} = put(λ$1:e.(is_a($1, {object 1})), {placement 2})
+$polite $vbbring the {object 1} to the {placement 2} = put(λ$1:e.(is_a($1, {object 1})), {placement 2})
 
 #########################################
 # Complex manipulation ($complexman)
@@ -25,7 +33,8 @@ $vbbring {object?} to {name 1} = bring(λ$1:e.(is_a($1, {object?})), λ$1:e.(and
 $polite Pour some cereals into the bowl = pour(λ$1:e.(is_a($1, cereal)), λ$2:e.(is_a($2, bowl)))
 
 $polite $vbbtake the {kobject} to the {placement 2} = put( λ$1:e.(and($1, {kobject})), {placement 2})
-$polite $vbbring me the $abspos object $cmanobjsrc = bring()
+$polite $vbbring me the left most object from the {placement 2} = bring(λ$1:e.(leftmost($1, {placement 2})))
+$polite $vbbring me the right most object from the {placement 2} = bring(λ$1:e.(rightmost($1, {placement 2})))
 $polite $vbbring me the object at the left of the {object} from the {placement 2} = bring(λ$1:e.(λ$2:e.(and(is_a($2, {object}),left_of($1, $2)))), {placement 2})
 $polite $vbbring me the object at the right of the {object} from the {placement 2} = bring(λ$1:e.(λ$2:e.(and(is_a($2, {object}),right_of($1, $2)))), {placement 2})
 $polite $vbbring me the object on top of the {object} from the {placement 2} = bring(λ$1:e.(λ$2:e.(and(is_a($2, {object}),on_top_of($1, $2)))), {placement 2})
@@ -73,3 +82,17 @@ $polite follow {name 1} = follow(λ$1:e.(and(person($1), named($1, {name 1}))))
 
 $polite $vbgopl to the {beacon 1}, meet the {category 1}, and follow it = UNKNOWN
 $polite $vbgopl to the {beacon 1}, meet the {object 1}, and follow it = UNKNOWN
+
+
+######
+# Find
+######
+
+$polite $vbfind the $object in the {room} = find(λ$1:e.(and(is_a($1, $object), at($1, {room}))))
+$polite $vbfind three {category} in the {room} = find(λ$1:e.(and(is_a($1, {category}), at($1, {room}))), 3)
+
+######
+# Go
+######
+
+$polite $vbgopl to the {room 1} = go({room 1})
