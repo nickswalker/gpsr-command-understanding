@@ -1,2 +1,3 @@
 *.pyc
 experiments/results*/
+*.swp
