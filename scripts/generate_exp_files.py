@@ -18,7 +18,7 @@ def main():
         fd.close()
 
         for label in labels:
-            json_data["train_data_path"] = "data/2_3/train_{}.txt".format(label)
+            json_data["train_data_path"] = "data/2_3/train{}.txt".format(label)
             fd = open("experiments/{}_{}.json".format(model, label), 'w')
             fd.write(json.dumps(json_data))
             fd.close()
