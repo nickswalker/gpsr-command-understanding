@@ -3,18 +3,18 @@ import sys
 from os.path import join
 
 models = [
-    "bert_base_seq2seq_freezed",
-    "bert_large_seq2seq_freezed",
-    "elmo_seq2seq_freezed",
-    "openai_seq2seq_freezed",
+    "bert_base_seq2seq",
+    "bert_large_seq2seq",
+    "elmo_seq2seq",
+    "openai_seq2seq",
     "seq2seq"
 ]
 
-iterations = [str(i) for i in range(1,11)] + ["Full"]
+iterations = [str(i) for i in range(1,18)] + ["Full"]
 
 def main(argv):
     if len(argv) != 2:
-        print("Usage: python -m scripts.accumulate_fine_tune_evaluation")
+        print("Usage: python -m scripts.accumulate_fine_tune_evaluation dir")
         return
 
     directory = argv[1]
