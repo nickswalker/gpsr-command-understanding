@@ -16,6 +16,7 @@ def main():
         fd = open("experiments/{}.json".format(model), 'r')
         json_data = json.loads(fd.read())
         fd.close()
+        json_data["validation_data_path"] = "data/2_3/val.txt"
 
         for label in labels:
             json_data["train_data_path"] = "data/2_3/train{}.txt".format(label)
