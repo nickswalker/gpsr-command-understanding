@@ -4,7 +4,7 @@ from lark import Tree
 
 from gpsr_semantic_parser.grammar import CombineExpressions, tree_printer, DiscardVoid
 from gpsr_semantic_parser.util import get_placeholders, replace_child_in_tree
-from gpsr_semantic_parser.types import NonTerminal
+from gpsr_semantic_parser.tokens import NonTerminal
 from queue import Queue
 import random
 

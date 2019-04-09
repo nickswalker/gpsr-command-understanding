@@ -7,21 +7,19 @@ from collections import defaultdict
 
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
-from gpsr_semantic_parser.util import tokens_to_str
 from gpsr_semantic_parser.grammar import prepare_anonymized_rules
+from gpsr_semantic_parser.grammar import tree_printer
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train-percentage", default=.6, type=float)
-    parser.add_argument("--val-percentage", default=.2, type=float)
-    parser.add_argument("--test-percentage", default=.2)
-    parser.add_argument("--train-categories", default=[1, 2, 3], nargs='+', type=int)
-    parser.add_argument("--test-categories", default=[1, 2, 3], nargs='+', type=int)
-    parser.add_argument("--use-parse-split", action='store_true', default=False)
+    parser.add_argument("-s","--split", default=[.7,.1,.2], nargs='+', type=float)
+    parser.add_argument("-trc","--train-categories", default=[1, 2, 3], nargs='+', type=int)
+    parser.add_argument("-tc","--test-categories", default=[1, 2, 3], nargs='+', type=int)
+    parser.add_argument("-p","--use-parse-split", action='store_true', default=False)
     parser.add_argument("--name", default=None)
     parser.add_argument("--seed", default=0, required=False)
-    parser.add_argument("--incremental-datasets", action='store_true', required=False)
+    parser.add_argument("-i","--incremental-datasets", action='store_true', required=False)
     args = parser.parse_args()
 
     different_test_dist = False
@@ -30,11 +28,15 @@ def main():
         if len(set(args.test_categories).intersection(set(args.train_categories))) > 0:
             print("Can't have partial overlap of train and test categories")
             exit(1)
-        if abs(1.0 - (args.train_percentage + args.val_percentage)) > 0.00001:
+        if abs(1.0 - (args.split[0] + args.split[1])) > 0.00001:
             print("Please ensure train and val percentage sum to 1.0 when using different train and test distributions")
             exit(1)
         print("Because train and test distributions are different, using as much of test (100%) as possible")
-        args.test_percentage = 1
+        args.split[2] = 1
+    else:
+        if abs(1.0 - sum(args.split)) > 0.00001:
+            print("Please ensure split percentages sum to 1")
+            exit(1)
 
     if not args.name:
         train_cats = "".join([str(x) for x in args.train_categories])
@@ -64,11 +66,11 @@ def main():
 
     # Get utterance -> parse maps
     cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
-    cat1_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat1_pairs}
+    cat1_pairs = {tree_printer(utterance): tree_printer(parse) for utterance, parse in cat1_pairs}
     cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
-    cat2_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat2_pairs}
+    cat2_pairs = {tree_printer(utterance): tree_printer(parse) for utterance, parse in cat2_pairs}
     cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
-    cat3_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat3_pairs}
+    cat3_pairs = {tree_printer(utterance): tree_printer(parse) for utterance, parse in cat3_pairs}
 
     cat1_unique_utterance_pair = cat1_pairs
     cat1_unique_parse_pair = defaultdict(list)
@@ -163,13 +165,14 @@ def main():
         # If we're training and testing on the same distributions, these should match exactly
         assert train_pairs == test_pairs
 
+    train_percentage, val_percentage, test_percentage = args.split
     if different_test_dist:
         # Just one split for the first dist, then use all of test
-        split1 = int(args.train_percentage * len(train_pairs))
+        split1 = int(train_percentage * len(train_pairs))
         train, val, test = train_pairs[:split1], train_pairs[split1:], test_pairs
     else:
-        split1 = int(args.train_percentage * len(train_pairs))
-        split2 = int((args.train_percentage + args.val_percentage) * len(train_pairs))
+        split1 = int(train_percentage * len(train_pairs))
+        split2 = int((train_percentage + val_percentage) * len(train_pairs))
         train, val, test = train_pairs[:split1], train_pairs[split1:split2], train_pairs[split2:]
 
 
@@ -215,7 +218,7 @@ def main():
         for sentence, parse in test:
             f.write(sentence + '\n' + str(parse) + '\n')
 
-    info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, args.train_percentage, args.val_percentage, args.test_percentage)
+    info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, train_percentage, val_percentage, test_percentage)
     info += "train={} val={} test={}".format(len(train), len(val), len(test))
     print(info)
     with open(meta_out_path, "w") as f:

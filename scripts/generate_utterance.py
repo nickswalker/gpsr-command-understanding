@@ -2,7 +2,7 @@ import os
 from os.path import join
 
 from gpsr_semantic_parser.grammar import prepare_rules, tree_printer
-from gpsr_semantic_parser.types import ROOT_SYMBOL
+from gpsr_semantic_parser.tokens import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_random_pair
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.util import assert_no_placeholders

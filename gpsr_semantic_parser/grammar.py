@@ -4,7 +4,7 @@ from copy import deepcopy
 from gpsr_semantic_parser.util import merge_dicts, get_wildcards, replace_child
 from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser
 
-from gpsr_semantic_parser.types import  *
+from gpsr_semantic_parser.tokens import  *
 
 from lark import Lark, Tree, Transformer, Visitor, Discard
 
@@ -48,6 +48,7 @@ class TypeConverter(Transformer):
             return WildCard("question", type)
         elif "void" in typed.data:
             return WildCard("void", type)
+        assert False
 
 
 class DiscardVoid(Visitor):

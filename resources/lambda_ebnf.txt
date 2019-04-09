@@ -25,16 +25,16 @@ meta:         "meta:" (WORD | wildcard)+
 
 _card_type: (location_wildcard_super | name_wildcard | object_wildcard_super | void_wildcard | pronoun_wildcard | question_wildcard | gesture_wildcard | category_wildcard)
 
-?location_wildcard_super: beacon_wildcard | placement_wildcard | room_wildcard | location_wildcard
+?location_wildcard_super: loc_beacon_wildcard | loc_placement_wildcard | loc_room_wildcard | location_wildcard
 location_wildcard:  "location" WORD? INT?
-placement_wildcard: "location"? "placement" INT?
-beacon_wildcard:    "location"? "beacon" INT?
-room_wildcard:      "location"? "room" INT?
+loc_placement_wildcard: "location"? "placement" INT?
+loc_beacon_wildcard:    "location"? "beacon" INT?
+loc_room_wildcard:      "location"? "room" INT?
 
-?object_wildcard_super: known_object_wildcard | alike_object_wildcard | object_wildcard
+?object_wildcard_super: object_alike_wildcard | object_known_wildcard | object_wildcard
 object_wildcard:            "object" (WORD | INT)?
-known_object_wildcard:      "object known" | "kobject"
-alike_object_wildcard:      "object alike" | "aobject"
+object_known_wildcard:      "object known" | "kobject"
+object_alike_wildcard:      "object alike" | "aobject"
 
 name_wildcard:      "name" [WORD | INT] | "female" | "male"
 question_wildcard:  "question"

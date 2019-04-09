@@ -1,6 +1,6 @@
 import operator
 
-from gpsr_semantic_parser.types import WildCard, NonTerminal
+from gpsr_semantic_parser.tokens import WildCard, NonTerminal
 
 
 def merge_dicts(x, y):
