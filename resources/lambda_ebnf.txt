@@ -1,0 +1,60 @@
+?start:         expression
+
+expression:    predicate
+                | lambda_abs
+                | UNKNOWN
+lambda_abs:     "(" _LAMBDA ARG[":"]TYPE ["."] expression+ ")"
+predicate:      "(" name [predicate_arg+]  ")"
+!name:          CNAME
+                | placeholder
+
+?predicate_arg: expression
+                | INT
+                | ESCAPED_STRING
+                | placeholder
+                | ARG
+                | ANON
+
+?placeholder:   non_terminal
+                | wildcard
+
+non_terminal: "$"CNAME
+
+wildcard:     "{" _card_type meta? OBFUSCATED?"}"
+meta:         "meta:" (WORD | wildcard)+
+
+_card_type: (location_wildcard_super | name_wildcard | object_wildcard_super | void_wildcard | pronoun_wildcard | question_wildcard | gesture_wildcard | category_wildcard)
+
+?location_wildcard_super: beacon_wildcard | placement_wildcard | room_wildcard | location_wildcard
+location_wildcard:  "location" WORD? INT?
+placement_wildcard: "location"? "placement" INT?
+beacon_wildcard:    "location"? "beacon" INT?
+room_wildcard:      "location"? "room" INT?
+
+?object_wildcard_super: known_object_wildcard | alike_object_wildcard | object_wildcard
+object_wildcard:            "object" (WORD | INT)?
+known_object_wildcard:      "object known" | "kobject"
+alike_object_wildcard:      "object alike" | "aobject"
+
+name_wildcard:      "name" [WORD | INT] | "female" | "male"
+question_wildcard:  "question"
+pronoun_wildcard:   "pron"
+void_wildcard:      "void"
+gesture_wildcard:   "gesture"
+category_wildcard:   "category" INT?
+
+
+OBFUSCATED:    "?"
+UNKNOWN:      "UNKNOWN"
+ANON:         "<"WORD">"
+ARG:          "$"INT
+TYPE:         "e"
+_LAMBDA:      "lambda" | "λ"
+
+%import common.WORD
+%import common.ESCAPED_STRING
+%import common.INT
+%import common.LETTER
+%import common.WS
+%import common.CNAME
+%ignore WS

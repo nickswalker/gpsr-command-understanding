@@ -1,13 +1,10 @@
-import itertools
 import os
-import sys
 from os.path import join
 
-from gpsr_semantic_parser.grammar import prepare_anonymized_rules
+from gpsr_semantic_parser.grammar import prepare_anonymized_rules, tree_printer
 from gpsr_semantic_parser.types import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
-from gpsr_semantic_parser.util import tokens_to_str
 
 out_root = os.path.abspath(os.path.dirname(__file__) + "/../data")
 grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
@@ -25,19 +22,19 @@ cat2_sentences = generate_sentences(ROOT_SYMBOL, cat2_rules)
 cat3_sentences = generate_sentences(ROOT_SYMBOL, cat3_rules)
 
 cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
-cat1_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat1_pairs}
+cat1_pairs = {utterance: str(parse) for utterance, parse in cat1_pairs}
 
 cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
-cat2_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat2_pairs}
+cat2_pairs = {utterance: str(parse) for utterance, parse in cat2_pairs}
 
 cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
-cat3_pairs = {tokens_to_str(utterance): str(parse) for utterance, parse in cat3_pairs}
+cat3_pairs = {utterance: str(parse) for utterance, parse in cat3_pairs}
 
 
-cat1_sentences = set([tokens_to_str(x) for x in cat1_sentences])
-cat2_sentences = set([tokens_to_str(x) for x in cat2_sentences])
+cat1_sentences = set([x for x in cat1_sentences])
+cat2_sentences = set([x for x in cat2_sentences])
 cat2_sentences_unique = cat2_sentences.difference(cat1_sentences)
-cat3_sentences = set([tokens_to_str(x) for x in cat3_sentences])
+cat3_sentences = set([x for x in cat3_sentences])
 cat3_sentences_unique = cat3_sentences.difference(cat1_sentences).difference(cat2_sentences)
 
 all_sentences = cat1_sentences.union(cat2_sentences).union(cat3_sentences)
@@ -73,7 +70,7 @@ sentences3_out_path = join(out_root, "3_sentences.txt")
 for cat_out_path, sentences in zip([sentences1_out_path, sentences2_out_path, sentences3_out_path],[cat1_sentences, cat2_sentences, cat3_sentences]):
     with open(cat_out_path, "w") as f:
         for sentence in sentences:
-            f.write(sentence + '\n')
+            f.write(tree_printer(sentence) + '\n')
 
 pairs1_out_path = join(out_root, "1_pairs.txt")
 pairs2_out_path = join(out_root, "2_pairs.txt")
@@ -84,7 +81,7 @@ cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
 for cat_out_path, pairs in zip([pairs1_out_path, pairs2_out_path, pairs3_out_path],[cat1_pairs, cat2_pairs, cat3_pairs]):
     with open(cat_out_path, "w") as f:
         for sentence, parse in pairs:
-            f.write(tokens_to_str(sentence) + '\n' + str(parse) + '\n')
+            f.write(tree_printer(sentence) + '\n' + tree_printer(parse) + '\n')
 
 meta_out_path = join(out_root, "annotations_meta.txt")
 with open(meta_out_path, "w") as f:
@@ -103,11 +100,11 @@ with open(meta_out_path, "w") as f:
 
 print("No parses for:")
 print("Cat 1:")
-for sentence in sorted(cat1_parseless):
+for sentence in sorted(map(tree_printer, cat1_parseless)):
     print(sentence)
 print("\n---------------------------------------\nCat 2:")
-for sentence in sorted(cat2_parseless):
+for sentence in sorted(map(tree_printer, cat2_parseless)):
     print(sentence)
 print("\n---------------------------------------\nCat 3:")
-for sentence in sorted(cat3_parseless):
+for sentence in sorted(map(tree_printer, cat3_parseless)):
     print(sentence)

@@ -1,98 +1,166 @@
-from gpsr_semantic_parser.util import combine_adjacent_text_fragments, expand_shorthand, merge_dicts
+import os
+from copy import deepcopy
+
+from gpsr_semantic_parser.util import merge_dicts, get_wildcards, replace_child
 from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser
 
 from gpsr_semantic_parser.types import  *
 
-import re
+from lark import Lark, Tree, Transformer, Visitor, Discard
 
 
-def tokenize(raw_rule):
+class TypeConverter(Transformer):
+    def non_terminal(self, children):
+        return NonTerminal(children[0])
+
+    def wildcard(self, children):
+        typed = children[0]
+        type = typed.children[0] if len(typed.children) > 0 else None
+        extra = typed.children[1] if len(typed.children) > 1 else None
+        if "obj" in typed.data:
+            if "alike" in typed.data:
+                type = "alike"
+                extra = typed.children[0] if len(typed.children) > 1 else None
+            elif "known" in typed.data:
+                type = "known"
+                extra = typed.children[0] if len(typed.children) > 1 else None
+            return WildCard("object", type, extra)
+        elif "loc" in typed.data:
+            if "beacon" in typed.data:
+                type = "beacon"
+                extra = typed.children[0] if len(typed.children) > 1 else None
+            elif "placement" in typed.data:
+                type ="placement"
+                extra = typed.children[0] if len(typed.children) > 1 else None
+            elif "room" in typed.data:
+                type = "room"
+                extra = typed.children[0] if len(typed.children) > 1 else None
+            return WildCard("location", type, extra)
+        elif "category" in typed.data:
+            return WildCard("category", type)
+        elif "gesture" in typed.data:
+            return WildCard("gesture", type)
+        elif "name" in typed.data:
+            return WildCard("name", type)
+        elif "pron" in typed.data:
+            return WildCard("pron", type)
+        elif "question" in typed.data:
+            return WildCard("question", type)
+        elif "void" in typed.data:
+            return WildCard("void", type)
+
+
+class DiscardVoid(Visitor):
+    def expression(self, tree):
+        tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonimized)) and x.name == "void"), tree.children))
+
+
+generator_grammar_parser = Lark(open(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018/generator_grammar_ebnf.txt")), start='start', parser="lalr", transformer=TypeConverter())
+
+
+class ToString(Transformer):
+    def __default__(self, data, children, meta):
+        return " ".join(map(str, children))
+
+    def non_terminal(self, children):
+        return "${}".format(" ".join(children))
+
+    def choice(self, children):
+        output = "("
+        for child in children:
+            output += child + " | "
+        return output[:-3] + ")"
+
+    def rule(self, children):
+        return "{} = {}".format(children[0], children[1])
+
+    def predicate(self, children):
+        return "({})".format(" ".join(map(str,children)))
+
+    def lambda_abs(self, children):
+        return "(λ{})".format(" ".join(map(str,children)))
+
+    def __call__(self, *args, **kwargs):
+        return self.transform(*args)
+
+
+tree_printer = ToString()
+
+
+class CombineExpressions(Visitor):
     """
-    Tokenize a GSPR grammar production rule
-    :param raw_rule:
-    :return: a list of tokens
+    Grammars may generate multiple text fragments in a sequence. This will combine them
+    :param tokens:
+    :return: a list of tokens with no adjacent text fragments
     """
-    tokens = []
-    cursor = 0
-    while cursor != len(raw_rule):
-        char = raw_rule[cursor]
-        if char == DOLLAR:
-            match = re.search(NON_TERM_RE, raw_rule[cursor:])
-            name = match.groupdict()["name"]
-            tokens.append(NonTerminal(name))
-            cursor += match.end()
-        elif char == L_PAREN:
-            tokens.append(L_PAREN)
-            cursor += 1
-        elif char == R_PAREN:
-            tokens.append(R_PAREN)
-            cursor += 1
-        elif char == BAR:
-            tokens.append(BAR)
-            cursor += 1
-        elif char == L_C_BRACE:
-            # We'll grab a string where the braces are balanced
-            count = 1
-            end_cursor = cursor + 1
-            while count != 0:
-                if raw_rule[end_cursor] == L_C_BRACE:
-                    count += 1
-                elif raw_rule[end_cursor] == R_C_BRACE:
-                    count -= 1
-                end_cursor += 1
-            has_void = raw_rule.find("void", cursor, end_cursor)
-            if has_void != -1:
-                # Just grab the stuff past the "void" and before the closing brace
-                tokens.append(Void(raw_rule[has_void + 4:end_cursor-1]))
-                cursor = end_cursor
+    def top_expression(self, tree):
+        tree.data = "expression"
+        self.expression(tree)
+
+    def expression(self, tree):
+        cleaned = []
+        i = 0
+        while i < len(tree.children):
+            child = tree.children[i]
+            # Not a fragment? Forward to output
+            if not (isinstance(child, Tree) and child.data == "expression"):
+                cleaned.append(child)
+                i += 1
                 continue
+            # Otherwise, gather up the the next subsequence of fragments
+            j = i + 1
+            while j < len(tree.children):
+                next_child = tree.children[j]
+                if isinstance(next_child, Tree) and next_child.data == "expression":
+                    j += 1
+                    continue
+                break
+            cleaned.extend([c for t in tree.children[i:j] for c in t.children])
+            i = j
+        if i == len(tree.children) - 1:
+            cleaned.append(tree.children[i])
 
-            has_meta = raw_rule.find("meta",cursor, end_cursor)
-            meta_removed = raw_rule[cursor: end_cursor]
-            if has_meta != -1:
-                meta_removed = raw_rule[cursor:has_meta] + "}"
+        all_expanded = False
+        while not all_expanded:
+            i = 0
+            while i < len(cleaned):
+                child = cleaned[i]
+                if isinstance(child, Tree) and child.data == "expression":
+                    cleaned = cleaned[:i] + child.children + cleaned[i+1:]
+                    break
+                i += 1
+            all_expanded = True
+        tree.children = cleaned
 
-            match = re.search(WILDCARD_RE, meta_removed)
-            name = match.groupdict()["name"]
 
-            if name in WILDCARD_ALIASES.keys():
-                inner_string = match.group().replace(name, " ".join(WILDCARD_ALIASES[name]))
-                match = re.search(WILDCARD_RE, inner_string)
-            name = match.groupdict()["name"]
-            type = match.groupdict()["type"]
-            extra = match.groupdict()["extra"]
-            obfuscated = match.groupdict()["obfuscated"] != None
-            tokens.append(WildCard(name, type, extra, obfuscated))
-            cursor = end_cursor
-        elif char.isspace():
-            match = re.search(WHITESPACE_RE, raw_rule[cursor:])
-            cursor += match.end()
-        else:
-            match = re.search(EMPTY_STR_RE, raw_rule[cursor:])
-            if match:
-                tokens.append(TextFragment(""))
-            else:
-                match = re.search(TEXT_FRAG_RE, raw_rule[cursor:])
-                assert "meta" not in match.group()
-                tokens.append(TextFragment(match.group()))
-            if match.end() == 0:
-                raise RuntimeError("Couldn't parse {}".format(raw_rule))
-            cursor += match.end()
+def expand_shorthand(tree):
+    in_progress = [tree]
+    output = []
+    while len(in_progress) != 0:
+        current = in_progress.pop()
+        choices = list(current.find_data("choice"))
+        if len(choices) == 0:
+            output.append(current)
+            continue
+        for choice in choices:
+            for option in choice.children:
+                choice_made_tree = deepcopy(tree)
+                if choice_made_tree == choice:
+                    in_progress.append(option)
+                else:
+                    choice_parent = list(choice_made_tree.find_pred(lambda subtree: any([child == choice for child in subtree.children])))[0]
+                    replace_child(choice_parent, choice, option, only_once=True)
+                    in_progress.append(choice_made_tree)
 
-    return tokens
+    return output
 
 
 def parse_production_rule(line):
-    eq_split = line.split("=")
-    # rule should be a single nonterminal producing some mix of term/non-term
-    assert (len(eq_split) == 2)
-    head, expansion = eq_split
-    lhs = NonTerminal(head.strip()[1:])
-    rhs_raw = expansion.strip()
-    rhs_tokens = tokenize(rhs_raw)
-    rhs_list_expanded = expand_shorthand([], rhs_tokens, "ALPH", [])
-    rhs_list_expanded = [combine_adjacent_text_fragments(x) for x in rhs_list_expanded]
-    return lhs, rhs_list_expanded
+    parsed = generator_grammar_parser.parse(line)
+    rhs_list_expanded = expand_shorthand(parsed.children[1])
+    #print(line)
+    #print(parsed.pretty())
+    return parsed.children[0], rhs_list_expanded
 
 
 def load_grammar(grammar_file_paths):
@@ -124,21 +192,6 @@ def load_grammar(grammar_file_paths):
     return production_rules
 
 
-def get_wildcards(production_rules):
-    """
-    Get all wildcards that occur in a grammar
-    :param production_rules:
-    :return:
-    """
-    groundable_terms = set()
-    for non_term, rule_list in production_rules.items():
-        for rule in rule_list:
-            for token in rule:
-                if isinstance(token, WildCard):
-                    groundable_terms.add(token)
-    return groundable_terms
-
-
 def make_anonymized_grounding_rules(wildcards, show_details=False):
     """
     Generates a single special-token substitution for each wildcard.
@@ -148,10 +201,10 @@ def make_anonymized_grounding_rules(wildcards, show_details=False):
     grounding_rules = {}
     for term in wildcards:
         if show_details:
-            prod = "<{}>".format(term.to_human_readable())
+            prod = Anonimized(term.to_human_readable())
         else:
-            prod = "<{}>".format(term.name)
-        grounding_rules[term] = [[prod]]
+            prod = Anonimized(term.name)
+        grounding_rules[term] = [Tree("expression", [prod])]
     return grounding_rules
 
 
@@ -216,6 +269,10 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
     production_rules[WildCard('location','room', obfuscated=True)] = [["room"]]
     production_rules[WildCard('gesture')] = gestures
 
+    for token, productions in production_rules.items():
+        productions = list(map(lambda p: Tree("expression", p),productions))
+        production_rules[token] = productions
+
     return production_rules
 
 
@@ -231,8 +288,8 @@ def prepare_rules(common_rules_path, category_paths, objects_xml_file, locations
     rules = load_grammar([common_rules_path] + category_paths)
     grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
     # This part of the grammar won't lend itself to any useful generalization from rephrasings
-    rules[WildCard("question")] = [["question"]]
-    rules[WildCard("pron")] = [["them"]]
+    rules[WildCard("question")] = [Tree("expression",["question"])]
+    rules[WildCard("pron")] = [Tree("expression",["them"])]
     return merge_dicts(rules, grounding_rules)
 
 
@@ -249,11 +306,12 @@ def prepare_anonymized_rules(common_rules_path, category_paths, show_debug_detai
     rules = load_grammar([common_rules_path] + category_paths)
     # $whattosay curiously doesn't pull from an XML file, but is instead baked into the grammar.
     # We'll manually anonymize it here
-    rules[NonTerminal("whattosay")] = [[TextFragment("<whattosay>")]]
+    rules[NonTerminal("whattosay")] = [Tree("expression",[Anonimized("whattosay")])]
 
     # We'll use the indeterminate pronoun for convenience
-    rules[WildCard("pron")] = [["them"]]
-    groundable_terms = get_wildcards(rules)
+    rules[WildCard("pron")] = [Tree("expression",["them"])]
+    all_rule_trees = [tree for _, trees  in rules.items() for tree in trees ]
+    groundable_terms = get_wildcards(all_rule_trees)
     groundable_terms.add(WildCard("object", "1"))
     groundable_terms.add(WildCard("category", "1"))
     grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)

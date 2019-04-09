@@ -1,11 +1,11 @@
 import os
 from os.path import join
 
-from gpsr_semantic_parser.grammar import prepare_rules
+from gpsr_semantic_parser.grammar import prepare_rules, tree_printer
 from gpsr_semantic_parser.types import ROOT_SYMBOL
-from gpsr_semantic_parser.generation import generate_sentences, generate_random_pair
+from gpsr_semantic_parser.generation import generate_random_pair
 from gpsr_semantic_parser.semantics import load_semantics
-from gpsr_semantic_parser.util import tokens_to_str, assert_no_wildcards
+from gpsr_semantic_parser.util import assert_no_placeholders
 import random
 
 grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018/")
@@ -21,5 +21,5 @@ cat2_semantics = load_semantics([join(grammar_dir, "gpsr_category_1_semantics.tx
 cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))
 
 
-utterance, parse = generate_random_pair(ROOT_SYMBOL, cat1_rules, cat1_semantics)
-print(tokens_to_str(utterance))
+utterance, parse = generate_random_pair(ROOT_SYMBOL, cat1_rules, cat1_semantics, generator=random.Random())
+print(tree_printer(utterance))

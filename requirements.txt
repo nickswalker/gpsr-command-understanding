@@ -1,5 +1,6 @@
 allennlp>=0.8.2
 awscli
 boto3
+lark-parser
 jupyter
-xmltodict 
+xmltodict

@@ -44,6 +44,10 @@ so you can configure the experiment
 
 ### Testing
 
+To see a model's output on a data file, use the `predict command`
+
+    allennlp predict --archive-path results/ --include-package gpsr_semantic_parser
+
 You can poke at a trained model through the browser using AllenNLP as well
 
     python -m allennlp.service.server_simple \
