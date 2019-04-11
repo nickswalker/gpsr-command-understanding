@@ -81,6 +81,9 @@ class ToString(Transformer):
     def lambda_abs(self, children):
         return "(λ{})".format(" ".join(map(str,children)))
 
+    def constant_placeholder(self, children):
+        return "\"" + " ".join(children) + "\""
+
     def __call__(self, *args, **kwargs):
         return self.transform(*args)
 
@@ -157,9 +160,9 @@ def expand_shorthand(tree):
 
 
 def parse_production_rule(line):
+    #print(line)
     parsed = generator_grammar_parser.parse(line)
     rhs_list_expanded = expand_shorthand(parsed.children[1])
-    #print(line)
     #print(parsed.pretty())
     return parsed.children[0], rhs_list_expanded
 
@@ -179,11 +182,8 @@ def load_grammar(grammar_file_paths):
                 if len(line) == 0 or line[0] != '$':
                     # We only care about lines that start with a nonterminal (denoted by $)
                     continue
-                # print(line)
                 # parse into possible productions
                 lhs, rhs_productions = parse_production_rule(line)
-                # print(lhs)
-                # print(rhs_productions)
                 # add to dictionary, if already there then append to list of rules
                 # using set to avoid duplicates
                 if lhs not in production_rules:
@@ -277,7 +277,7 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
     return production_rules
 
 
-def prepare_rules(common_rules_path, category_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+def prepare_grounded_rules(common_rules_path, category_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
     """
         Prepare the production rules for a given GPSR category.
         :param common_rules_path:

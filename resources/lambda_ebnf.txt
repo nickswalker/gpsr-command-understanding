@@ -12,11 +12,14 @@ predicate:      "(" name [predicate_arg+]  ")"
                 | INT
                 | ESCAPED_STRING
                 | placeholder
+                | constant_placeholder
                 | ARG
                 | ANON
 
 ?placeholder:   non_terminal
                 | wildcard
+
+constant_placeholder: "\"" placeholder "\"" | "'" placeholder "'"
 
 non_terminal: "$"CNAME
 

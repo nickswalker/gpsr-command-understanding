@@ -45,7 +45,7 @@ def generate_random_pair(start_symbols, production_rules, semantics_rules, yield
     return next(generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rules, yield_requires_semantics=yield_requires_semantics, branch_cap=1, generator=generator))
 
 
-def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules, yield_requires_semantics=True, branch_cap=-1, generator=None):
+def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules, start_semantics=None, yield_requires_semantics=True, branch_cap=-1, generator=None):
     """
     Expand the start_symbols in breadth first order. At each expansion, see if we have an associated semantic template.
     If the current expansion has a semantics associated, also apply the expansion to the semantics.
@@ -69,27 +69,61 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
     else:
         assert isinstance(start_tree, Tree)
 
-    semantics = semantics_rules.get(start_tree)
     frontier = Queue()
-    frontier.put((start_tree, semantics))
+    frontier.put((start_tree, start_semantics))
     while not frontier.empty():
         sentence, semantics = frontier.get()
-        replace_token = list(sentence.scan_values(lambda x: x in production_rules.keys()))
-        if not replace_token:
+        if not semantics:
+            # Let's see if the  expansion is associated with any semantics
+            semantics = semantics_rules.get(sentence)
+        expansions = list(expand_pair(sentence, semantics, production_rules, branch_cap=branch_cap, generator=generator))
+        if not expansions:
             # If we couldn't replace anything else, this sentence is done!
             if semantics:
                 semantics = DiscardVoid().visit(semantics)
-                # We should've hit all the replacements. If not, there was probably a formatting issue with the template
-                placeholders_remaining = get_placeholders(semantics)
-                if len(placeholders_remaining) != 0:
-                    print("Unfilled placeholders {} \nin template {}".format(" ".join(map(str, placeholders_remaining)), tree_printer.transform(semantics)))
-                    print("Won't accept these semantics")
+                sem_placeholders_remaining = get_placeholders(semantics)
+                sentence_placeholders_remaining = get_placeholders(sentence)
+                # Are there placeholders in the semantics that aren't left in the sentence? These will never get expanded,
+                # so it's almost certainly an error
+                probably_should_be_filled = sem_placeholders_remaining.difference(sentence_placeholders_remaining)
+                if len(probably_should_be_filled) > 0:
+                    print("Unfilled placeholders {}".format(" ".join(map(str, probably_should_be_filled))))
+                    print(tree_printer.transform(sentence))
+                    print(tree_printer.transform(semantics))
+                    print("This annotation is probably wrong")
+                    print("")
                     continue
+                elif len(sem_placeholders_remaining) != len(sentence_placeholders_remaining):
+                    not_in_annotation = sentence_placeholders_remaining.difference(sem_placeholders_remaining)
+                    print("Annotation is missing wildcards that are present in the original sentence. Were they left out accidentally?")
+                    print(" ".join(map(str,not_in_annotation)))
+                    print(tree_printer.transform(sentence))
+                    print(tree_printer.transform(semantics))
+                    print("")
             elif yield_requires_semantics:
                 # This won't be a pair without semantics, so we'll just skip it
                 continue
             yield (sentence, semantics)
             continue
+        for pair in expansions:
+            frontier.put(pair)
+
+        # What productions don't have semantics?
+        """if not modified_semantics:
+            print(sentence_filled.pretty())
+        """
+
+
+def expand_pair_full(sentence, semantics, production_rules, branch_cap=-1, generator=None):
+    return next(generate_sentence_parse_pairs(sentence, production_rules, {}, start_semantics=semantics,
+                                       branch_cap=branch_cap, generator=generator))
+
+
+def expand_pair(sentence, semantics, production_rules, branch_cap=-1, generator=None):
+        replace_token = list(sentence.scan_values(lambda x: x in production_rules.keys()))
+
+        if not replace_token:
+            return None
 
         if generator:
             replace_token = generator.choice(replace_token)
@@ -112,14 +146,7 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
             if semantics:
                 modified_semantics = copy.deepcopy(semantics)
                 replace_child_in_tree(modified_semantics, replace_token, production)
-            else:
-                # Let's see if the  expansion is associated with any semantics
-                modified_semantics = semantics_rules.get(sentence_filled)
-            frontier.put((sentence_filled, modified_semantics))
-            # What productions don't have semantics?
-            """if not modified_semantics:
-                print(sentence_filled.pretty())
-            """
+            yield sentence_filled, modified_semantics
 
 
 def expand_all_semantics(production_rules, semantics_rules):
