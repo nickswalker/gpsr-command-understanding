@@ -5,6 +5,7 @@ from gpsr_semantic_parser.grammar import prepare_anonymized_rules, tree_printer
 from gpsr_semantic_parser.tokens import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
+from gpsr_semantic_parser.util import assert_no_placeholders
 
 out_root = os.path.abspath(os.path.dirname(__file__) + "/../data")
 grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
@@ -70,6 +71,7 @@ sentences3_out_path = join(out_root, "3_sentences.txt")
 for cat_out_path, sentences in zip([sentences1_out_path, sentences2_out_path, sentences3_out_path],[cat1_sentences, cat2_sentences, cat3_sentences]):
     with open(cat_out_path, "w") as f:
         for sentence in sentences:
+            assert_no_placeholders(sentence)
             f.write(tree_printer(sentence) + '\n')
 
 pairs1_out_path = join(out_root, "1_pairs.txt")

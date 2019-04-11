@@ -2,11 +2,10 @@ import os
 from os.path import join
 
 import random
-from gpsr_semantic_parser.grammar import prepare_rules
-from gpsr_semantic_parser.types import ROOT_SYMBOL
-from gpsr_semantic_parser.generation import generate_sentences, generate_random_pair
-from gpsr_semantic_parser.semantics import load_semantics
-from gpsr_semantic_parser.util import tokens_to_str, assert_no_wildcards
+from gpsr_semantic_parser.grammar import prepare_grounded_rules, tree_printer, prepare_anonymized_rules, load_grammar
+from gpsr_semantic_parser.generation import generate_random_pair, expand_pair_full
+from gpsr_semantic_parser.semantics import load_semantics, lambda_parser
+from gpsr_semantic_parser.util import assert_no_placeholders
 
 grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
 
@@ -14,9 +13,17 @@ common_path = join(grammar_dir, "common_rules.txt")
 
 paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
 
-cat1_rules = prepare_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"), *paths)
-cat2_rules = prepare_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"), *paths)
-cat3_rules = prepare_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"), *paths)
+cat1_rules = load_grammar([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")])
+cat2_rules = load_grammar([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")])
+cat3_rules = load_grammar([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")])
+
+cat1_rules_ground = prepare_grounded_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"), *paths)
+cat2_rules_ground = prepare_grounded_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"), *paths)
+cat3_rules_ground = prepare_grounded_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"), *paths)
+cat1_rules_anon = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
+cat2_rules_anon = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
+cat3_rules_anon = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
+
 cat1_semantics = load_semantics(join(grammar_dir, "gpsr_category_1_semantics.txt"))
 cat2_semantics = load_semantics(
     [join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
@@ -25,22 +32,40 @@ cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt
 grounded_examples = []
 random_source = random.Random(0)
 for generation_path, semantic_production in cat1_semantics.items():
-    utterance, parse = generate_random_pair(list(generation_path), cat1_rules, cat1_semantics, random_source)
-    assert_no_wildcards(utterance)
-    grounded_examples.append((utterance, parse))
+    utterance_wild, parse_wild = generate_random_pair(generation_path, cat1_rules, cat1_semantics, yield_requires_semantics=True, generator=random_source)
+    _, parse_anon = expand_pair_full(utterance_wild, parse_wild, cat1_rules_anon, branch_cap=1, generator=random_source)
+    utterance, parse_ground = expand_pair_full(utterance_wild, parse_wild, cat1_rules_ground, branch_cap=1, generator=random_source)
+    assert_no_placeholders(utterance)
+    lambda_parser.parse(tree_printer(parse_ground))
+    grounded_examples.append((utterance, parse_anon, parse_ground))
 
 for generation_path, semantic_production in cat2_semantics.items():
-    utterance, parse = generate_random_pair(list(generation_path), cat2_rules, cat2_semantics, random_source)
-    assert_no_wildcards(utterance)
-    grounded_examples.append((utterance, parse))
+    utterance_wild, parse_wild = generate_random_pair(generation_path, cat2_rules, cat2_semantics, yield_requires_semantics=True, generator=random_source)
+    _, parse_anon = expand_pair_full(utterance_wild, parse_wild, cat2_rules_anon, branch_cap=1, generator=random_source)
+    utterance, parse_ground = expand_pair_full(utterance_wild, parse_wild, cat2_rules_ground, branch_cap=1, generator=random_source)
+    assert_no_placeholders(utterance)
+    lambda_parser.parse(tree_printer(parse_ground))
+    grounded_examples.append((utterance, parse_anon, parse_ground))
 
 for generation_path, semantic_production in cat3_semantics.items():
-    utterance, parse = generate_random_pair(list(generation_path), cat3_rules, cat3_semantics, random_source)
-    assert_no_wildcards(utterance)
-    grounded_examples.append((utterance, parse))
+    utterance_wild, parse_wild = generate_random_pair(generation_path, cat3_rules, cat3_semantics, yield_requires_semantics=True, generator=random_source)
+    _, parse_anon = expand_pair_full(utterance_wild, parse_wild, cat3_rules_anon, branch_cap=1, generator=random_source)
+    utterance, parse_ground = expand_pair_full(utterance_wild, parse_wild, cat3_rules_ground, branch_cap=1, generator=random_source)
+    assert_no_placeholders(utterance)
+    lambda_parser.parse(tree_printer(parse_ground))
+    grounded_examples.append((utterance, parse_anon, parse_ground))
+
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 with open("../data/rephrasings_data.csv",'w') as output:
-    output.write("command,semantics\n")
-    for utterance, parse in grounded_examples:
-        output.write("\"{}\",\"{}\"\n".format(tokens_to_str(utterance), str(parse)))
+    command_columns = ["command{},parse{},parse_ground{},".format(x,x,x) for x in range(1,13)]
+    output.write(",".join(command_columns) + "\n")
+
+    for chunk in chunker(grounded_examples,12):
+        line = ""
+        for utterance, parse_anon, parse_ground in chunk:
+            line += ("'{}','{}','{}',".format(tree_printer(utterance), tree_printer(parse_anon), tree_printer(parse_ground)))
+        output.write(line[:-1] + "\n")
