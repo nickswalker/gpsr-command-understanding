@@ -46,8 +46,15 @@ done
 
 results_dirs=${results_path}/*
 test_name=$(basename $test_path)
+dataset_name=$(basename $(dirname "${test_path}"))
+summary_path="${results_path}"/${dataset_name}_${test_name}_results_summary.txt
 
 for dir in $results_dirs; do
-    name=$(basename $dir)
-    allennlp evaluate "${dir}/model.tar.gz" --output-file "${results_path}/evaluation_${test_name}" --include-package gpsr_semantic_parser
+    model_name=$(basename $dir)
+    model_path="${dir}/model.tar.gz"
+    output_path="${dir}/evaluation_${test_name}"
+    #allennlp evaluate ${model_path} ${test_path} --output-file "${output_path}" --include-package gpsr_semantic_parser
+    allennlp predict ${model_path} ${test_path}     --output-file "${dir}/predictions_${test_name}" --use-dataset-reader --predictor simple_seq2seq --include-package gpsr_semantic_parser
+    echo -e "\n ${model_name}" >> ${summary_path}
+    cat "${dir}/evaluation_${test_name}" >> ${summary_path}
 done

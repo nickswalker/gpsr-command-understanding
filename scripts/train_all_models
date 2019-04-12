@@ -67,10 +67,13 @@ if [[ !$use_cpu ]]; then
 fi
 
 experiment_files=${experiment_path}/*.json
-
+summary_path=${results_path}/summary.txt
 for file in ${experiment_files}; do
     name=$(basename $file)
     # remove .json extension
     name="${name%.*}"
     allennlp train "$file" -s "${results_path}/${name}" --include-package gpsr_semantic_parser "${args}"
+    metrics_path="${results_path}/${name}/metrics.json"
+    echo -e "\n ${name}" >> $summary_path
+    cat $metrics_path >> $summary_path
 done

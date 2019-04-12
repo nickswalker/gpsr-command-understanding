@@ -1,20 +1,18 @@
-Tell me the name of the person at the <location beacon>
-( say ( λ $1 e ( and ( name $1 ) ( at $1 <location beacon> ) ) ) )
-
-Tell me the name of the person in the <location room>
-( say ( λ $1 e ( and ( name $1 ) ( at $1 <location room> ) ) ) )
-
-bring me the <object known> from the <location placement>
-( bring ( λ $1 e ( and ( <object known> $1 ) ( at $1 <location placement> ) ) ) )
-
-give me the <object known> from the <location placement>
-( bring ( λ $1 e ( and ( <object known> $1 ) ( at $1 <location placement> ) ) ) )
-
-find the <object known?> in the <location room>
-( find ( λ $1 e ( <object known?> $1 ) ) ( λ $1 e ( and ( location $1 ) ( name <location room> ) ) ) )
-
-locate the <object known?> in the <location room>
-( find ( λ $1 e ( <object known?> $1 ) ) ( λ $1 e ( and ( location $1 ) ( name <location room> ) ) ) )
-
-look for the <object known?> in the <location room>
-( find ( λ $1 e ( <object known?> $1 ) ) ( λ $1 e ( and ( location $1 ) ( name <location room> ) ) ) )
+look for the <object> in the <location>
+(find (lambda $1 e (is_a $1 " <object> ") (at $1 " <location> ")))
+locate the <object> in the <location>
+(find (lambda $1 e (is_a $1 " <object> ") (at $1 " <location> ")))
+find the <object> in the <location>
+(find (lambda $1 e (is_a $1 " <object> ") (at $1 " <location> ")))
+Tell me how many <object> there are on the <location>
+(say (count (lambda $1 e (is_a $1 " <object> ") (at $1 " <location> "))))
+look for a person in the <location> and say <whattosay>
+(say " <whattosay> " (lambda $1 e (person $1) (at $1 " <location> ")))
+look for a person in the <location> and tell <whattosay>
+(say " <whattosay> " (lambda $1 e (person $1) (at $1 " <location> ")))
+locate a person in the <location> and say <whattosay>
+(say " <whattosay> " (lambda $1 e (person $1) (at $1 " <location> ")))
+locate a person in the <location> and tell <whattosay>
+(say " <whattosay> " (lambda $1 e (person $1) (at $1 " <location> ")))
+find a person in the <location> and say <whattosay>
+(say " <whattosay> " (lambda $1 e (person $1) (at $1 " <location> ")))

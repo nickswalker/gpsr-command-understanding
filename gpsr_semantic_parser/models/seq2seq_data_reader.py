@@ -1,6 +1,7 @@
 from typing import Dict
 import logging
 
+from allennlp.data.tokenizers.word_splitter import JustSpacesWordSplitter
 from overrides import overrides
 
 from allennlp.common.checks import ConfigurationError
@@ -54,7 +55,7 @@ class Seq2SeqDatasetReader(DatasetReader):
                  lazy: bool = False) -> None:
         super().__init__(lazy)
         self._source_tokenizer = source_tokenizer or WordTokenizer()
-        self._target_tokenizer = target_tokenizer or self._source_tokenizer
+        self._target_tokenizer = target_tokenizer or WordTokenizer(JustSpacesWordSplitter())
         self._source_token_indexers = source_token_indexers or {"tokens": SingleIdTokenIndexer()}
         self._target_token_indexers = target_token_indexers or self._source_token_indexers
         self._source_add_start_token = source_add_start_token
@@ -97,4 +98,5 @@ class Seq2SeqDatasetReader(DatasetReader):
             meta_fields["target_tokens"] = [y.text for y in tokenized_target[1:-1]]
         fields_dict["metadata"] = MetadataField(meta_fields)
 
+#TODO: FIX $1 getting tokenized to $ 1, which messes up the output (won't parse)
         return Instance(fields_dict)

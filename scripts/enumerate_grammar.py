@@ -5,7 +5,7 @@ from gpsr_semantic_parser.grammar import prepare_anonymized_rules, tree_printer
 from gpsr_semantic_parser.tokens import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
-from gpsr_semantic_parser.util import assert_no_placeholders
+from gpsr_semantic_parser.util import has_placeholders
 
 out_root = os.path.abspath(os.path.dirname(__file__) + "/../data")
 grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
@@ -23,13 +23,13 @@ cat2_sentences = generate_sentences(ROOT_SYMBOL, cat2_rules)
 cat3_sentences = generate_sentences(ROOT_SYMBOL, cat3_rules)
 
 cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
-cat1_pairs = {utterance: str(parse) for utterance, parse in cat1_pairs}
+cat1_pairs = {utterance: parse for utterance, parse in cat1_pairs}
 
 cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
-cat2_pairs = {utterance: str(parse) for utterance, parse in cat2_pairs}
+cat2_pairs = {utterance: parse for utterance, parse in cat2_pairs}
 
 cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
-cat3_pairs = {utterance: str(parse) for utterance, parse in cat3_pairs}
+cat3_pairs = {utterance: parse for utterance, parse in cat3_pairs}
 
 
 cat1_sentences = set([x for x in cat1_sentences])
@@ -71,7 +71,7 @@ sentences3_out_path = join(out_root, "3_sentences.txt")
 for cat_out_path, sentences in zip([sentences1_out_path, sentences2_out_path, sentences3_out_path],[cat1_sentences, cat2_sentences, cat3_sentences]):
     with open(cat_out_path, "w") as f:
         for sentence in sentences:
-            assert_no_placeholders(sentence)
+            assert not has_placeholders(sentence)
             f.write(tree_printer(sentence) + '\n')
 
 pairs1_out_path = join(out_root, "1_pairs.txt")
@@ -83,7 +83,12 @@ cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
 for cat_out_path, pairs in zip([pairs1_out_path, pairs2_out_path, pairs3_out_path],[cat1_pairs, cat2_pairs, cat3_pairs]):
     with open(cat_out_path, "w") as f:
         for sentence, parse in pairs:
+            if has_placeholders(sentence) or has_placeholders(parse):
+                print("Skipping pair for {} because it still has placeholders after expansion".format(tree_printer(sentence)))
+                continue
             f.write(tree_printer(sentence) + '\n' + tree_printer(parse) + '\n')
+            if "Wildcard" in tree_printer(sentence):
+                print("hi")
 
 meta_out_path = join(out_root, "annotations_meta.txt")
 with open(meta_out_path, "w") as f:

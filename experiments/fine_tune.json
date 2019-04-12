@@ -13,6 +13,10 @@
         "namespace": "tokens"
       }
     },
+    "target_tokenizer": {
+      "type":  "word",
+      "word_splitter": "just_spaces"
+    }
   },
   "train_data_path": "data/train.txt",
   "validation_data_path": "data/val.txt",

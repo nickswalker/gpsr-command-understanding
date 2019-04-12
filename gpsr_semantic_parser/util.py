@@ -9,8 +9,8 @@ def merge_dicts(x, y):
     return z
 
 
-def assert_no_placeholders(tree):
-    assert all(tree.scan_values(lambda x: not (isinstance(x, WildCard) or isinstance(x, NonTerminal))))
+def has_placeholders(tree):
+    return any(tree.scan_values(lambda x: isinstance(x, WildCard) or isinstance(x, NonTerminal)))
 
 
 def get_placeholders(tree):

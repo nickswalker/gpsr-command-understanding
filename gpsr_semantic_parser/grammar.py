@@ -76,10 +76,10 @@ class ToString(Transformer):
         return "{} = {}".format(children[0], children[1])
 
     def predicate(self, children):
-        return "({})".format(" ".join(map(str,children)))
+        return "( {} )".format(" ".join(map(str,children)))
 
     def lambda_abs(self, children):
-        return "(λ{})".format(" ".join(map(str,children)))
+        return "( lambda {} )".format(" ".join(map(str,children)))
 
     def constant_placeholder(self, children):
         return "\"" + " ".join(children) + "\""

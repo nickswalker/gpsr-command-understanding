@@ -9,6 +9,7 @@ from gpsr_semantic_parser.generation import generate_sentences, expand_all_seman
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.grammar import prepare_anonymized_rules
 from gpsr_semantic_parser.grammar import tree_printer
+from gpsr_semantic_parser.util import has_placeholders
 
 
 def main():
@@ -64,13 +65,20 @@ def main():
         [join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
     cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))
 
+    def pairs_without_placeholders(rules, semantics):
+        pairs = expand_all_semantics(rules, semantics)
+        out = {}
+        for utterance, parse in pairs:
+            if has_placeholders(utterance) or has_placeholders(parse):
+                print("Skipping pair for {} because it still has placeholders after expansion".format(
+                    tree_printer(utterance)))
+                continue
+            out[tree_printer(utterance)] = tree_printer(parse)
+        return out
     # Get utterance -> parse maps
-    cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
-    cat1_pairs = {tree_printer(utterance): tree_printer(parse) for utterance, parse in cat1_pairs}
-    cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
-    cat2_pairs = {tree_printer(utterance): tree_printer(parse) for utterance, parse in cat2_pairs}
-    cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
-    cat3_pairs = {tree_printer(utterance): tree_printer(parse) for utterance, parse in cat3_pairs}
+    cat1_pairs = pairs_without_placeholders(cat1_rules, cat1_semantics)
+    cat2_pairs = pairs_without_placeholders(cat2_rules, cat2_semantics)
+    cat3_pairs = pairs_without_placeholders(cat3_rules, cat3_semantics)
 
     cat1_unique_utterance_pair = cat1_pairs
     cat1_unique_parse_pair = defaultdict(list)
