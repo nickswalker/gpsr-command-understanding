@@ -40,7 +40,7 @@ class WildCard(NonTerminal):
         return isinstance(other, WildCard) and self.name == other.name and self.type == other.type and self.extra == other.extra and self.obfuscated == other.obfuscated
 
 
-class Anonimized(object):
+class Anonymized(object):
     def __init__(self, name):
         self.name = name
     def __str__(self):
@@ -48,7 +48,7 @@ class Anonimized(object):
     def __hash__(self):
         return hash(self.__str__())
     def __eq__(self, other):
-        return isinstance(other, Anonimized) and self.name == other.name
+        return isinstance(other, Anonymized) and self.name == other.name
 
 
 # The GPSR grammars all have this as their root

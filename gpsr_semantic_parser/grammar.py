@@ -53,7 +53,7 @@ class TypeConverter(Transformer):
 
 class DiscardVoid(Visitor):
     def expression(self, tree):
-        tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonimized)) and x.name == "void"), tree.children))
+        tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonymized)) and x.name == "void"), tree.children))
 
 
 generator_grammar_parser = Lark(open(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018/generator_grammar_ebnf.txt")), start='start', parser="lalr", transformer=TypeConverter())
@@ -202,9 +202,9 @@ def make_anonymized_grounding_rules(wildcards, show_details=False):
     grounding_rules = {}
     for term in wildcards:
         if show_details:
-            prod = Anonimized(term.to_human_readable())
+            prod = Anonymized(term.to_human_readable())
         else:
-            prod = Anonimized(term.name)
+            prod = Anonymized(term.name)
         grounding_rules[term] = [Tree("expression", [prod])]
     return grounding_rules
 
@@ -307,7 +307,7 @@ def prepare_anonymized_rules(common_rules_path, category_paths, show_debug_detai
     rules = load_grammar([common_rules_path] + category_paths)
     # $whattosay curiously doesn't pull from an XML file, but is instead baked into the grammar.
     # We'll manually anonymize it here
-    rules[NonTerminal("whattosay")] = [Tree("expression",[Anonimized("whattosay")])]
+    rules[NonTerminal("whattosay")] = [Tree("expression", [Anonymized("whattosay")])]
 
     # We'll use the indeterminate pronoun for convenience
     rules[WildCard("pron")] = [Tree("expression",["them"])]

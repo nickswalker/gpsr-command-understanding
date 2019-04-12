@@ -4,7 +4,7 @@ from lark import Tree
 
 from gpsr_semantic_parser.grammar import CombineExpressions, tree_printer, DiscardVoid
 from gpsr_semantic_parser.util import get_placeholders, replace_child_in_tree
-from gpsr_semantic_parser.tokens import NonTerminal
+from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized
 from queue import Queue
 import random
 
@@ -145,7 +145,11 @@ def expand_pair(sentence, semantics, production_rules, branch_cap=-1, generator=
             modified_semantics = None
             if semantics:
                 modified_semantics = copy.deepcopy(semantics)
-                replace_child_in_tree(modified_semantics, replace_token, production)
+                sem_substitute = production
+                if isinstance(replace_token, WildCard) or (len(production.children) >0 and isinstance(production.children[0], Anonymized)):
+                    sem_substitute = production.copy()
+                    sem_substitute.children = ["\""] + sem_substitute.children + ["\""]
+                replace_child_in_tree(modified_semantics, replace_token, sem_substitute)
             yield sentence_filled, modified_semantics
 
 

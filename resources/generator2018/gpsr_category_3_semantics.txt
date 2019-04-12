@@ -2,29 +2,29 @@
 # Manipulation
 #####
 
-$polite $vbtake the {object 1} from the {beacon 1} to the {beacon 2} = (put (λ$1:e (is_a $1 "{object 1}") (at $1 "{beacon 1}"))"{beacon 2}")
+$polite $vbtake the {object 1} from the {beacon 1} to the {beacon 2} = (put (λ$1:e (is_a $1 {object 1}) (at $1 {beacon 1})){beacon 2})
 
 # Note: Good example of underspecified command that has a well formed parse
-$polite $vbtake the {object 1} to the {beacon 2} = (put (λ$1:e(is_a $1 "{object 1}"))"{beacon 2}")
-$polite $vbtake the {object 1} to the {placement 2} = (put (λ$1:e(is_a $1 "{object 1}"))"{placement 2}")
+$polite $vbtake the {object 1} to the {beacon 2} = (put (λ$1:e(is_a $1 {object 1})){beacon 2})
+$polite $vbtake the {object 1} to the {placement 2} = (put (λ$1:e(is_a $1 {object 1})){placement 2})
 
 ######
 # Bring
 ######
 
-$polite $vbdeliver me the {object 1} = (bring (λ$1:e(is_a $1 "{object 1}")))
-$polite $vbdeliver {object?} to me = (bring (λ$1:e(is_a $1 "{object?}")))
-$polite $vbdeliver me the {object?} = (bring (λ$1:e(is_a $1 "{object?}")))
-$polite $vbdeliver {object?} to {name 1} = (bring (λ$1:e(is_a $1 "{object?}")) (λ$1:e (person $1)(name $1 "{name 1}")))
-$polite $vbdeliver {object?} to the {gesture} person in the {room} = (bring (λ$1:e(is_a $1 "{object?}")) (λ$1:e (person $1)(is $1 "{gesture}")(at $1 "{room}")))
+$polite $vbdeliver me the {object 1} = (bring (λ$1:e(is_a $1 {object 1})))
+$polite $vbdeliver {object?} to me = (bring (λ$1:e(is_a $1 {object?})))
+$polite $vbdeliver me the {object?} = (bring (λ$1:e(is_a $1 {object?})))
+$polite $vbdeliver {object?} to {name 1} = (bring (λ$1:e(is_a $1 {object?})) (λ$1:e (person $1)(name $1 {name 1})))
+$polite $vbdeliver {object?} to the {gesture} person in the {room} = (bring (λ$1:e(is_a $1 {object?})) (λ$1:e (person $1)(is $1 {gesture})(at $1 {room})))
 
 
 #####
 # Manipulation
 ##
 
-$polite $vbplace the {object 1} on the {placement 2} = (put (λ$1:e(is_a $1 "{object 1}"))"{placement 2}")
-$polite $vbbring the {object 1} to the {placement 2} = (put (λ$1:e(is_a $1 "{object 1}"))"{placement 2}")
+$polite $vbplace the {object 1} on the {placement 2} = (put (λ$1:e(is_a $1 {object 1})){placement 2})
+$polite $vbbring the {object 1} to the {placement 2} = (put (λ$1:e(is_a $1 {object 1})){placement 2})
 
 #########################################
 # Complex manipulation ($complexman)
@@ -32,35 +32,35 @@ $polite $vbbring the {object 1} to the {placement 2} = (put (λ$1:e(is_a $1 "{ob
 
 $polite Pour some cereals into the bowl = (pour (λ$1:e(is_a $1 "cereal")) (λ$1:e(is_a $1 "bowl")))
 
-$polite $vbbtake the {kobject} to the {placement 2} = (put (λ$1:e (is_a $1 "{kobject}"))"{placement 2}")
-$polite $vbbring me the left most object from the {placement 2} = (bring (λ$1:e(leftmost $1"{placement 2}")))
-$polite $vbbring me the right most object from the {placement 2} = (bring (λ$1:e(rightmost $1"{placement 2}")))
-$polite $vbbring me the object at the left of the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 "{object}")(left_of $1 $2)))"{placement 2}")
-$polite $vbbring me the object at the right of the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 "{object}")(right_of $1 $2)))"{placement 2}")
-$polite $vbbring me the object on top of the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 "{object}")(on_top_of $1 $2)))"{placement 2}")
-$polite $vbbring me the object above the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 "{object}")(above $1 $2)))"{placement 2}")
-$polite $vbbring me the object behind the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 "{object}")(behind $1 $2)))"{placement 2}")
-$polite $vbbring me the object under the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 "{object}")(below $1 $2)))"{placement 2}")
-$polite $vbbring me the $oprop {category} from the {placement 2} = (bring (λ$1:e (is_a $1 "{category}")($oprop $1))"{placement 2}")
-$polite $vbbring me the $oprop object from the {placement 2} = (bring (λ$1:e ($oprop $1))"{placement 2}")
+$polite $vbbtake the {kobject} to the {placement 2} = (put (λ$1:e (is_a $1 {kobject})){placement 2})
+$polite $vbbring me the left most object from the {placement 2} = (bring (λ$1:e(leftmost $1{placement 2})))
+$polite $vbbring me the right most object from the {placement 2} = (bring (λ$1:e(rightmost $1{placement 2})))
+$polite $vbbring me the object at the left of the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 {object})(left_of $1 $2))){placement 2})
+$polite $vbbring me the object at the right of the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 {object})(right_of $1 $2))){placement 2})
+$polite $vbbring me the object on top of the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 {object})(on_top_of $1 $2))){placement 2})
+$polite $vbbring me the object above the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 {object})(above $1 $2))){placement 2})
+$polite $vbbring me the object behind the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 {object})(behind $1 $2))){placement 2})
+$polite $vbbring me the object under the {object} from the {placement 2} = (bring (λ$1:e(λ$2:e (is_a $2 {object})(below $1 $2))){placement 2})
+$polite $vbbring me the $oprop {category} from the {placement 2} = (bring (λ$1:e (is_a $1 {category})($oprop $1)){placement 2})
+$polite $vbbring me the $oprop object from the {placement 2} = (bring (λ$1:e ($oprop $1)){placement 2})
 
 #####
 # Info gathering
 #####
-$polite Tell me how many $object there are on the {placement} = (say (count (λ$1:e (is_a $1 "$object") (at $1 "{placement}"))))
-$polite tell me which are the three $oprop objects on the {placement 1} = (say (λ$1:e ($oprop $1 3) (at $1 "{placement 1}")))
-$polite tell me which are the three $oprop objects on the {placement 1} = (say (λ$1:e ($oprop $1 3) (at $1 "{placement 1}")))
-$polite tell me which are the three $oprop {category} on the {placement 1} = (say (λ$1:e ($oprop $1 3) (is_a $1 "{category}") (at $1 "{placement 1}")))
-$polite tell me which are the three $oprop {category} on the {placement 1} = (say (λ$1:e ($oprop $1 3) (is_a $1 "{category}") (at $1 "{placement 1}")))
+$polite Tell me how many $object there are on the {placement} = (say (count (λ$1:e (is_a $1 $object) (at $1 {placement}))))
+$polite tell me which are the three $oprop objects on the {placement 1} = (say (λ$1:e ($oprop $1 3) (at $1 {placement 1})))
+$polite tell me which are the three $oprop objects on the {placement 1} = (say (λ$1:e ($oprop $1 3) (at $1 {placement 1})))
+$polite tell me which are the three $oprop {category} on the {placement 1} = (say (λ$1:e ($oprop $1 3) (is_a $1 {category}) (at $1 {placement 1})))
+$polite tell me which are the three $oprop {category} on the {placement 1} = (say (λ$1:e ($oprop $1 3) (is_a $1 {category}) (at $1 {placement 1})))
 
 #####
 # Guide
 #####
-$polite meet {name 1} and $vbguide {pron} = (guide (λ$1:e (person $1) (name $1 "{name 1}")) UNKNOWN)
-$polite $vbguide {name 1} from the {beacon 1} to the {beacon 1} = (guide (λ$1:e (person $1) (name $1 "{name 1}")(at $1 "{beacon 1}")) "{beacon 1}")
-$polite $vbguide {name 1} from the {beacon 1} to the {beacon 2} = (guide (λ$1:e (person $1) (name $1 "{name 1}")(at $1 "{beacon 1}"))"{beacon 2}")
-$polite $vbguide {name 1} to the {beacon 2} = (guide (λ$1:e (person $1) (name $1 "{name 1}"))"{beacon 2}")
-$polite $vbgopl to the {beacon 1}, meet {name 1}, and $vbguide {pron} = (guide (λ$1:e (person $1) (name $1 "{name 1}") (at $1 "{beacon 1}")) UNKNOWN)
+$polite meet {name 1} and $vbguide {pron} = (guide (λ$1:e (person $1) (name $1 {name 1})) UNKNOWN)
+$polite $vbguide {name 1} from the {beacon 1} to the {beacon 1} = (guide (λ$1:e (person $1) (name $1 {name 1})(at $1 {beacon 1})) {beacon 1})
+$polite $vbguide {name 1} from the {beacon 1} to the {beacon 2} = (guide (λ$1:e (person $1) (name $1 {name 1})(at $1 {beacon 1})){beacon 2})
+$polite $vbguide {name 1} to the {beacon 2} = (guide (λ$1:e (person $1) (name $1 {name 1})){beacon 2})
+$polite $vbgopl to the {beacon 1}, meet {name 1}, and $vbguide {pron} = (guide (λ$1:e (person $1) (name $1 {name 1}) (at $1 {beacon 1})) UNKNOWN)
 
 $polite $vbguide the {object 1} from the {beacon 1} to the {beacon 2} = UNKNOWN
 $polite $vbguide the {category 1} from the {beacon 1} to the {beacon 2} = UNKNOWN
@@ -68,17 +68,17 @@ $polite $vbguide the {category 1} from the {beacon 1} to the {beacon 2} = UNKNOW
 #####
 # Sequence
 #####
-$polite $fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbgopl to the {room 1} = (sequence (follow (λ$1:e (person $1) (name $1 "{name 1}")(at $1 "{beacon 1}"))) (go "{room 1}"))
-$polite $fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbguide {pron} back = (λ$1:e(sequence (follow (person $1) (name $1 "{name 1}")(at $1 "{beacon 1}")) (guide $1 "current")))
+$polite $fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbgopl to the {room 1} = (sequence (follow (λ$1:e (person $1) (name $1 {name 1})(at $1 {beacon 1}))) (go {room 1}))
+$polite $fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbguide {pron} back = (λ$1:e(sequence (follow (person $1) (name $1 {name 1})(at $1 {beacon 1})) (guide $1 "current")))
 
 #####
 # Follow
 #####
 
-$polite $vbgopl to the {beacon 1}, meet {name 1}, and $vbfollow {pron} to the {beacon 1} = (follow (λ$1:e (person $1) (name $1 "{name 1}")(at $1 "{beacon 1}")) "{beacon 1}")
-$polite $vbgopl to the {beacon 1}, meet {name 1}, and $vbfollow {pron} to the {room 2} = (follow (λ$1:e (person $1) (name $1 "{name 1}")(at $1 "{beacon 1}")))
+$polite $vbgopl to the {beacon 1}, meet {name 1}, and $vbfollow {pron} to the {beacon 1} = (follow (λ$1:e (person $1) (name $1 {name 1})(at $1 {beacon 1})) {beacon 1})
+$polite $vbgopl to the {beacon 1}, meet {name 1}, and $vbfollow {pron} to the {room 2} = (follow (λ$1:e (person $1) (name $1 {name 1})(at $1 {beacon 1})))
 
-$polite follow {name 1} = (follow (λ$1:e (person $1) (name $1 "{name 1}")))
+$polite follow {name 1} = (follow (λ$1:e (person $1) (name $1 {name 1})))
 
 $polite $vbgopl to the {beacon 1}, meet the {category 1}, and follow it = UNKNOWN
 $polite $vbgopl to the {beacon 1}, meet the {object 1}, and follow it = UNKNOWN
@@ -88,11 +88,11 @@ $polite $vbgopl to the {beacon 1}, meet the {object 1}, and follow it = UNKNOWN
 # Find
 ######
 
-$polite $vbfind the $object in the {room} = (find (λ$1:e (is_a $1 "$object") (at $1 "{room}")))
-$polite $vbfind three {category} in the {room} = (find (λ$1:e (is_a $1 "{category}") (at $1 "{room}")) 3)
+$polite $vbfind the $object in the {room} = (find (λ$1:e (is_a $1 $object) (at $1 {room})))
+$polite $vbfind three {category} in the {room} = (find (λ$1:e (is_a $1 {category}) (at $1 {room})) 3)
 
 ######
 # Go
 ######
 
-$polite $vbgopl to the {room 1} = (go "{room 1}")
+$polite $vbgopl to the {room 1} = (go {room 1})

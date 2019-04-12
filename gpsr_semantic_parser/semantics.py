@@ -1,28 +1,11 @@
 import os
 
-from lark import Lark, tree, Tree, Transformer, Visitor, Token
+from lark import Lark, Tree
 
 from gpsr_semantic_parser.grammar import generator_grammar_parser, expand_shorthand, TypeConverter
 from gpsr_semantic_parser.util import get_wildcards
 
 lambda_parser = Lark(open(os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt")), start='start', parser="lalr", transformer=TypeConverter())
-
-
-class ReplaceToken(Visitor):
-    def __init__(self, to_replace_type, to_replace_name, replace_with):
-        self.to_replace_type = to_replace_type
-        self.to_replace_name = to_replace_name
-        self.replace_with = replace_with
-        super().__init__()
-
-    def wildcard(self, args):
-        if self.to_replace_type == "wildcard" and [self.to_replace_name] == args:
-            return self.replace_with
-        return args
-
-    def non_terminal(self, args):
-        if self.to_replace_type == "non_terminal" and self.to_replace_name == args.children[0]:
-            args.children[0] = self.replace_with
 
 
 def parse_rule(line, rule_dict):
