@@ -1,75 +1,117 @@
 <!-- You must include this JavaScript file -->
 <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
 
+<style>
+    #instructions-box {
+        background-color: #ddd;
+        padding: 12px;
+    }
+    #skip-button {
+        margin: 12px auto;
+    }
+    .green {
+        color: darkgreen;
+    }
+    .red {
+        color: darkred;
+    }
+    #task crowd-input {
+        margin-top: -16px;
+        margin-bottom: 16px;
+    }
+</style>
 <!-- For the full list of available Crowd HTML Elements and their input/output documentation,
       please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
 
 <!-- You must include crowd-form so that your task submits answers to MTurk -->
 <crowd-form answer-format="flatten-objects">
 
-    <crowd-instructions link-text="View instructions" link-type="button">
-        <short-summary>
-            <p>Rephrase a command to a robot</p>
-        </short-summary>
+    <div id="instructions-box">
+        <crowd-button variant="normal" href="#task" id="skip-button">Skip instructions</crowd-button>
+        <p>Given a command that someone said to a household helper robot, rephrase it in your own words.
+          Don't try to be overly formal, simply write what you would say if you wanted the robot to accomplish the same command.</p>
+    <p>Try to
+    <ul>
+        <li>Capture all of the same information as the original command</li>
+        <li>Write something different than the original command</li>
+        <li>Use natural english</li>
+        <li>Consider varying sentence structure and using different words that mean roughly the same thing</li>
+    </ul>
+    </p>
 
-        <detailed-instructions>
-            <h3>Rephrase a command to a robot</h3>
-            <p>
-              Given a command that someone gave to a household helper robot, rephrase it in your own words.
-              Don't try to be overly formal, simply write what you would say if you wanted the robot to accomplish the same command.
-        </p>
-        <p>Do:
-        <ul>
-            <li>Capture all of the same information as the original command</li>
-            <li>Write something different than the original command</li>
-            <li>Use natural english</li>
-            <li>Consider varying sentence structure and using different words that mean roughly the same thing</li>
-            <li>Keep instructions in the same order, if there are multiple instructions in one command</li>
-        </ul>
-        </p>
-        </detailed-instructions>
-
-        <positive-example>
-            <h3>Original Command</h3>
-            <p>Pick up the apple from the table and place it on the counter</p>
-
-            <h3>Rephrased</h3>
-            <p>Move the apple on the table to the counter please</p>
-        </positive-example>
-
-        <positive-example>
-            <h3>Original Command</h3>
-            <p>Take Fred from the bedroom to the kitchen</p>
-
-            <h3>Rephrased</h3>
-            <p>Get Fred from the bedroom to the kitchen</p>
-
-        </positive-example>
-
-        <negative-example>
-            <h3>Original Command</h3>
-            <p>Go to the foyer, meet Alice, and lead her to the living room.</p>
-
-            <h3>Rephrased</h3>
-            <p>Guide Alice to the living room.</p>
-            <p><strong>Reason: </strong> The rephrased command doesn't include all of the information from the original command. Specifically, it doesn't include that Alice can be found in the foyer.</p>
-         </negative-example>
-
-          <negative-example>
-            <h3>Original Command</h3>
-            <p>Find a person in the bedroom and tell them the time.</p>
-
-            <h3>Rephrased</h3>
-            <p>Tell the time then find someone in the bedroom.</p>
-            <p><strong>Reason: </strong> The rephrased command changes the meaning of the command. Specifically, it tells the robot to tell the user the time, when it should tell the robot to tell someone in the bedroom the time.</p>
-         </negative-example>
-
-    </crowd-instructions>
-
-    <p>Rephrase this robot command:</p>
+        <h3>Examples</h3>
+        <p>Original: Pick up the apple from the table and place it on the counter<br/>
+        Rephrased: <span class="green">Move the apple on the table to the counter please</span></p>
 
 
-    <p><strong>Original Command: </strong>${command}</p>
+        <p>Original: Take Fred from the bedroom to the kitchen<br/>
+        Rephrased: <span class="green"> Get Fred from the bedroom to the kitchen</span></p>
 
-    <crowd-input name="utterance" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+
+        <p>Original: Go to the foyer, meet Alice, and lead her to the living room.<br/>
+        Rephrased: <span class="red">Guide Alice to the living room.</span><br/>
+        <strong>Reason: </strong> The rephrased command doesn't include all of the information from the original command. Specifically, it doesn't include that Alice can be found in the foyer.</p>
+
+        <p>Original: Find a person in the bedroom and tell them the time.<br/>
+        Rephrased: <span class="red"> Tell the time then find someone in the bedroom.</span><br/>
+        <strong>Reason: </strong> The rephrased command changes the meaning of the command. Specifically, it tells the robot to tell the user the time, when it should tell the robot to tell someone in the bedroom the time.</p>
+
+    </div>
+
+    <div id="task">
+    <p>Rephrase each of these commands:</p>
+
+
+    <p><strong>Original Command: </strong>${command1}
+    <crowd-input name="utterance1" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command2}
+    <crowd-input name="utterance2" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command3}
+    <crowd-input name="utterance3" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command4}
+    <crowd-input name="utterance4" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command5}
+    <crowd-input name="utterance5" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command6}
+    <crowd-input name="utterance6" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command7}
+    <crowd-input name="utterance7" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command8}
+    <crowd-input name="utterance8" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command9}
+    <crowd-input name="utterance9" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command10}
+    <crowd-input name="utterance10" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command11}
+    <crowd-input name="utterance11" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Original Command: </strong>${command12}
+    <crowd-input name="utterance12" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    </p>
+
+    <p><strong>Comment (optional):</strong>
+    <crowd-input name="comment" placeholder="Let us know any comments or feedback you have on this HIT"></crowd-input>
+    </p>
+        </div>
 </crowd-form>
