@@ -6,6 +6,6 @@ do
   for i in {1..8} "Full"
   do
     allennlp fine-tune -m results/$model/model.tar.gz -c experiments/${model}_$i.json -s fine_tune_results/${model}_$i --include-package gpsr_semantic_parser
-    echo "$model is done" >> progress.txt
+    echo "${model}_$i is done" >> progress.txt
   done
 done
