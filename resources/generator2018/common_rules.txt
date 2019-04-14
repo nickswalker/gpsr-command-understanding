@@ -109,7 +109,11 @@ $delivat  = $vbdeliver it to {name} at the {beacon}
 ; Speak
 $talk     = $answer | $speak
 $answer   = answer a {question}
-$speak    = $vbspeak $whattosay
+
+; MODIFICATION: Make whatosay a wildcard instead of a nonterminal.
+; This makes it easier to swap in more variations here, and better
+; fits our anonymization scheme
+$speak    = $vbspeak  {whattosay}
 
 
 ##############################################################################

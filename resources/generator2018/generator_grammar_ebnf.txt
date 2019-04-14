@@ -9,7 +9,7 @@ non_terminal: "$"CNAME
 wildcard:     "{" _card_type meta? OBFUSCATED?"}"
 meta: "meta:" (WORD | wildcard | COMMA | PERIOD | INT)+
 
-_card_type: (location_wildcard_super | name_wildcard | object_wildcard_super | void_wildcard | pronoun_wildcard | question_wildcard | gesture_wildcard | category_wildcard)
+_card_type: (location_wildcard_super | name_wildcard | object_wildcard_super | void_wildcard | pronoun_wildcard | question_wildcard | gesture_wildcard | category_wildcard | whattosay_wildcard)
 
 ?location_wildcard_super: loc_beacon_wildcard | loc_placement_wildcard | loc_room_wildcard | location_wildcard
 location_wildcard:  "location" WORD? INT?
@@ -28,6 +28,7 @@ pronoun_wildcard:   "pron"
 void_wildcard:      "void"
 gesture_wildcard:   "gesture"
 category_wildcard:   "category" INT?
+whattosay_wildcard: "whattosay"
 
 COMMENT: /(#|;).*/
 COMMA: ","

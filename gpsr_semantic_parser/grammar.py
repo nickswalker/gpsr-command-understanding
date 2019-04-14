@@ -48,6 +48,8 @@ class TypeConverter(Transformer):
             return WildCard("question", type)
         elif "void" in typed.data:
             return WildCard("void", type)
+        elif "whattosay" in typed.data:
+            return WildCard("whattosay")
         assert False
 
 
@@ -76,6 +78,11 @@ class ToString(Transformer):
         return "{} = {}".format(children[0], children[1])
 
     def predicate(self, children):
+        # Check for any string constant args and make sure they have
+        # padding spaces between text and the quote marks
+        for i, child in enumerate(children):
+            if  isinstance(child, str) and child[0] == "\"":
+                children[i] = "\" " + child[1:-1] + " \""
         return "( {} )".format(" ".join(map(str,children)))
 
     def lambda_abs(self, children):
@@ -270,6 +277,10 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
     production_rules[WildCard('location','room', obfuscated=True)] = [["room"]]
     production_rules[WildCard('gesture')] = gestures
 
+
+    things_to_say = ["something about yourself","the time","what day it is","the day of the week","a joke"]
+    production_rules[WildCard("whattosay")] = [ [x] for x in things_to_say]
+
     for token, productions in production_rules.items():
         productions = list(map(lambda p: Tree("expression", p),productions))
         production_rules[token] = productions
@@ -288,6 +299,7 @@ def prepare_grounded_rules(common_rules_path, category_paths, objects_xml_file, 
         category_paths = [category_paths]
     rules = load_grammar([common_rules_path] + category_paths)
     grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
+
     # This part of the grammar won't lend itself to any useful generalization from rephrasings
     rules[WildCard("question")] = [Tree("expression",["question"])]
     rules[WildCard("pron")] = [Tree("expression",["them"])]
@@ -305,9 +317,6 @@ def prepare_anonymized_rules(common_rules_path, category_paths, show_debug_detai
     if not isinstance(category_paths, list):
         category_paths = [category_paths]
     rules = load_grammar([common_rules_path] + category_paths)
-    # $whattosay curiously doesn't pull from an XML file, but is instead baked into the grammar.
-    # We'll manually anonymize it here
-    rules[NonTerminal("whattosay")] = [Tree("expression", [Anonymized("whattosay")])]
 
     # We'll use the indeterminate pronoun for convenience
     rules[WildCard("pron")] = [Tree("expression",["them"])]
@@ -315,5 +324,6 @@ def prepare_anonymized_rules(common_rules_path, category_paths, show_debug_detai
     groundable_terms = get_wildcards(all_rule_trees)
     groundable_terms.add(WildCard("object", "1"))
     groundable_terms.add(WildCard("category", "1"))
+    groundable_terms.add(WildCard("whattosay"))
     grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)
     return merge_dicts(rules, grounding_rules)
