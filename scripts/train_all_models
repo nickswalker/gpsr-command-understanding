@@ -67,7 +67,7 @@ if [[ !$use_cpu ]]; then
 fi
 
 experiment_files=${experiment_path}/*.json
-summary_path=${results_path}/summary.txt
+summary_path=${results_path}/training_summary.txt
 for file in ${experiment_files}; do
     name=$(basename $file)
     # remove .json extension

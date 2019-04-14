@@ -1,11 +1,12 @@
 import itertools
+import operator
 import os
 import random
 from os.path import join
 import argparse
-from collections import defaultdict
+from collections import defaultdict, Counter
 
-from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
+from gpsr_semantic_parser.generation import expand_all_semantics
 from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.grammar import prepare_anonymized_rules
 from gpsr_semantic_parser.grammar import tree_printer
@@ -226,11 +227,28 @@ def main():
         for sentence, parse in test:
             f.write(sentence + '\n' + str(parse) + '\n')
 
+    utterance_vocab = Counter()
+    parse_vocab = Counter()
+    for utterance, parse in itertools.chain(train, val, test):
+        for token in utterance.split(" "):
+            utterance_vocab[token] += 1
+        for token in parse.split(" "):
+            parse_vocab[token] += 1
+
     info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, train_percentage, val_percentage, test_percentage)
     info += "train={} val={} test={}".format(len(train), len(val), len(test))
     print(info)
     with open(meta_out_path, "w") as f:
         f.write(info)
+
+        f.write("\n\nUtterance vocab\n")
+        for token, count in sorted(utterance_vocab.items(), key=operator.itemgetter(1), reverse=True):
+            f.write("{} {}\n".format(token, str(count)))
+
+        f.write("\n\nParse vocab\n")
+        for token, count in sorted(parse_vocab.items(), key=operator.itemgetter(1), reverse=True):
+            f.write("{} {}\n".format(token, str(count)))
+
 
 if __name__ == "__main__":
     main()

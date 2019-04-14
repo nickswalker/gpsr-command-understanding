@@ -1,21 +1,30 @@
-from overrides import overrides
+from typing import List
 
-from allennlp.common.util import JsonDict
+from allennlp.common.util import JsonDict, sanitize
 from allennlp.data import Instance
 from allennlp.predictors.predictor import Predictor
 
 
-@Predictor.register('my_seq2seq')
+@Predictor.register('command_parser')
 class CommandParser(Predictor):
     """Predictor wrapper for the CommandParser"""
-    @overrides
-    def predict_json(self, json_dict: JsonDict) -> JsonDict:
+
+    def predict_instance(self, instance: Instance) -> JsonDict:
+        outputs = self._model.forward_on_instance(instance)
+        out_dict = sanitize(outputs)
+        digest = " ".join(out_dict["predicted_tokens"])
+        out_dict["digest"] = digest
+        return out_dict
+
+    def predict_batch_instance(self, instances: List[Instance]) -> List[JsonDict]:
+        outputs = self._model.forward_on_instances(instances)
+        out_dict = sanitize(outputs)
+        for i, pred in enumerate(out_dict):
+            digest = " ".join(out_dict[i]["predicted_tokens"])
+            out_dict[i]["digest"] = digest
+        return out_dict
+
+    def _json_to_instance(self, json_dict: JsonDict) -> Instance:
         command = json_dict['command']
-        instance = self._dataset_reader.text_to_instance(source_string=command)
+        return  self._dataset_reader.text_to_instance(source_string=command)
 
-        # label_dict will be like {0: "ACL", 1: "AI", ...}
-        label_dict = self._model.vocab.get_index_to_token_vocabulary('labels')
-        # Convert it to list ["ACL", "AI", ...]
-        all_labels = [label_dict[i] for i in range(len(label_dict))]
-
-        return {"instance": self.predict_instance(instance)}

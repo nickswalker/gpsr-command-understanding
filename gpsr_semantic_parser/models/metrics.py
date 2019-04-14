@@ -71,7 +71,6 @@ class ParseValidity(Metric):
         self._total_counts += len(predictions)
         for predicted_tokens in predictions:
             as_str = " ".join(predicted_tokens)
-            print(as_str)
             try:
                 self._parser.parse(as_str)
                 self._correct_counts += 1

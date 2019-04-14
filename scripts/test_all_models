@@ -8,6 +8,7 @@ function usage {
 
     Options:
         -h --help                      Print this message
+        -c --use-cpu                 Use CPU instead of GPU
 EOF
         exit 1
 }
@@ -23,11 +24,16 @@ shift
 test_path=$1
 shift
 
+use_cpu=false
+
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
         -h|--help)
                 usage
+        ;;
+        -c|--use-cpu)
+            use_cpu=true
         ;;
         --)
             # Get rid of --
@@ -49,12 +55,23 @@ test_name=$(basename $test_path)
 dataset_name=$(basename $(dirname "${test_path}"))
 summary_path="${results_path}"/${dataset_name}_${test_name}_results_summary.txt
 
+# Clear this file
+"" > $summary_path
+
+gpu_arg="--cuda-device 0"
+if [[ ${use_cpu} = "true" ]]; then
+    gpu_arg=""
+fi
+
 for dir in $results_dirs; do
+    if [[ ! -d $dir ]]; then
+        continue
+    fi
     model_name=$(basename $dir)
     model_path="${dir}/model.tar.gz"
     output_path="${dir}/evaluation_${test_name}"
-    #allennlp evaluate ${model_path} ${test_path} --output-file "${output_path}" --include-package gpsr_semantic_parser
-    allennlp predict ${model_path} ${test_path}     --output-file "${dir}/predictions_${test_name}" --use-dataset-reader --predictor simple_seq2seq --include-package gpsr_semantic_parser
+    allennlp evaluate ${model_path} ${test_path} --output-file "${output_path}" --include-package gpsr_semantic_parser $gpu_arg
+    allennlp predict ${model_path} ${test_path}   --output-file "${dir}/predictions_${test_name}" --use-dataset-reader --predictor command_parser --include-package gpsr_semantic_parser --batch-size 64 $gpu_arg
     echo -e "\n ${model_name}" >> ${summary_path}
     cat "${dir}/evaluation_${test_name}" >> ${summary_path}
 done
