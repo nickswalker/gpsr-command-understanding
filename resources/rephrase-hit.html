@@ -1,5 +1,94 @@
 <!-- You must include this JavaScript file -->
 <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+<script>
+
+	var current = 1; //the current page
+	var moved = []; //pages which have been moved by the randomization
+	var movedto = [];
+
+	//takes randomization into account
+	function effectivePage(pagenum) {
+		var index = moved.indexOf(pagenum);
+		if (index == -1) {
+			return pagenum;
+		} else {
+			return movedto[index];
+		}
+	}
+
+	//make one vanish and the other appear
+	function swap(vanish, appear) {
+		document.getElementById(vanish).style.display = "none";
+		document.getElementById(appear).style.display = "";
+	}
+
+	//go to the next page
+	function next() {
+	    if (current === 16) {
+	        return;
+        }
+		current++;
+		document.getElementById("page-number").innerText = current;
+		swap(effectivePage(current - 1), effectivePage(current));
+	}
+
+	function back() {
+        if (current === 1) {
+	        return;
+        }
+		current--;
+		document.getElementById("page-number").innerText = current;
+		swap(effectivePage(current + 1), effectivePage(current));
+	}
+
+	//shuffles the array
+	//taken from http://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript
+	Array.prototype.shuffle = function () {
+		for (var i = this.length - 1; i > 0; i--) {
+			var j = Math.floor(Math.random() * (i + 1));
+			var tmp = this[i];
+			this[i] = this[j];
+			this[j] = tmp;
+		}
+
+		return this;
+	}
+
+	//randomize the order of trials i through j
+	//note: don't call this on the same index twice!
+	function randomize(i, j) {
+		ar = [];
+		ar2 = [];
+		for (var k = i; k <= j; k++) {
+			ar.push(k);
+			ar2.push(k);
+		}
+		ar2.shuffle();
+		for (var k = 0; k < ar.length; k++) {
+			if (moved.indexOf(ar[k]) != -1) {
+				alert("Error: same index randomized twice.");
+			} else {
+				moved.push(ar[k]);
+				movedto.push(ar2[k]);
+			}
+		}
+	}
+</script>
+<script>
+	function submitPage(evt) {
+		evt.preventDefault();
+		next();
+		return false;
+	}
+
+	function preventEnter(event) {
+		if (event.keyCode == 13) {
+			event.preventDefault();
+			return false;
+		}
+	}
+
+</script>
 
 <style>
     #instructions-box {
@@ -19,6 +108,13 @@
         margin-top: -16px;
         margin-bottom: 16px;
     }
+    .hidden {
+        display: none;
+    }
+    #controls > * {
+        display: inline-block;
+    }
+
 </style>
 <!-- For the full list of available Crowd HTML Elements and their input/output documentation,
       please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
@@ -27,9 +123,14 @@
 <crowd-form answer-format="flatten-objects">
 
     <div id="instructions-box">
-        <crowd-button variant="normal" href="#task" id="skip-button">Skip instructions</crowd-button>
+        <!--<crowd-button variant="normal" href="#task" id="skip-button">Skip instructions</crowd-button>-->
+        <crowd-button variant="normal" id="collapse-button" onclick="toggleInstructionVisibility()">Show/Hide instructions</crowd-button>
+        <div id="instructions-content">
         <p>Given a command that someone said to a household helper robot, rephrase it in your own words.
           Don't try to be overly formal, simply write what you would say if you wanted the robot to accomplish the same command.</p>
+
+        <img id="instructions-image" src="https://live.staticflickr.com/1917/44967325532_0a1f438899_z_d.jpg"/>
+            <p><i>A pair of the kind of robots that these commands are intended for. Commands are for one robot only.</i></p>
     <p>Try to
     <ul>
         <li>Capture all of the same information as the original command</li>
@@ -55,63 +156,121 @@
         <p>Original: Find a person in the bedroom and tell them the time.<br/>
         Rephrased: <span class="red"> Tell the time then find someone in the bedroom.</span><br/>
         <strong>Reason: </strong> The rephrased command changes the meaning of the command. Specifically, it tells the robot to tell the user the time, when it should tell the robot to tell someone in the bedroom the time.</p>
-
     </div>
+        </div>
 
     <div id="task">
-    <p>Rephrase each of these commands:</p>
 
+       <div class="page" id="1">
+           <p>This HIT has 12 commands for you to rephrase, then 2 entries for your own custom commands.</p>
+           <p>Please read the instructions then use the "next" button to continue.</p>
+    </p></div>
 
+       <div class="page" id="2">
+               <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command1}
     <crowd-input name="utterance1" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="3">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command2}
     <crowd-input name="utterance2" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="4">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command3}
     <crowd-input name="utterance3" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="5">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command4}
     <crowd-input name="utterance4" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="6">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command5}
     <crowd-input name="utterance5" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="7">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command6}
     <crowd-input name="utterance6" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="8">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command7}
     <crowd-input name="utterance7" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="9">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command8}
     <crowd-input name="utterance8" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="10">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command9}
     <crowd-input name="utterance9" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="11">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command10}
     <crowd-input name="utterance10" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="12">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command11}
     <crowd-input name="utterance11" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
-
+    </p></div>
+<div class="page" id="13">
+        <p>Rephrase this command:</p>
     <p><strong>Original Command: </strong>${command12}
     <crowd-input name="utterance12" placeholder="Type how you would rephrase this command here..." required></crowd-input>
-    </p>
+    </p></div>
 
+
+        <div class="page" id="14">
+                <p>Write a new command you think the robot could do:</p>
+    <crowd-input name="custom1" placeholder="Write a new command you would give to the robot" required></crowd-input>
+    </p></div>
+
+                <div class="page" id="15">
+                                    <p>Write a new command you think the robot could do:</p>
+    <crowd-input name="custom1" placeholder="Write a new command you would give to the robot" required></crowd-input>
+    </p></div>
+
+<div class="page" id="16">
+    <p>Thank you for doing our HIT!</p>
     <p><strong>Comment (optional):</strong>
     <crowd-input name="comment" placeholder="Let us know any comments or feedback you have on this HIT"></crowd-input>
     </p>
+    <p><b>Note: The submit button won't work unless you've filled out every required input!</b></p>
+        <crowd-button form-action="submit" variant="primary">Submit</crowd-button>
+</div>
+
+        </div>
+
+
+    <div id="controls">
+    <input onclick="back()" type="button" value="Back" name="noop"/>
+    <p id="page-number">1</p>
+    <input onclick="submitPage(event)" type="button" value="Next" name="noop1" />
         </div>
 </crowd-form>
+
+<script>
+
+	  var divsToHide = document.getElementsByClassName("page"); //divsToHide is an array
+    for(var i = 0; i < divsToHide.length; i++){
+        divsToHide[i].style.display = "none"; // depending on what you're doing
+    }
+    document.getElementById("1").style.display="block"
+
+    // Instructions expand/collapse
+		var content = document.getElementById('instructions-content');
+		var trigger = document.getElementById('collapse-button');
+
+		function toggleInstructionVisibility() {
+            content.classList.toggle("hidden")
+        }
+
+</script>
