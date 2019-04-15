@@ -1,5 +1,5 @@
 # Models to be trained
-models=("bert_base_seq2seq" "bert_large_seq2seq" "elmo_seq2seq" "openai_seq2seq" "seq2seq")
+models=("bert_base_seq2seq" "bert_large_seq2seq" "elmo_seq2seq" "openai_seq2seq" "glove_seq2seq" "seq2seq")
 
 for model in ${models[*]}
 do
