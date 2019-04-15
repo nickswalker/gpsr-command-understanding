@@ -27,7 +27,7 @@
         "type": "embedding",
         "vocab_namespace": "source_tokens",
         "embedding_dim": 100,
-        "pretrained_file": "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.100d.txt.gz",
+        "pretrained_file": "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.100d.txt.gz"
       }
       },
     "encoder": {
