@@ -9,7 +9,7 @@
 	//takes randomization into account
 	function effectivePage(pagenum) {
 		var index = moved.indexOf(pagenum);
-		if (index == -1) {
+		if (index === -1) {
 			return pagenum;
 		} else {
 			return movedto[index];
@@ -29,7 +29,7 @@
         }
 		current++;
 		document.getElementById("page-number").innerText = current;
-		swap(effectivePage(current - 1), effectivePage(current));
+		swap(current - 1, current);
 	}
 
 	function back() {
@@ -38,43 +38,40 @@
         }
 		current--;
 		document.getElementById("page-number").innerText = current;
-		swap(effectivePage(current + 1), effectivePage(current));
+		swap(current + 1, current);
 	}
 
-	//shuffles the array
-	//taken from http://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript
-	Array.prototype.shuffle = function () {
-		for (var i = this.length - 1; i > 0; i--) {
-			var j = Math.floor(Math.random() * (i + 1));
-			var tmp = this[i];
-			this[i] = this[j];
-			this[j] = tmp;
-		}
 
-		return this;
-	}
+	function edit_dist(a, b){
+        if(a.length == 0) return b.length;
+        if(b.length == 0) return a.length;
+        var matrix = [];
+        // increment along the first column of each row
+        var i;
+        for(i = 0; i <= b.length; i++){
+            matrix[i] = [i];
+          }
+        // increment each column in the first row
+        var j;
+        for(j = 0; j <= a.length; j++){
+            matrix[0][j] = j;
+          }
+        // Fill in the rest of the matrix
+        for(i = 1; i <= b.length; i++){
+        for(j = 1; j <= a.length; j++){
+        if(b.charAt(i-1) == a.charAt(j-1)){
+                matrix[i][j] = matrix[i-1][j-1];
+              } else {
+                matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+        Math.min(matrix[i][j-1] + 1, // insertion
+                                                 matrix[i-1][j] + 1)); // deletion
+              }
+            }
+          }
+        return matrix[b.length][a.length];
+    };
 
-	//randomize the order of trials i through j
-	//note: don't call this on the same index twice!
-	function randomize(i, j) {
-		ar = [];
-		ar2 = [];
-		for (var k = i; k <= j; k++) {
-			ar.push(k);
-			ar2.push(k);
-		}
-		ar2.shuffle();
-		for (var k = 0; k < ar.length; k++) {
-			if (moved.indexOf(ar[k]) != -1) {
-				alert("Error: same index randomized twice.");
-			} else {
-				moved.push(ar[k]);
-				movedto.push(ar2[k]);
-			}
-		}
-	}
-</script>
-<script>
+
 	function submitPage(evt) {
 		evt.preventDefault();
 		next();
@@ -87,6 +84,80 @@
 			return false;
 		}
 	}
+
+    function intersection(a, b, c) {
+  var x = [];
+  var check = function (e, cb) {
+    if (~b.indexOf(e)) x.push(e);
+    if (cb && typeof cb == 'function') cb(null);
+  };
+
+  if (c) {
+    async.forEach(a, check, function () {
+      c(null, x);
+    });
+  } else {
+    a.forEach(check);
+    return x;
+  }
+}
+
+/*
+ * Return distinct elements from both input sets
+ */
+function union(a, b, c) {
+  var x = [];
+  var check = function (e, cb) {
+    if (!~x.indexOf(e)) x.push(e);
+    if (cb && typeof cb == 'function') cb(null);
+  }
+
+  if (c) {
+    var waiting = 2;
+    var asyncCheck = function () {
+      if (--waiting == 0) {
+        c(null, x);
+      }
+    }
+    async.forEach(a, check, asyncCheck);
+    async.forEach(b, check, asyncCheck);
+  } else {
+    a.forEach(check);
+    b.forEach(check);
+    return x;
+  }
+}
+
+/*
+ * Similarity
+ */
+  function index(a, b, c) {
+  if (c) {
+    async.parallel({
+      intersection: function (cb) {
+        intersection(a, b, cb);
+      },
+      union: function (cb) {
+        union(a, b, cb);
+      }
+    }, function (err, results) {
+      c(results.intersection.length / results.union.length);
+    });
+  } else {
+    return intersection(a, b).length / union(a, b).length;
+  }
+}
+
+/*
+ * Dissimilarity
+ */
+function jaccard_distance(a, b, c) {
+  if (c) {
+    c(1 - index(a, b));
+  } else {
+    return 1 - index(a, b);
+  }
+}
 
 </script>
 
@@ -114,6 +185,14 @@
     #controls > * {
         display: inline-block;
     }
+    crowd-input.low-diff {
+        background-color: orange;
+        background-color: rgba(255, 165, 0, .6);
+    }
+    crowd-input.high-diff {
+        background-color: mediumpurple;
+        background-color: rgba(147,112,219,.6);
+    }
 
 </style>
 <!-- For the full list of available Crowd HTML Elements and their input/output documentation,
@@ -130,7 +209,7 @@
           Don't try to be overly formal, simply write what you would say if you wanted the robot to accomplish the same command.</p>
 
         <img id="instructions-image" src="https://live.staticflickr.com/1917/44967325532_0a1f438899_z_d.jpg"/>
-            <p><i>A pair of the kind of robots that these commands are intended for. Commands are for one robot only.</i></p>
+            <p><i>A pair of the type of robots that can carry out these commands. Commands are for one robot only.</i></p>
     <p>Try to
     <ul>
         <li>Capture all of the same information as the original command</li>
@@ -139,14 +218,21 @@
         <li>Consider varying sentence structure and using different words that mean roughly the same thing</li>
     </ul>
     </p>
+            <p><ul><li>The text box will turn <span style="background-color: orange">orange</span> if your input is very close to the original command.</li><li>It will turn <span style="background-color: mediumpurple">purple</span> if the input is highly dissimilar. </li><li><b>Neither of these colorings necessarily indicates a problem</b> with a particular rephrasing, but if you keep seeing them, then it is likely that your <span style="background-color: orange">rephrasings are not substantial enough</span>, or are <span style="background-color: mediumpurple">missing important information from the original command</span>.</li></ul></p>
 
         <h3>Examples</h3>
         <p>Original: Pick up the apple from the table and place it on the counter<br/>
-        Rephrased: <span class="green">Move the apple on the table to the counter please</span></p>
+        Rephrased: <span class="green">Move the apple that's on the table to the counter please</span></p>
 
 
         <p>Original: Take Fred from the bedroom to the kitchen<br/>
         Rephrased: <span class="green"> Get Fred from the bedroom to the kitchen</span></p>
+
+        <p>Original: Tell me the gender of the person in the bedroom<br />
+        Rephrased: <span class="green">What gender is the person in the bathroom?</span> </p>
+
+            <p>Original: Guide Michael to the armchair , you will find them at the dishwasher<br/>
+            Rephrased: <span class="green">show Micheal the way to the armchair, they're over by the dishwasher</span> </p>
 
 
         <p>Original: Go to the foyer, meet Alice, and lead her to the living room.<br/>
@@ -163,68 +249,69 @@
 
        <div class="page" id="1">
            <p>This HIT has 12 commands for you to rephrase, then 2 entries for your own custom commands.</p>
-           <p>Please read the instructions then use the "next" button to continue.</p>
+           <p>Please read the instructions, as consistent failure to apply the guidelines will lead to your work being rejected! </p>
+               <p>Use the "next" button to continue.</p>
     </p></div>
 
-       <div class="page" id="2">
+       <div class="page rephrasing" id="2">
                <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command1}
-    <crowd-input name="utterance1" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+           <p><strong>Original Command: </strong><span class="original-command">${command1}</span>
+    <crowd-input class="rephrase-input" name="utterance1" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="3">
+<div class="page rephrasing" id="3">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command2}
-    <crowd-input name="utterance2" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command2}</span>
+    <crowd-input class="rephrase-input" name="utterance2" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="4">
+<div class="page rephrasing" id="4">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command3}
-    <crowd-input name="utterance3" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command3}</span>
+    <crowd-input class="rephrase-input" name="utterance3" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="5">
+<div class="page rephrasing" id="5">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command4}
-    <crowd-input name="utterance4" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command4}</span>
+    <crowd-input class="rephrase-input" name="utterance4" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="6">
+<div class="page rephrasing" id="6">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command5}
-    <crowd-input name="utterance5" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command5}</span>
+    <crowd-input class="rephrase-input" name="utterance5" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="7">
+<div class="page rephrasing" id="7">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command6}
-    <crowd-input name="utterance6" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command6}</span>
+    <crowd-input class="rephrase-input" name="utterance6" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="8">
+<div class="page rephrasing" id="8">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command7}
-    <crowd-input name="utterance7" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command7}</span>
+    <crowd-input class="rephrase-input" name="utterance7" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="9">
+<div class="page rephrasing" id="9">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command8}
-    <crowd-input name="utterance8" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command8}</span>
+    <crowd-input class="rephrase-input" name="utterance8" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="10">
+<div class="page rephrasing" id="10">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command9}
-    <crowd-input name="utterance9" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command9}</span>
+    <crowd-input class="rephrase-input" name="utterance9" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="11">
+<div class="page rephrasing" id="11">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command10}
-    <crowd-input name="utterance10" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command10}</span>
+    <crowd-input class="rephrase-input" name="utterance10" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="12">
+<div class="page rephrasing" id="12">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command11}
-    <crowd-input name="utterance11" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command11}</span>
+    <crowd-input class="rephrase-input" name="utterance11" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
-<div class="page" id="13">
+<div class="page rephrasing" id="13">
         <p>Rephrase this command:</p>
-    <p><strong>Original Command: </strong>${command12}
-    <crowd-input name="utterance12" placeholder="Type how you would rephrase this command here..." required></crowd-input>
+    <p><strong>Original Command: </strong><span class="original-command">${command12}</span>
+    <crowd-input class="rephrase-input" name="utterance12" placeholder="Type how you would rephrase this command here..." required></crowd-input>
     </p></div>
 
 
@@ -235,7 +322,7 @@
 
                 <div class="page" id="15">
                                     <p>Write a new command you think the robot could do:</p>
-    <crowd-input name="custom1" placeholder="Write a new command you would give to the robot" required></crowd-input>
+    <crowd-input name="custom2" placeholder="Write a new command you would give to the robot" required></crowd-input>
     </p></div>
 
 <div class="page" id="16">
@@ -259,12 +346,47 @@
 
 <script>
 
-	  var divsToHide = document.getElementsByClassName("page"); //divsToHide is an array
+    var divsToHide = document.getElementsByClassName("page"); //divsToHide is an array
     for(var i = 0; i < divsToHide.length; i++){
         divsToHide[i].style.display = "none"; // depending on what you're doing
     }
-    document.getElementById("1").style.display="block"
+    document.getElementById("1").style.display="block";
 
+    rephrasing_pages = document.getElementsByClassName("rephrasing");
+
+    function make_thresholder(original_command) {
+        return
+    }
+
+
+    for(var i = 0; i< rephrasing_pages.length; i++) {
+        let page = rephrasing_pages[i];
+        let input = page.querySelector("crowd-input");
+
+        let original_command = page.querySelector(".original-command").innerText.trim();
+        let original_tokens = original_command.split(/[ ,]+/).filter(Boolean);
+
+        //input.addEventListener("keypress", make_thresholder(original_command));
+        input.addEventListener("keyup", function(event) {
+            let input_text = event.target.value.trim();
+            let input_tokens = input_text.split(/[ ,]+/).filter(Boolean);
+            let dist = edit_dist(input_text, original_command);
+            let jacc_dist = jaccard_distance(input_tokens, original_tokens);
+            let percentage_change = dist / original_command.length;
+            //console.log("Edit " + percentage_change + " Jacc " + jacc_dist);
+            if (percentage_change < 0.15 || jacc_dist < .2) {
+                input.classList.add("low-diff");
+                input.classList.remove("high-diff");
+            } else if (percentage_change > 1.0 || jacc_dist > 0.9) {
+                input.classList.add("high-diff");
+                input.classList.remove("low-diff");
+            } else {
+                input.classList.remove("low-diff");
+                input.classList.remove("high-diff");
+
+            }
+        });
+    }
     // Instructions expand/collapse
 		var content = document.getElementById('instructions-content');
 		var trigger = document.getElementById('collapse-button');

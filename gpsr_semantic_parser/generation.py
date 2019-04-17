@@ -6,7 +6,6 @@ from gpsr_semantic_parser.grammar import CombineExpressions, tree_printer, Disca
 from gpsr_semantic_parser.util import get_placeholders, replace_child_in_tree
 from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized
 from queue import Queue
-import random
 
 
 def generate_sentences(start_tree, production_rules):
@@ -127,7 +126,7 @@ def expand_pair(sentence, semantics, production_rules, branch_cap=-1, generator=
 
         if generator:
             replace_token = generator.choice(replace_token)
-            productions = random.choices(production_rules[replace_token],k=branch_cap)
+            productions = generator.sample(production_rules[replace_token],k=branch_cap)
         else:
             # We know we have at least one, so we'll just use the first
             replace_token = replace_token[0]
