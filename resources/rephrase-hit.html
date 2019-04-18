@@ -218,29 +218,35 @@ function jaccard_distance(a, b, c) {
         <li>Consider varying sentence structure and using different words that mean roughly the same thing</li>
     </ul>
     </p>
-            <p><ul><li>The text box will turn <span style="background-color: orange">orange</span> if your input is very close to the original command.</li><li>It will turn <span style="background-color: mediumpurple">purple</span> if the input is highly dissimilar. </li><li><b>Neither of these colorings necessarily indicates a problem</b> with a particular rephrasing, but if you keep seeing them, then it is likely that your <span style="background-color: orange">rephrasings are not substantial enough</span>, or are <span style="background-color: mediumpurple">missing important information from the original command</span>.</li></ul></p>
+            <p>
+            <ul>
+            <li>The text box will turn <span style="background-color: orange">orange</span> if your input is very close to the original command.</li>
+            <li>It will turn <span style="background-color: mediumpurple">purple</span> if the input is highly dissimilar. </li>
+            <li>The box won't change color at all if neither of the above conditions are detected</li>
+            <li><b>The colorings don't necessarily indicate a problem</b> with a rephrasing, but if they appear on multiple, then it is likely that the <span style="background-color: orange">rephrasings are not substantial enough</span>, or are <span style="background-color: mediumpurple">missing important information from the original command</span>.</li>
+        </ul></p>
 
         <h3>Examples</h3>
         <p>Original: Pick up the apple from the table and place it on the counter<br/>
-        Rephrased: <span class="green">Move the apple that's on the table to the counter please</span></p>
+        Good rephrasing: <span class="green">Move the apple that's on the table to the counter please</span></p>
 
 
         <p>Original: Take Fred from the bedroom to the kitchen<br/>
-        Rephrased: <span class="green"> Get Fred from the bedroom to the kitchen</span></p>
+        Good rephrasing: <span class="green"> Get Fred from the bedroom to the kitchen</span></p>
 
         <p>Original: Tell me the gender of the person in the bedroom<br />
-        Rephrased: <span class="green">What gender is the person in the bathroom?</span> </p>
+        Good rephrasing: <span class="green">What gender is the person in the bathroom?</span> </p>
 
             <p>Original: Guide Michael to the armchair , you will find them at the dishwasher<br/>
-            Rephrased: <span class="green">show Micheal the way to the armchair, they're over by the dishwasher</span> </p>
+            Good rephrasing: <span class="green">show Micheal the way to the armchair, they're over by the dishwasher</span> </p>
 
 
         <p>Original: Go to the foyer, meet Alice, and lead her to the living room.<br/>
-        Rephrased: <span class="red">Guide Alice to the living room.</span><br/>
+        Bad Rephrasing: <span class="red">Guide Alice to the living room.</span><br/>
         <strong>Reason: </strong> The rephrased command doesn't include all of the information from the original command. Specifically, it doesn't include that Alice can be found in the foyer.</p>
 
         <p>Original: Find a person in the bedroom and tell them the time.<br/>
-        Rephrased: <span class="red"> Tell the time then find someone in the bedroom.</span><br/>
+        Bad rephrasing: <span class="red"> Tell the time then find someone in the bedroom.</span><br/>
         <strong>Reason: </strong> The rephrased command changes the meaning of the command. Specifically, it tells the robot to tell the user the time, when it should tell the robot to tell someone in the bedroom the time.</p>
     </div>
         </div>
@@ -249,7 +255,7 @@ function jaccard_distance(a, b, c) {
 
        <div class="page" id="1">
            <p>This HIT has 12 commands for you to rephrase, then 2 entries for your own custom commands.</p>
-           <p>Please read the instructions, as consistent failure to apply the guidelines will lead to your work being rejected! </p>
+           <p>Please read the instructions, as failure to apply the guidelines will lead to your work being rejected!</p>
                <p>Use the "next" button to continue.</p>
     </p></div>
 
@@ -321,7 +327,7 @@ function jaccard_distance(a, b, c) {
     </p></div>
 
                 <div class="page" id="15">
-                                    <p>Write a new command you think the robot could do:</p>
+                                    <p>And, one more time: Write a new command you think the robot could do:</p>
     <crowd-input name="custom2" placeholder="Write a new command you would give to the robot" required></crowd-input>
     </p></div>
 
@@ -364,12 +370,12 @@ function jaccard_distance(a, b, c) {
         let input = page.querySelector("crowd-input");
 
         let original_command = page.querySelector(".original-command").innerText.trim();
-        let original_tokens = original_command.split(/[ ,]+/).filter(Boolean);
+        let original_tokens = original_command.toLowerCase().split(/[ ,]+/).filter(Boolean);
 
         //input.addEventListener("keypress", make_thresholder(original_command));
         input.addEventListener("keyup", function(event) {
             let input_text = event.target.value.trim();
-            let input_tokens = input_text.split(/[ ,]+/).filter(Boolean);
+            let input_tokens = input_text.toLowerCase().split(/[ ,]+/).filter(Boolean);
             let dist = edit_dist(input_text, original_command);
             let jacc_dist = jaccard_distance(input_tokens, original_tokens);
             let percentage_change = dist / original_command.length;

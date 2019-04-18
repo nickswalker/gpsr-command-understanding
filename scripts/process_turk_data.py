@@ -6,14 +6,17 @@ rephrasings = []
 new = []
 
 
-def process_turk_file(path):
+def process_turk_files(paths, filter_rejected=True):
     def drop_trailing_num(name):
         try:
             return next(re.finditer(r'[\D\.]*',name)).group(0)
         except:
             return name
 
-    frame = pd.read_csv(path)
+    frame = pd.concat([pd.read_csv(path, na_filter=False) for path in paths])
+    if filter_rejected:
+        frame = frame.drop(frame["RejectionTime"] != "")
+
     data_views = []
     for n in range(1, 13):
         columns = ["Input.command" + str(n),"Answer.utterance" + str(n), "Input.parse" + str(n), "Input.parse_ground" + str(n),  "WorkerId"]
@@ -23,11 +26,11 @@ def process_turk_file(path):
     for n in range(1, 3):
         new_views.append(frame[["Answer.custom" + str(n), "WorkerId"]].rename(columns=drop_trailing_num))
     new = pd.concat(new_views)
-    other_data = frame.drop(columns=[ c for c in frame.columns if "Input" in c or "Answer" in c])
+    other_data = frame.drop(columns=[ c for c in frame.columns if ("Input" in c or "Answer" in c) and not (c == "Answer.comment")])
     return rephrasings, new, other_data
 
 
-rephrasings, new, other_data = process_turk_file("../data/test_hit_2.csv")
+rephrasings, new, other_data = process_turk_files(["../data/test_hit_2.csv"] + ["../data/hit_0_1_3.csv"])
 
 rephrasings["EditDistance"] = rephrasings.apply(lambda row: edit_distance(row["Input.command"],row["Answer.utterance"]) / len(row["Input.command"]), axis=1)
 rephrasings["JaccardDistance"] = rephrasings.apply(lambda row: jaccard_distance(set(row["Input.command"].split(" ")),set(row["Answer.utterance"].split(" "))), axis=1)
@@ -45,6 +48,7 @@ turker_performance = pd.DataFrame()
 turker_performance["HITTime"] = other_data.groupby("WorkerId")["WorkTimeInSeconds"].mean()
 turker_performance["MeanEditDistance"] = rephrasings.groupby("WorkerId")["EditDistance"].mean()
 turker_performance["MeanJaccardDistance"] = rephrasings.groupby("WorkerId")["JaccardDistance"].mean()
+turker_performance["Comment"] = other_data.groupby("WorkerId")["Answer.comment"]
 for _, (original, parse, rephrasing, edit, jaccard) in rephrasings[["Input.command","Input.parse","Answer.utterance", "EditDistance","JaccardDistance"]].iterrows():
     print(original)
     print(parse)
@@ -60,3 +64,5 @@ for name, group in new_by_worker:
     for custom in group["Answer.custom"]:
         print(custom)
         print("")
+
+print("{} workers provided {} rephrasings and {} new commands".format(len(by_worker),len(rephrasings),len(new)))
