@@ -3,8 +3,8 @@ import copy
 from lark import Tree
 
 from gpsr_semantic_parser.grammar import CombineExpressions, tree_printer, DiscardVoid
-from gpsr_semantic_parser.util import get_placeholders, replace_child_in_tree
-from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized
+from gpsr_semantic_parser.util import get_placeholders, replace_child_in_tree, has_placeholders
+from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 from queue import Queue
 
 
@@ -44,7 +44,7 @@ def generate_random_pair(start_symbols, production_rules, semantics_rules, yield
     return next(generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rules, yield_requires_semantics=yield_requires_semantics, branch_cap=1, generator=generator))
 
 
-def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules, start_semantics=None, yield_requires_semantics=True, branch_cap=-1, generator=None):
+def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules, start_semantics=None, yield_requires_semantics=True, branch_cap=None, generator=None):
     """
     Expand the start_symbols in breadth first order. At each expansion, see if we have an associated semantic template.
     If the current expansion has a semantics associated, also apply the expansion to the semantics.
@@ -113,12 +113,12 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
         """
 
 
-def expand_pair_full(sentence, semantics, production_rules, branch_cap=-1, generator=None):
-    return next(generate_sentence_parse_pairs(sentence, production_rules, {}, start_semantics=semantics,
-                                       branch_cap=branch_cap, generator=generator))
+def expand_pair_full(sentence, semantics, production_rules, branch_cap=None, generator=None):
+    return generate_sentence_parse_pairs(sentence, production_rules, {}, start_semantics=semantics,
+                                       branch_cap=branch_cap, generator=generator)
 
 
-def expand_pair(sentence, semantics, production_rules, branch_cap=-1, generator=None):
+def expand_pair(sentence, semantics, production_rules, branch_cap=None, generator=None):
         replace_token = list(sentence.scan_values(lambda x: x in production_rules.keys()))
 
         if not replace_token:
@@ -126,7 +126,13 @@ def expand_pair(sentence, semantics, production_rules, branch_cap=-1, generator=
 
         if generator:
             replace_token = generator.choice(replace_token)
-            productions = generator.sample(production_rules[replace_token],k=branch_cap)
+            replacement_rules = production_rules[replace_token]
+            if branch_cap:
+                productions = generator.sample(replacement_rules, k=branch_cap)
+            else:
+                # Use all of the branches
+                productions = production_rules[replace_token]
+                generator.shuffle(productions)
         else:
             # We know we have at least one, so we'll just use the first
             replace_token = replace_token[0]
@@ -163,3 +169,19 @@ def expand_all_semantics(production_rules, semantics_rules):
         yield from generate_sentence_parse_pairs(utterance, production_rules, semantics_rules, False)
     return
 
+
+def pairs_without_placeholders(rules, semantics, only_in_grammar=False):
+    pairs = expand_all_semantics(rules, semantics)
+    out = {}
+    all_utterances_in_grammar = set(generate_sentences(ROOT_SYMBOL, rules))
+    for utterance, parse in pairs:
+        if has_placeholders(utterance) or has_placeholders(parse):
+            # This case is almost certainly a bug with the annotations
+            print("Skipping pair for {} because it still has placeholders after expansion".format(
+                tree_printer(utterance)))
+            continue
+        # If it's important that we only get pairs that are in the grammar, check to make sure
+        if only_in_grammar and not utterance in all_utterances_in_grammar:
+            continue
+        out[tree_printer(utterance)] = tree_printer(parse)
+    return out

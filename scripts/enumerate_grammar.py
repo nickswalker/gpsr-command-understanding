@@ -1,117 +1,98 @@
+import itertools
 import os
+import numpy as np
 from os.path import join
 
-from gpsr_semantic_parser.grammar import prepare_anonymized_rules, tree_printer
+from gpsr_semantic_parser.generator import Generator
+from gpsr_semantic_parser.grammar import tree_printer
+from gpsr_semantic_parser.loading_helpers import load_all_2018
 from gpsr_semantic_parser.tokens import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics
-from gpsr_semantic_parser.semantics import load_semantics
 from gpsr_semantic_parser.util import has_placeholders
 
-out_root = os.path.abspath(os.path.dirname(__file__) + "/../data")
-grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
-common_path = join(grammar_dir, "common_rules.txt")
+out_root = os.path.abspath(os.path.dirname(__file__) + "/../../data")
+grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
-cat1_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
-cat2_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
-cat3_rules = prepare_anonymized_rules(common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
-cat1_semantics = load_semantics(join(grammar_dir, "gpsr_category_1_semantics.txt"))
-cat2_semantics = load_semantics([join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt")])
-cat3_semantics = load_semantics(join(grammar_dir, "gpsr_category_3_semantics.txt"))
-
-cat1_sentences = generate_sentences(ROOT_SYMBOL, cat1_rules)
-cat2_sentences = generate_sentences(ROOT_SYMBOL, cat2_rules)
-cat3_sentences = generate_sentences(ROOT_SYMBOL, cat3_rules)
-
-cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
-cat1_pairs = {utterance: parse for utterance, parse in cat1_pairs}
-
-cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
-cat2_pairs = {utterance: parse for utterance, parse in cat2_pairs}
-
-cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
-cat3_pairs = {utterance: parse for utterance, parse in cat3_pairs}
+cmd_gen = Generator(grammar_format_version=2018)
+generator = load_all_2018(cmd_gen, grammar_dir)
 
 
-cat1_sentences = set([x for x in cat1_sentences])
-cat2_sentences = set([x for x in cat2_sentences])
-cat2_sentences_unique = cat2_sentences.difference(cat1_sentences)
-cat3_sentences = set([x for x in cat3_sentences])
-cat3_sentences_unique = cat3_sentences.difference(cat1_sentences).difference(cat2_sentences)
+def get_annotated_sentences(sentences_and_pairs):
+    sentences, pairs = sentences_and_pairs
+    annotated_sentences = set(pairs.keys())
+    # Only keep annotations that cover sentences actually in the grammar
+    useless_annotations = annotated_sentences.difference(sentences)
+    annotated_sentences.intersection_update(sentences)
+    return annotated_sentences
 
-all_sentences = cat1_sentences.union(cat2_sentences).union(cat3_sentences)
 
-cat1_annotated_sentences = set(cat1_pairs.keys())
-# Only keep annotations that cover sentences actually in the grammar
-cat1_annotated_sentences.intersection_update(cat1_sentences)
-cat1_parses = set(cat1_pairs.values())
+cat_sentences = [set(generate_sentences(ROOT_SYMBOL, rules)) for _,rules, _, _ in generator]
+pairs = [{utterance: parse for utterance, parse in expand_all_semantics(rules, semantics)} for _, rules, _, semantics in generator]
+unique = []
+for i, _ in enumerate(cat_sentences):
+    prev_cats = cat_sentences[:i]
+    if prev_cats:
+    # Don't count the sentence as unique unless it hasn't happened in any earlier categories
+        unique.append(cat_sentences[i].difference())
+    else:
+        unique.append(cat_sentences[i])
 
-cat2_annotated_sentences = set(cat2_pairs.keys())
-cat2_annotated_sentences.intersection_update(cat2_sentences)
-cat2_with_parse_unique = cat2_annotated_sentences.difference(cat1_sentences)
-cat2_parses = set(cat2_pairs.values()).difference(cat1_parses)
+all_sentences = set().union(*cat_sentences)
+all_pairs = pairs
 
-cat3_annotated_sentences = set(cat3_pairs.keys())
-cat3_annotated_sentences.intersection_update(cat3_sentences)
-cat3_with_parse_unique = cat3_annotated_sentences.difference(cat1_sentences).difference(cat2_sentences)
-cat3_parses = set(cat3_pairs.values()).difference(cat2_parses).difference(cat1_parses)
+annotated = [get_annotated_sentences(x) for x in zip(cat_sentences, pairs)]
 
-combined_annotations = cat1_annotated_sentences.union(cat2_annotated_sentences).union(cat3_annotated_sentences)
+unique_annotated = [get_annotated_sentences((unique_sen, cat_pairs)) for unique_sen, cat_pairs in zip(unique, pairs)]
+unique_sentence_parses = [[pairs[ann_sen] for ann_sen in annotated] for annotated, pairs in zip(unique_annotated, pairs)]
+unique_sentence_parses = [set(x) for x in unique_sentence_parses]
+
+combined_annotations = set().union(*annotated)
 combined_annotations.intersection_update(all_sentences)
 
-cat1_parseless = cat1_sentences.difference(cat1_annotated_sentences)
-cat2_parseless = cat2_sentences.difference(cat2_annotated_sentences)
-cat3_parseless = cat3_sentences.difference(cat3_annotated_sentences)
+parseless = [sen.difference(annotated_sentences) for sen, annotated_sentences in zip(cat_sentences, annotated)]
 
-#sentence_parse_pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, cat1_rules, cat1_semantics)
+out_paths = [join(out_root, str(i)+"_sentences.txt") for i in range(1, 4)]
 
-sentences1_out_path = join(out_root, "1_sentences.txt")
-sentences2_out_path = join(out_root, "2_sentences.txt")
-sentences3_out_path = join(out_root, "3_sentences.txt")
-
-for cat_out_path, sentences in zip([sentences1_out_path, sentences2_out_path, sentences3_out_path],[cat1_sentences, cat2_sentences, cat3_sentences]):
+for cat_out_path, sentences in zip(out_paths,cat_sentences):
     with open(cat_out_path, "w") as f:
         for sentence in sentences:
             assert not has_placeholders(sentence)
             f.write(tree_printer(sentence) + '\n')
 
-pairs1_out_path = join(out_root, "1_pairs.txt")
-pairs2_out_path = join(out_root, "2_pairs.txt")
-pairs3_out_path = join(out_root, "3_pairs.txt")
-cat1_pairs = expand_all_semantics(cat1_rules, cat1_semantics)
-cat2_pairs = expand_all_semantics(cat2_rules, cat2_semantics)
-cat3_pairs = expand_all_semantics(cat3_rules, cat3_semantics)
-for cat_out_path, pairs in zip([pairs1_out_path, pairs2_out_path, pairs3_out_path],[cat1_pairs, cat2_pairs, cat3_pairs]):
+out_paths = [join(out_root, str(i)+"_pairs.txt") for i in range(1, 4)]
+
+
+for cat_out_path, pairs in zip(out_paths,all_pairs):
     with open(cat_out_path, "w") as f:
-        for sentence, parse in pairs:
+        for sentence, parse in pairs.items():
             if has_placeholders(sentence) or has_placeholders(parse):
                 print("Skipping pair for {} because it still has placeholders after expansion".format(tree_printer(sentence)))
                 continue
             f.write(tree_printer(sentence) + '\n' + tree_printer(parse) + '\n')
-            if "Wildcard" in tree_printer(sentence):
-                print("hi")
 
 meta_out_path = join(out_root, "annotations_meta.txt")
 with open(meta_out_path, "w") as f:
     f.write("Coverage:\n")
-    f.write("cat1 {0}/{1} {2:.1f}%\n".format(len(cat1_annotated_sentences), len(cat1_sentences), 100.0 * len(cat1_annotated_sentences) / len(cat1_sentences)))
-    f.write("\t unique parses: {}\n".format(len(cat1_parses)))
-    f.write("cat2 {0}/{1} {2:.1f}%\n".format(len(cat2_annotated_sentences), len(cat2_sentences), 100.0 * len(cat2_annotated_sentences) / len(cat2_sentences)))
-    f.write("\t unique {0}/{1} {2:.1f}%\n".format(len(cat2_with_parse_unique), len(cat2_sentences_unique), 100.0 * len(cat2_with_parse_unique) / len(cat2_sentences_unique)))
-    f.write("\t unique parses: {}\n".format(len(cat2_parses)))
-    f.write("cat3 {0}/{1} {2:.1f}%\n".format(len(cat3_annotated_sentences), len(cat3_sentences), 100.0 * len(cat3_annotated_sentences) / len(cat3_sentences)))
-    f.write("\t unique {0}/{1} {2:.1f}%\n".format(len(cat3_with_parse_unique), len(cat3_sentences_unique), 100.0 * len(cat3_with_parse_unique) / len(cat3_sentences_unique)))
-    f.write("\t unique parses: {}\n".format(len(cat3_parses)))
+    cat_parse_lengths = []
+    cat_sen_lengths = []
+    for i, (annotated_sen, sen, unique_parses) in enumerate(zip(annotated, cat_sentences, unique_sentence_parses)):
+        f.write("cat{0} {1}/{2} {3:.1f}%\n".format(i+1, len(annotated_sen), len(sen), 100.0 * len(annotated_sen) / len(sen)))
+        f.write("\t unique parses: {}\n".format(len(unique_parses)))
+        cat_sen_lengths.append([len(tree_printer(sentence).split(" ")) for sentence in sen])
+        avg_sentence_length = np.mean(cat_sen_lengths[i])
+        cat_parse_lengths.append([len(tree_printer(parse).split(" ")) for parse in unique_parses])
+        avg_parse_length = np.mean(cat_parse_lengths[i])
+        f.write("\t avg sentence length (tokens): {:.2f} avg parse length (tokens): {:.2f}\n".format(avg_sentence_length, avg_parse_length))
+
 
     f.write("combined {0}/{1} {2:.1f}%\n".format(len(combined_annotations), len(all_sentences), 100.0 * len(combined_annotations) / len(all_sentences)))
-    f.write("combined unique parses: {}".format(len(cat1_parses.union(cat2_parses).union(cat3_parses))))
+    f.write("combined unique parses: {}\n".format(len(set().union(*unique_sentence_parses))))
 
+    all_sen_lengths = [length for cat in cat_sen_lengths for length in cat]
+    all_parse_lengths = [length for cat in cat_parse_lengths for length in cat]
+    f.write("combined avg sentence length (tokens): {:.2f} avg parse length (tokens): {:.2f}\n".format(np.mean(all_sen_lengths), np.mean(all_parse_lengths)))
 print("No parses for:")
-print("Cat 1:")
-for sentence in sorted(map(tree_printer, cat1_parseless)):
-    print(sentence)
-print("\n---------------------------------------\nCat 2:")
-for sentence in sorted(map(tree_printer, cat2_parseless)):
-    print(sentence)
-print("\n---------------------------------------\nCat 3:")
-for sentence in sorted(map(tree_printer, cat3_parseless)):
-    print(sentence)
+for cat in parseless:
+    for sentence in sorted(map(tree_printer, cat)):
+        print(sentence)
+    print("-----------------")

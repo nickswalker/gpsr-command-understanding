@@ -1,4 +1,4 @@
-import operator
+from collections import defaultdict
 
 from gpsr_semantic_parser.tokens import WildCard, NonTerminal
 
@@ -48,3 +48,43 @@ def get_wildcards(trees):
         for item in extracted:
             wildcards.add(item)
     return wildcards
+
+
+def determine_unique_cat_data(cat_data, keep_new_utterance_repeat_parse_for_lower_cat=True):
+    unique_utterance_pair = []
+    unique_parse_pair = []
+
+    for i, cat_pairs in enumerate(cat_data):
+        cat_unique_utterance_pair = cat_pairs
+        cat_unique_parse_pair = defaultdict(list)
+
+        for utterance, parse in cat_unique_utterance_pair.items():
+            utterance_unique_to_cat = True
+            parse_unique_to_cat = True
+            for j, (prev_cat_by_utt, prev_cat_by_parse) in enumerate(zip(unique_utterance_pair[:i], unique_parse_pair[:i])):
+
+                # If this utterance was in a prev cat, then we know that neither the utterance
+                # nor the parse are unique (because utterances always produce a unique parse)
+                if utterance in prev_cat_by_utt.keys():
+                    utterance_unique_to_cat = False
+                    parse_unique_to_cat = False
+                    break
+
+                # Even if the utterance is unique, its parse might not be.
+                # In that case, we take the parse to "belong to the previous category", and tack
+                # on this utterance as training data in category 1
+                if parse in prev_cat_by_parse.keys():
+                    prev_cat_by_parse[parse].append(utterance)
+                    parse_unique_to_cat = False
+
+            if utterance_unique_to_cat:
+                cat_unique_utterance_pair[utterance] = parse
+            if parse_unique_to_cat:
+                cat_unique_parse_pair[parse].append(utterance)
+        unique_utterance_pair.append(cat_unique_utterance_pair)
+        unique_parse_pair.append(cat_unique_parse_pair)
+    return unique_utterance_pair, unique_parse_pair
+
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
