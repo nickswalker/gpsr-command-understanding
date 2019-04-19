@@ -33,6 +33,8 @@ def validate_args(args):
         args.name = "{}_{}".format(train_cats, test_cats)
         if args.use_parse_split:
             args.name += "_parse"
+        if args.groundings:
+            args.name += "_g" + str(args.groundings)
 
 
 def save_data(data, out_path):
@@ -85,7 +87,7 @@ def main():
     test_out_path = os.path.join(pairs_out_path, "test.txt")
     meta_out_path = os.path.join(pairs_out_path, "meta.txt")
 
-    #os.mkdir(pairs_out_path)
+    os.mkdir(pairs_out_path)
     
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
