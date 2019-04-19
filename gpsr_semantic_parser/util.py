@@ -55,10 +55,10 @@ def determine_unique_cat_data(cat_data, keep_new_utterance_repeat_parse_for_lowe
     unique_parse_pair = []
 
     for i, cat_pairs in enumerate(cat_data):
-        cat_unique_utterance_pair = cat_pairs
+        cat_unique_utterance_pair = {}
         cat_unique_parse_pair = defaultdict(list)
 
-        for utterance, parse in cat_unique_utterance_pair.items():
+        for utterance, parse in cat_pairs.items():
             utterance_unique_to_cat = True
             parse_unique_to_cat = True
             for j, (prev_cat_by_utt, prev_cat_by_parse) in enumerate(zip(unique_utterance_pair[:i], unique_parse_pair[:i])):
@@ -71,11 +71,12 @@ def determine_unique_cat_data(cat_data, keep_new_utterance_repeat_parse_for_lowe
                     break
 
                 # Even if the utterance is unique, its parse might not be.
-                # In that case, we take the parse to "belong to the previous category", and tack
-                # on this utterance as training data in category 1
                 if parse in prev_cat_by_parse.keys():
-                    prev_cat_by_parse[parse].append(utterance)
                     parse_unique_to_cat = False
+                    # In that case, we can take the parse to "belong to the previous category", and tack
+                    # on this utterance as training data in category 1
+                    if keep_new_utterance_repeat_parse_for_lower_cat:
+                        prev_cat_by_parse[parse].append(utterance)
 
             if utterance_unique_to_cat:
                 cat_unique_utterance_pair[utterance] = parse
