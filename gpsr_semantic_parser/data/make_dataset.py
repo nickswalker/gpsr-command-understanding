@@ -3,13 +3,16 @@ import operator
 import os
 import random
 import argparse
-from collections import Counter, defaultdict
+from collections import Counter
+
+import lark
+import more_itertools
 
 from gpsr_semantic_parser.generation import pairs_without_placeholders
-from gpsr_semantic_parser.generator import Generator, get_grounding_per_each_parse, get_grounding_per_each_parse_by_cat
+from gpsr_semantic_parser.generator import Generator, get_grounding_per_each_parse_by_cat
 from gpsr_semantic_parser.grammar import tree_printer
 from gpsr_semantic_parser.loading_helpers import load_all_2018
-from gpsr_semantic_parser.util import determine_unique_cat_data, merge_dicts
+from gpsr_semantic_parser.util import determine_unique_cat_data, save_data, flatten, merge_dicts
 
 
 def validate_args(args):
@@ -27,21 +30,21 @@ def validate_args(args):
             print("Please ensure split percentages sum to 1")
             exit(1)
 
+    if not (args.anonymized or args.groundings or args.turk):
+        print("Must use at least one of anonymized or grounded pairs")
+
     if not args.name:
         train_cats = "".join([str(x) for x in args.train_categories])
         test_cats = "".join([str(x) for x in args.test_categories])
         args.name = "{}_{}".format(train_cats, test_cats)
         if args.use_parse_split:
             args.name += "_parse"
+        if args.anonymized:
+            args.name += "_a"
         if args.groundings:
             args.name += "_g" + str(args.groundings)
-
-
-def save_data(data, out_path):
-    data = sorted(data, key=lambda x: len(x[0]))
-    with open(out_path, "w") as f:
-        for sentence, parse in data:
-            f.write(sentence + '\n' + str(parse) + '\n')
+        if args.turk:
+            args.name += "_t"
 
 
 def get_pairs_by_cats(data, train_categories, test_categories):
@@ -60,21 +63,48 @@ def get_pairs_by_cats(data, train_categories, test_categories):
     return train_pairs, test_pairs
 
 
+def load_turk_data(path, lambda_parser):
+    pairs = {}
+    with open(path) as f:
+        line_generator = more_itertools.peekable(enumerate(f))
+        while line_generator:
+            line_num, line = next(line_generator)
+            line = line.strip("\n")
+            if len(line) == 0:
+                continue
+
+            next_pair = line_generator.peek(None)
+            if not next_pair:
+                raise RuntimeError()
+            next_line_num, next_line = next(line_generator)
+
+            source_sequence, target_sequence = line, next_line
+
+            try:
+                pairs[source_sequence] = tree_printer(lambda_parser.parse(target_sequence))
+            except lark.exceptions.LarkError:
+                print("Skipping malformed parse: {}".format(target_sequence))
+    return pairs
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-s","--split", default=[.7,.1,.2], nargs='+', type=float)
     parser.add_argument("-trc","--train-categories", default=[1, 2, 3], nargs='+', type=int)
     parser.add_argument("-tc","--test-categories", default=[1, 2, 3], nargs='+', type=int)
     parser.add_argument("-p","--use-parse-split", action='store_true', default=False)
-    parser.add_argument("-g","--groundings", required=False, type=int)
-    parser.add_argument("--name", default=None)
-    parser.add_argument("--seed", default=0, required=False)
+    parser.add_argument("-g","--groundings", required=False, type=int, default=0)
+    parser.add_argument("-a","--anonymized", required=False, default=True, action="store_true")
+    parser.add_argument("-na","--no-anonymized", required=False, dest="anonymized", action="store_false")
+    parser.add_argument("-t","--turk", required=False, default=True, type=str)
+    parser.add_argument("--name", default=None, type=str)
+    parser.add_argument("--seed", default=0, required=False, type=int)
     parser.add_argument("-i","--incremental-datasets", action='store_true', required=False)
     args = parser.parse_args()
 
     validate_args(args)
 
-    generator = Generator(grammar_format_version=2018)
+    cmd_gen = Generator(grammar_format_version=2018)
     random_source = random.Random(args.seed)
 
     different_test_dist = False
@@ -87,13 +117,15 @@ def main():
     test_out_path = os.path.join(pairs_out_path, "test.txt")
     meta_out_path = os.path.join(pairs_out_path, "meta.txt")
 
-    os.mkdir(pairs_out_path)
+    #os.mkdir(pairs_out_path)
     
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
-    generator = load_all_2018(generator, grammar_dir)
+    generator = load_all_2018(cmd_gen, grammar_dir)
 
-    pairs = [pairs_without_placeholders(rules, semantics) for _, rules, _, semantics in generator]
+    pairs = [{}, {}, {}]
+    if args.anonymized:
+        pairs = [pairs_without_placeholders(rules, semantics) for _, rules, _, semantics in generator]
 
     # For now this only works with all data
     if args.groundings and len(args.train_categories) == 3:
@@ -102,6 +134,10 @@ def main():
             for cat_pairs, groundings in zip(pairs, groundings):
                 for utt, parse_anon, _ in groundings:
                     cat_pairs[tree_printer(utt)] = tree_printer(parse_anon)
+
+    if args.turk and len(args.train_categories) == 3:
+        turk_pairs = load_turk_data(args.turk, cmd_gen.lambda_parser)
+        pairs[0] = merge_dicts(pairs[0], turk_pairs)
 
     #pairs_in = [pairs_without_placeholders(rules, semantics, only_in_grammar=True) for _, rules, _, semantics in generator]
     by_utterance, by_parse = determine_unique_cat_data(pairs)
@@ -112,9 +148,7 @@ def main():
         data_to_split = by_utterance
     train_pairs, test_pairs = get_pairs_by_cats(data_to_split, args.train_categories, args.test_categories)
 
-
-    # Randomize for the split, but then sort by utterance length before we save out so that things are easier to read
-
+    # Randomize for the split, but then sort by utterance length before we save out so that things are easier to read.
     # If these lists are the same, they need to be shuffled the same way...
     random.Random(args.seed).shuffle(train_pairs)
     random.Random(args.seed).shuffle(test_pairs)
@@ -133,16 +167,9 @@ def main():
         split2 = int((train_percentage + val_percentage) * len(train_pairs))
         train, val, test = train_pairs[:split1], train_pairs[split1:split2], train_pairs[split2:]
 
-
     # Parse splits would have stored parse-(utterance list) pairs, so lets
     # flatten out those lists if we need to.
     if args.use_parse_split:
-        def flatten(original):
-            flattened = []
-            for parse, utterances in original:
-                for utterance in utterances:
-                    flattened.append((utterance, parse))
-            return flattened
         train = flatten(train)
         val = flatten(val)
         test = flatten(test)

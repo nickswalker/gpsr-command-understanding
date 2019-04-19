@@ -2,6 +2,10 @@ import re
 
 from nltk.metrics.distance import edit_distance, jaccard_distance
 import pandas as pd
+
+from gpsr_semantic_parser.data.make_dataset import get_pairs_by_cats
+from gpsr_semantic_parser.util import determine_unique_cat_data
+
 rephrasings = []
 new = []
 
@@ -15,22 +19,24 @@ def process_turk_files(paths, filter_rejected=True):
 
     frame = pd.concat([pd.read_csv(path, na_filter=False) for path in paths])
     if filter_rejected:
-        frame = frame.drop(frame["RejectionTime"] != "")
+        frame.drop(frame[frame["AssignmentStatus"] == "Rejected"].index, inplace=True)
 
     data_views = []
     for n in range(1, 13):
         columns = ["Input.command" + str(n),"Answer.utterance" + str(n), "Input.parse" + str(n), "Input.parse_ground" + str(n),  "WorkerId"]
         data_views.append(frame[columns].rename(columns=drop_trailing_num))
     rephrasings = pd.concat(data_views)
+    rephrasings.sort_values(by="Answer.utterance", inplace=True)
     new_views = []
     for n in range(1, 3):
         new_views.append(frame[["Answer.custom" + str(n), "WorkerId"]].rename(columns=drop_trailing_num))
     new = pd.concat(new_views)
+    new.sort_values(by="Answer.custom", inplace=True)
     other_data = frame.drop(columns=[ c for c in frame.columns if ("Input" in c or "Answer" in c) and not (c == "Answer.comment")])
     return rephrasings, new, other_data
 
 
-rephrasings, new, other_data = process_turk_files(["../data/test_hit_2.csv"] + ["../data/hit_0_1_3.csv"])
+rephrasings, new, other_data = process_turk_files(["../data/hit_0_1_3.csv"])
 
 rephrasings["EditDistance"] = rephrasings.apply(lambda row: edit_distance(row["Input.command"],row["Answer.utterance"]) / len(row["Input.command"]), axis=1)
 rephrasings["JaccardDistance"] = rephrasings.apply(lambda row: jaccard_distance(set(row["Input.command"].split(" ")),set(row["Answer.utterance"].split(" "))), axis=1)
@@ -61,8 +67,19 @@ print("--------------")
 new_by_worker = new.groupby(new["WorkerId"])
 for name, group in new_by_worker:
     print(name)
-    for custom in group["Answer.custom"]:
-        print(custom)
+    for custom_utt in group["Answer.custom"]:
+        print(custom_utt)
         print("")
 
 print("{} workers provided {} rephrasings and {} new commands".format(len(by_worker),len(rephrasings),len(new)))
+
+rephrasings_dict = {}
+with open("../data/all_rephrasings.txt",'w') as outfile:
+    for _, (utt, parse) in rephrasings[["Answer.utterance","Input.parse"]].sort_values(by="Answer.utterance").iterrows():
+        outfile.write(utt + "\n")
+        outfile.write(parse + "\n")
+        rephrasings_dict[utt] = parse
+
+with open("../data/all_custom.txt",'w') as outfile:
+    for utt in new["Answer.custom"].sort_values():
+        outfile.write(utt + "\n")

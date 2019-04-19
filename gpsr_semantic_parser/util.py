@@ -36,6 +36,7 @@ def replace_child_in_tree(tree, child_target, replacement, only_once=False):
             return did_replace
     return did_replace
 
+
 def get_wildcards(trees):
     """
     Get all wildcards that occur in a grammar
@@ -89,3 +90,18 @@ def determine_unique_cat_data(cat_data, keep_new_utterance_repeat_parse_for_lowe
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
+
+def save_data(data, out_path):
+    data = sorted(data, key=lambda x: len(x[0]))
+    with open(out_path, "w") as f:
+        for sentence, parse in data:
+            f.write(sentence + '\n' + str(parse) + '\n')
+
+
+def flatten(original):
+    flattened = []
+    for parse, utterances in original:
+        for utterance in utterances:
+            flattened.append((utterance, parse))
+    return flattened

@@ -16,7 +16,7 @@ EOF
 }
 
 
-if [[ $# < 1 ]]; then
+if [[ $# < 2 ]]; then
     echo "Pass a path to a directory of experiments"
     exit 1
 fi
@@ -26,6 +26,12 @@ experiment_name=$1
 shift
 experiment_path=$1
 shift
+
+if [[ ! -d "$experiment_path" ]]; then
+    echo "Second argument should be a path to a directory of experiment configurations"
+    exit 1
+fi
+
 
 results_path=${experiment_path}/results_${experiment_name}
 mkdir -p $results_path
