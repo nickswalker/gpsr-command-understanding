@@ -119,7 +119,7 @@ def main():
     test_out_path = os.path.join(pairs_out_path, "test.txt")
     meta_out_path = os.path.join(pairs_out_path, "meta.txt")
 
-    if args.overwrite:
+    if args.force_overwrite:
         shutil.rmtree(pairs_out_path)
     os.mkdir(pairs_out_path)
     
