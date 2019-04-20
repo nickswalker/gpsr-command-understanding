@@ -3,6 +3,7 @@ import operator
 import os
 import random
 import argparse
+import shutil
 from collections import Counter
 
 import lark
@@ -100,6 +101,7 @@ def main():
     parser.add_argument("--name", default=None, type=str)
     parser.add_argument("--seed", default=0, required=False, type=int)
     parser.add_argument("-i","--incremental-datasets", action='store_true', required=False)
+    parser.add_argument("-f", "--force-overwrite", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
     validate_args(args)
@@ -117,7 +119,9 @@ def main():
     test_out_path = os.path.join(pairs_out_path, "test.txt")
     meta_out_path = os.path.join(pairs_out_path, "meta.txt")
 
-    #os.mkdir(pairs_out_path)
+    if args.overwrite:
+        shutil.rmtree(pairs_out_path)
+    os.mkdir(pairs_out_path)
     
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
