@@ -79,8 +79,5 @@
     "should_log_learning_rate": true,
     "should_log_parameter_statistics": false,
     "validation_metric": "+seq_acc"
-  },
-  "vocabulary": {
-    "directory_path": "vocabulary"
   }
 }
