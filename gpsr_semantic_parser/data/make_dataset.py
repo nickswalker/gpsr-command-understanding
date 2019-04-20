@@ -94,10 +94,10 @@ def main():
     parser.add_argument("-trc","--train-categories", default=[1, 2, 3], nargs='+', type=int)
     parser.add_argument("-tc","--test-categories", default=[1, 2, 3], nargs='+', type=int)
     parser.add_argument("-p","--use-parse-split", action='store_true', default=False)
-    parser.add_argument("-g","--groundings", required=False, type=int, default=0)
+    parser.add_argument("-g","--groundings", required=False, type=int, default=None)
     parser.add_argument("-a","--anonymized", required=False, default=True, action="store_true")
     parser.add_argument("-na","--no-anonymized", required=False, dest="anonymized", action="store_false")
-    parser.add_argument("-t","--turk", required=False, default=True, type=str)
+    parser.add_argument("-t","--turk", required=False, default=None, type=str)
     parser.add_argument("--name", default=None, type=str)
     parser.add_argument("--seed", default=0, required=False, type=int)
     parser.add_argument("-i","--incremental-datasets", action='store_true', required=False)
@@ -119,7 +119,7 @@ def main():
     test_out_path = os.path.join(pairs_out_path, "test.txt")
     meta_out_path = os.path.join(pairs_out_path, "meta.txt")
 
-    if args.force_overwrite:
+    if args.force_overwrite and os.path.isdir(pairs_out_path):
         shutil.rmtree(pairs_out_path)
     os.mkdir(pairs_out_path)
     
