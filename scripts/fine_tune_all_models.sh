@@ -1,8 +1,7 @@
 if [ -d "fine_tune_results_cat2" ]; then
   rm -rf fine_tune_results_cat2
-  mkdir fine_tune_results_cat2
 fi
-
+mkdir fine_tune_results_cat2
 
 # Models to be trained
 models=("bert_base_seq2seq" "bert_large_seq2seq" "elmo_seq2seq" "openai_seq2seq" "glove_seq2seq" "seq2seq")
