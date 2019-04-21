@@ -56,7 +56,7 @@ dataset_name=$(basename $(dirname "${test_path}"))
 summary_path="${results_path}"/${dataset_name}_${test_name}_results_summary.txt
 
 # Clear this file
-"" > $summary_path
+echo "" > $summary_path
 
 gpu_arg="--cuda-device 0"
 if [[ ${use_cpu} = "true" ]]; then
