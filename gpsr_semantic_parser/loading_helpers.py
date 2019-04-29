@@ -95,48 +95,6 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
     return production_rules
 
 
-def prepare_grounded_rules(generator, common_rules_path, category_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
-    """
-        Prepare the production rules for a given GPSR category.
-        :param common_rules_path:
-        :param category_path:
-        :return:
-        """
-    if not isinstance(category_paths, list):
-        category_paths = [category_paths]
-    rules = generator.load_rules([common_rules_path] + category_paths)
-    grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
-
-    # This part of the grammar won't lend itself to any useful generalization from rephrasings
-    rules[WildCard("question")] = [Tree("expression",["question"])]
-    rules[WildCard("pron")] = [Tree("expression",["them"])]
-    return merge_dicts(rules, grounding_rules)
-
-
-def prepare_anonymized_rules(generator, common_rules_path, category_paths, show_debug_details=False):
-    """
-    Prepare the production rules for a given GPSR category, making some
-    typical adjustments to make the grammar usable
-    :param common_rules_path:
-    :param category_path:
-    :return:
-    """
-    if not isinstance(category_paths, list):
-        category_paths = [category_paths]
-    rules = generator.load_rules([common_rules_path] + category_paths)
-
-    all_rule_trees = [tree for _, trees in rules.items() for tree in trees ]
-    groundable_terms = get_wildcards(all_rule_trees)
-    groundable_terms.add(WildCard("object", "1"))
-    groundable_terms.add(WildCard("category", "1"))
-    groundable_terms.add(WildCard("whattosay"))
-    grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)
-
-    # We'll use the indeterminate pronoun for convenience
-    grounding_rules[WildCard("pron")] = [Tree("expression", ["them"])]
-    return merge_dicts(rules, grounding_rules)
-
-
 def load_all_2018(generator, grammar_dir):
 
     common_path = join(grammar_dir, "common_rules.txt")

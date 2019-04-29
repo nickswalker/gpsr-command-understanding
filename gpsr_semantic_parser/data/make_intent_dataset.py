@@ -8,11 +8,10 @@ import shutil
 
 from os.path import join
 
-from gpsr_semantic_parser.generator import Generator, get_grounding_per_each_parse_by_cat, get_utterance_slot_pairs
+from gpsr_semantic_parser.generator import Generator
 from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences
 from gpsr_semantic_parser.util import save_data
-from gpsr_semantic_parser.loading_helpers import load_slot
 from gpsr_semantic_parser.grammar import tree_printer
 
 def main():
@@ -46,11 +45,18 @@ def main():
     os.mkdir(pairs_out_path)
 
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
-    generator = load_slot(cmd_gen, grammar_dir)
-    for k,v in generator[0][3].items():
+    common_path = join(grammar_dir, "common_rules.txt")
+    paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
+    grammar_file_paths = [common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")]
+    semantics_file_paths = [join(grammar_dir, "gpsr_category_1_slot.txt"), join(grammar_dir, "common_rules_slot.txt")]
+
+    cmd_gen.load_set_of_rules(grammar_file_paths, semantics_file_paths, *paths)
+
+    generator = cmd_gen.rules[0]
+    for k,v in generator[3].items():
         print(k)
         print(v)
-    get_utterance_slot_pairs(generator, random_source)
+    cmd_gen.get_utterance_slot_pairs(random_source)
 
     #grounded_pairs = get_grounding_per_each_parse_by_cat(generator, random_source)
     #print(grounded_pairs[0][0][1].pretty())

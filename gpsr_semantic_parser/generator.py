@@ -4,9 +4,10 @@ from lark import Lark, Tree
 
 from gpsr_semantic_parser.generation import generate_sentence_parse_pairs, generate_sentence_slot_pairs, expand_pair_full
 from gpsr_semantic_parser.grammar import TypeConverter, expand_shorthand
-from gpsr_semantic_parser.util import get_wildcards, has_placeholders
+from gpsr_semantic_parser.util import get_wildcards, has_placeholders, merge_dicts
 from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 from gpsr_semantic_parser.grammar import tree_printer
+from gpsr_semantic_parser.loading_helpers import load_wildcard_rules, make_anonymized_grounding_rules
 
 from itertools import zip_longest
 
@@ -23,7 +24,15 @@ class Generator:
             start='start', parser="lalr", transformer=TypeConverter())
             self.lambda_parser = Lark(annotation_spec,
                              start='start', parser="lalr", transformer=TypeConverter())
+            self.rules = []
 
+    def load_set_of_rules(self, grammar_file_paths, semantics_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+        rules_raw = self.load_rules(grammar_file_paths)
+        rules_anon = self.prepare_anonymized_rules(grammar_file_paths)
+        rules_ground = self.prepare_grounded_rules(grammar_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
+        rules_semantic = self.load_semantics_rules(semantics_file_paths)
+
+        self.rules.append([rules_raw, rules_anon, rules_ground, rules_semantic])
 
     def parse_production_rule(self, line):
         #print(line)
@@ -96,6 +105,49 @@ class Generator:
 
         return prod_to_semantics
 
+    def prepare_grounded_rules(self, grammar_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+
+        if not isinstance(grammar_file_paths, list):
+            grammar_file_paths = [grammar_file_paths]
+        rules = self.load_rules(grammar_file_paths)
+        grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
+
+        # This part of the grammar won't lend itself to any useful generalization from rephrasings
+        rules[WildCard("question")] = [Tree("expression",["question"])]
+        rules[WildCard("pron")] = [Tree("expression",["them"])]
+        return merge_dicts(rules, grounding_rules)
+
+    def prepare_anonymized_rules(self, grammar_file_paths, show_debug_details=False):
+
+        if not isinstance(grammar_file_paths, list):
+            grammar_file_paths = [grammar_file_paths]
+        rules = self.load_rules(grammar_file_paths)
+
+        all_rule_trees = [tree for _, trees in rules.items() for tree in trees ]
+        groundable_terms = get_wildcards(all_rule_trees)
+        groundable_terms.add(WildCard("object", "1"))
+        groundable_terms.add(WildCard("category", "1"))
+        groundable_terms.add(WildCard("whattosay"))
+        grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)
+
+        # We'll use the indeterminate pronoun for convenience
+        grounding_rules[WildCard("pron")] = [Tree("expression", ["them"])]
+        return merge_dicts(rules, grounding_rules)
+
+    def get_utterance_slot_pairs(self, random_source):
+        grounded_examples = []
+
+        for rules, rules_anon, rules_ground, semantics in self.rules:
+            cat_groundings = {}
+
+            pairs = generate_sentence_slot_pairs(ROOT_SYMBOL, rules_ground, semantics, 
+                                            yield_requires_semantics=True,
+                                            branch_cap=1,
+                                            random_generator=random_source)
+            for sentence, semantics in pairs:
+                print(tree_printer(sentence))
+                print(tree_printer(semantics))
+
 
 def get_grounding_per_each_parse(generator, random_source):
     grounded_examples = {}
@@ -166,21 +218,3 @@ def get_grounding_per_each_parse_by_cat(generator, random_source):
                 cat_groundings[parse_anon] = (utterance, parse_anon, parse_ground)
         grounded_examples.append(list(cat_groundings.values()))
     return grounded_examples
-
-def get_utterance_slot_pairs(generator, random_source):
-    grounded_examples = []
-
-
-    for rules, rules_anon, rules_ground, semantics in generator:
-        cat_groundings = {}
-
-        pairs = generate_sentence_slot_pairs(ROOT_SYMBOL, rules_ground, semantics, 
-                                        yield_requires_semantics=True,
-                                        branch_cap=1,
-                                        random_generator=random_source)
-        for sentence, semantics in pairs:
-            print(tree_printer(sentence))
-            print(tree_printer(semantics))
-        #for generation_path, semantic_production in semantics.items():
-        #    print (generation_path)
-        #    print (semantic_production)
