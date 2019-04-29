@@ -2,16 +2,23 @@ import os
 
 from lark import Lark, Tree
 
-from gpsr_semantic_parser.generation import generate_sentence_parse_pairs, expand_pair_full
+from gpsr_semantic_parser.generation import generate_sentence_parse_pairs, generate_sentence_slot_pairs, expand_pair_full
 from gpsr_semantic_parser.grammar import TypeConverter, expand_shorthand
 from gpsr_semantic_parser.util import get_wildcards, has_placeholders
+from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
+from gpsr_semantic_parser.grammar import tree_printer
 
-GENERATOR_GRAMMARS={2018:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt")),
-                    2019:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt"))}
+from itertools import zip_longest
+
+GENERATOR_GRAMMARS={2018: os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018/generator_grammar_ebnf.txt"),
+                    2019: os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019/generator_grammar_ebnf.txt")}
+
+SEMANTIC_FORMS={"lambda": os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt"),
+                "slot": os.path.abspath(os.path.dirname(__file__) + "/../resources/slot_ebnf.txt")}
 
 class Generator:
-    def __init__(self, grammar_format_version=2018):
-        with  open(GENERATOR_GRAMMARS[grammar_format_version][0]) as grammar_spec, open(GENERATOR_GRAMMARS[grammar_format_version][1]) as annotation_spec:
+    def __init__(self, grammar_format_version=2018, semantic_form_version="lambda"):
+        with  open(GENERATOR_GRAMMARS[grammar_format_version]) as grammar_spec, open(SEMANTIC_FORMS[semantic_form_version]) as annotation_spec:
             self.generator_grammar_parser = Lark(grammar_spec,
             start='start', parser="lalr", transformer=TypeConverter())
             self.lambda_parser = Lark(annotation_spec,
@@ -58,15 +65,16 @@ class Generator:
         expanded_prod_heads = expand_shorthand(prod)
         sem = semantics.strip()
         sem = self.lambda_parser.parse(sem)
-        sem_wildcards = get_wildcards([sem]) if isinstance(sem, Tree) else set()
-        for head in expanded_prod_heads:
+        expanded_sem_heads = expand_shorthand(sem)
+        for prod, sem in zip_longest(expanded_prod_heads, expanded_sem_heads, fillvalue=expanded_sem_heads[0]):
             # Check for any obvious errors in the annotation
-            head_wildcards = get_wildcards([head])
-            if sem_wildcards.difference(head_wildcards):
+            prod_wildcards = get_wildcards([prod])
+            sem_wildcards = get_wildcards([sem]) if isinstance(sem, Tree) else set()
+            if sem_wildcards.difference(prod_wildcards):
                 raise RuntimeError(
                     "Semantics rely on non-terminal {} that doesn't occur in rule: {}".format(sem_wildcards, line))
 
-            rule_dict[head] = sem
+            rule_dict[prod] = sem
 
     def load_semantics_rules(self, semantics_file_paths):
         """
@@ -83,6 +91,7 @@ class Generator:
                     cleaned = line.strip()
                     if len(cleaned) == 0 or cleaned[0] == '#':
                         continue
+                    #print(cleaned)
                     self.parse_rule(cleaned, prod_to_semantics)
 
         return prod_to_semantics
@@ -157,3 +166,21 @@ def get_grounding_per_each_parse_by_cat(generator, random_source):
                 cat_groundings[parse_anon] = (utterance, parse_anon, parse_ground)
         grounded_examples.append(list(cat_groundings.values()))
     return grounded_examples
+
+def get_utterance_slot_pairs(generator, random_source):
+    grounded_examples = []
+
+
+    for rules, rules_anon, rules_ground, semantics in generator:
+        cat_groundings = {}
+
+        pairs = generate_sentence_slot_pairs(ROOT_SYMBOL, rules_ground, semantics, 
+                                        yield_requires_semantics=True,
+                                        branch_cap=1,
+                                        random_generator=random_source)
+        for sentence, semantics in pairs:
+            print(tree_printer(sentence))
+            print(tree_printer(semantics))
+        #for generation_path, semantic_production in semantics.items():
+        #    print (generation_path)
+        #    print (semantic_production)

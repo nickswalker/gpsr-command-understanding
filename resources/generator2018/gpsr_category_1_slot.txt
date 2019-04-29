@@ -1,0 +1,62 @@
+#; grammar name Category I
+#; grammar tier Easy
+#; import common.txt
+
+
+#$Main     = $deliver
+#$Main     = $fndppl
+#$Main     = $fndobj
+
+##############################################################################
+#
+# Production Rules required by common.txt
+#
+##############################################################################
+#; Define an object type
+#$object   = {kobject}
+{kobject} = OBJECT
+
+#; Rule for finding a specific (named) person
+#$findp    = $vbfind ( {name} | a person | someone )
+$vbfind ( {name} | a person | someone ) = $vbfind ( {name} | B-PERSON I-PERSON | B-PERSON )
+
+#; A named or described person in the given place
+#$whowhere = {name} at the {beacon 1}
+
+##############################################################################
+#
+# Manipulation
+#
+##############################################################################
+#$deliver  = $vbbring (me | to $whowhere) the {kobject} from the {placement}
+#$deliver  = $takefrom and ($delivme | $delivat)
+#$deliver  = $takefrom and $place
+
+
+##############################################################################
+#
+# Find people
+#
+##############################################################################
+#$fndppl   = Tell me the name of the person at the {beacon}
+Tell me the name of the person at the {beacon} = {tell} O B-PERSON O I-INFO I-INFO I-INFO I-INFO O O {beacon}
+#$fndppl   = Tell me the name of the person in the {room}
+Tell me the name of the person in the {room} = {tell} O B-PERSON O I-INFO I-INFO I-INFO I-INFO O O {room}
+
+##############################################################################
+#
+# Find objects
+#
+##############################################################################
+#$fndobj   = $vbfind the {kobject?} in the {room}
+$vbfind the {kobject?} in the {room} = $vbfind O {kobject?} O O {room}
+{kobject?} = OBJECT
+
+
+##############################################################################
+#
+# Rules
+#
+##############################################################################
+
+

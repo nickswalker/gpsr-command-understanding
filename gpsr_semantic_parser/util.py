@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from gpsr_semantic_parser.tokens import WildCard, NonTerminal
+from lark import Token
 
 
 def merge_dicts(x, y):
@@ -35,6 +36,25 @@ def replace_child_in_tree(tree, child_target, replacement, only_once=False):
         if only_once and did_replace:
             return did_replace
     return did_replace
+
+
+def replace_words_in_tree(tree, replacement):
+    for tree in tree.iter_subtrees():
+        for i, child in enumerate(tree.children):
+            if (isinstance(child, Token) and child.type == 'WORD') or (type(child) is str):
+                tree.children[i] = replacement
+
+
+def replace_slots_in_tree(tree, slot):
+    first = True
+    for tree in tree.iter_subtrees():
+        for i, child in enumerate(tree.children):
+            if (isinstance(child, Token) and child.type == 'WORD') or (type(child) is str):
+                if first:
+                    tree.children[i] = "B-" + slot
+                    first = False
+                else:
+                    tree.children[i] = "I-" + slot
 
 
 def get_wildcards(trees):

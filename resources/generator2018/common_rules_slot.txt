@@ -1,0 +1,176 @@
+#
+# This grammar file has no main, therefore, cannot be loaded
+# standalone. Import using:
+# ; import common.txt
+#
+# The following rules must be defined in the importer
+# ; An object type
+# $object
+# ; Rule for finding a specific (named) person
+# $findp
+# ; A named or described person in the given place
+# $whowhere
+#
+#; grammar name Common
+
+##############################################################################
+#
+# Manipulation
+#
+##############################################################################
+#$deliver  = $take and $vbplace it on the {placement 2}
+#$deliver  = $vbplace the $object on the {placement 2}
+#$deliver  = $vbbring me the $object
+#$deliver  = $vbdeliver the $object to $someone
+#$deliver  = $takefrom and $vbplace it on the {placement 2}
+#$deliver  = $goplace, $vbfind the $object, and ($delivme | $delivat)
+#$deliver  = $goplace, $vbfind the $object, and $place
+
+$deliver = {deliver} $deliver
+
+##############################################################################
+#
+# Find people
+#
+##############################################################################
+#$fndppl   = $talk to $whowhere
+#$fndppl   = $findp in the {room} and $talk
+#$fndppl   = $goroom, $findp, and $talk
+
+$fndppl = {say} $fndppl
+
+##############################################################################
+#
+# Find objects
+#
+##############################################################################
+#$fndobj   = Tell me how many $object there are on the {placement}
+Tell me how many $object there are on the {placement} = {count} O O O O $object O O O O {placement}
+#$fndobj   = $vbfind the $object in the {room}
+$vbfind the $object in the {room} = {find} $vbfind O $object O O {room}
+
+
+##############################################################################
+#
+# Follow people
+#
+##############################################################################
+#$follow   = $vbfollow {name 1} from the {beacon 1} to the {room 2}
+#$follow   = meet {name 1} at the {beacon 1} and $vbfollow {pron} $fllwdest
+#$follow   = $gobeacon, meet {name 1}, and $vbfollow {pron} $fllwhdst
+
+#$fllmeet  = meet {name 1} | find a person
+#$fllwdest = (to the {room 2}) | $fllwhdst
+#$fllwhdst = {void meta: Follow {name 1} to the {room 2}}
+
+
+##############################################################################
+#
+# Guide people
+#
+##############################################################################
+#$guide    = $gdcmd $gdmeta 
+
+#$gdcmd    = $vbguide {name 1} from the {beacon 1} to the {beacon 2}
+#$gdcmd    = meet {name 1} at the {beacon 1} and $guideto
+#$gdcmd    = $gobeacon, meet {name 1}, and $guideto
+#$gdcmd    = $vbguide {name 1} to the {beacon 2}, $gdwhere
+
+#$guideto  = $vbguide {pron} to the {beacon 2}
+#$gdwhere  = you (may | can | will) find {pron} at the {beacon 1}
+#$gdmeta   = {void meta: The person being guided must deviate when indicated by the referee before reaching the {beacon 2}}
+
+##############################################################################
+#
+# Rules
+#
+##############################################################################
+#; People
+#$someone  = me | $whowhere
+
+#; Place an object
+#$place    = $vbplace it on the {placement 2}
+
+#; Object properties
+#$oprop    = biggest | largest | smallest | heaviest | lightest | thinnest
+
+#; Navigating
+#$goplace  = $vbgopl to the {placement 1}
+#$gobeacon = $vbgopl to the {beacon 1}
+#$goroom   = $vbgopl to the {room 1}
+
+#; Take an object
+#$take     = $vbtake the $object
+#$takefrom = $take from the {placement 1}
+
+#; Deliver an object
+#$delivme  = $vbdeliver it to me
+#$delivto  = $vbdeliver it to {name}
+#$delivat = $vbdeliver it to {name} at the {beacon}
+##$vbdeliver it to {name} at the {beacon} = X O O X O O TO(X)
+
+#; Speak
+#$talk     = $answer | $speak
+#$answer   = answer a {question}
+#$speak    = $vbspeak $whattosay
+
+
+##############################################################################
+#
+# What to say ($whattosay)
+#
+##############################################################################
+##something about yourself = B-WHATTOSAY I-WHATTOSAY I-WHATTOSAY
+##the time = B-WHATTOSAY I-WHATTOSAY
+##what day is (today | tomorrow) = B-WHATTOSAY I-WHATTOSAY I-WHATTOSAY (I-WHATTOSAY | I-WHATTOSAY)
+##your team's (name | country | affiliation) = B-WHATTOSAY I-WHATTOSAY (I-WHATTOSAY | I-WHATTOSAY | I-WHATTOSAY)
+##the day of the (week | month) = B-WHATTOSAY I-WHATTOSAY I-WHATTOSAY I-WHATTOSAY (I-WHATTOSAY | I-WHATTOSAY)
+##a joke = B-WHATTOSAY I-WHATTOSAY
+
+##############################################################################
+#
+# Verbs
+#
+##############################################################################
+#$vbbtake   = bring | take
+#$vbplace   = put | place
+#$vbbring   = bring | give
+#$vbdeliver = $vbbring | deliver
+#$vbtake    = get | grasp | take | pick up
+#$vbspeak   = tell | say
+#$vbgopl    = go | navigate
+#$vbgor     = $vbgopl | enter
+#$vbfind    = find | locate | look for
+#$vbguide   = guide | escort | take | lead | accompany
+#$vbfollow  = follow
+ 
+
+##############################################################################
+#
+# Polite
+#
+##############################################################################
+#$polite   = {void} | Please
+#$polite   = Could you
+#$polite   = Robot please
+#$polite   = Could you please
+
+
+##############################################################################
+#
+# Wildcards
+#
+##############################################################################
+{room} = ROOM
+#{room 2} = TO-ROOM
+{placement} = PLACEMENT
+#{placement 1} = FROM-PLACEMENT
+#{placement 2} = TO-PLACEMENT
+{name} = PERSON
+{name 1} = PERSON
+{beacon} = BEACON
+#{beacon 1} = FROM-BEACON
+#{beacon 2} = TO-BEACON
+{pron} = PRON
+{whattosay} = WHATTOSAY
+{question} = QUESTION

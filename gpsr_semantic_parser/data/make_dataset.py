@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, "../gpsr-semantic-parser")
+
 import itertools
 import operator
 import os
