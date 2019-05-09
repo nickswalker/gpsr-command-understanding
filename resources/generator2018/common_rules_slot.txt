@@ -19,12 +19,25 @@
 #
 ##############################################################################
 #$deliver  = $take and $vbplace it on the {placement 2}
+$take and $vbplace it on the {placement 2} = $take O $vbplace O O O TO[{placement 2}]
+
 #$deliver  = $vbplace the $object on the {placement 2}
+$vbplace the $object on the {placement 2} = $vbplace O $object O O TO[{placement 2}]
+
 #$deliver  = $vbbring me the $object
+$vbbring me the $object = $vbbring TO[B-OPERATOR] O $object
+
 #$deliver  = $vbdeliver the $object to $someone
+$vbdeliver the $object to $someone = $vbdeliver O $object O TO[$someone]
+
 #$deliver  = $takefrom and $vbplace it on the {placement 2}
+$takefrom and $vbplace it on the {placement 2} = $takefrom O $vbplace O O O TO[{placement 2}]
+
 #$deliver  = $goplace, $vbfind the $object, and ($delivme | $delivat)
+$goplace, $vbfind the $object, and ($delivme | $delivat) = FROM[$goplace], $vbfind O $object, O ($delivme | $delivat)
+
 #$deliver  = $goplace, $vbfind the $object, and $place
+$goplace, $vbfind the $object, and $place = FROM[$goplace], $vbfind O $object, O $place
 
 $deliver = {deliver} $deliver
 
@@ -34,10 +47,11 @@ $deliver = {deliver} $deliver
 #
 ##############################################################################
 #$fndppl   = $talk to $whowhere
+$talk to $whowhere = {say} $talk O $whowhere
 #$fndppl   = $findp in the {room} and $talk
+$findp in the {room} and $talk = {say} $findp O O {room} O $talk
 #$fndppl   = $goroom, $findp, and $talk
-
-$fndppl = {say} $fndppl
+$goroom, $findp, and $talk = {say} $goroom, $findp, O $talk
 
 ##############################################################################
 #
@@ -45,9 +59,9 @@ $fndppl = {say} $fndppl
 #
 ##############################################################################
 #$fndobj   = Tell me how many $object there are on the {placement}
-Tell me how many $object there are on the {placement} = {count} O O O O $object O O O O {placement}
+Tell me how many $object there are on the {placement} = {count} O TO[B-OPERATOR] O O $object O O O O FROM[{placement}]
 #$fndobj   = $vbfind the $object in the {room}
-$vbfind the $object in the {room} = {find} $vbfind O $object O O {room}
+$vbfind the $object in the {room} = {find} $vbfind O $object O O FROM[{room}]
 
 
 ##############################################################################
@@ -56,13 +70,23 @@ $vbfind the $object in the {room} = {find} $vbfind O $object O O {room}
 #
 ##############################################################################
 #$follow   = $vbfollow {name 1} from the {beacon 1} to the {room 2}
+$vbfollow {name 1} from the {beacon 1} to the {room 2} = $vbfollow {name 1} O O FROM[{beacon 1}] O O TO[{room 2}]
+
 #$follow   = meet {name 1} at the {beacon 1} and $vbfollow {pron} $fllwdest
+meet {name 1} at the {beacon 1} and $vbfollow {pron} $fllwdest = O {name 1} O O FROM[{beacon 1}] O $vbfollow {pron} $fllwdest
+
 #$follow   = $gobeacon, meet {name 1}, and $vbfollow {pron} $fllwhdst
+$gobeacon, meet {name 1}, and $vbfollow {pron} $fllwhdst = $gobeacon, O {name 1}, O $vbfollow {pron} $fllwhdst
 
 #$fllmeet  = meet {name 1} | find a person
+meet {name 1} | find a person = O {name 1} | O O B-PERSON
+
 #$fllwdest = (to the {room 2}) | $fllwhdst
+(to the {room 2}) | $fllwhdst = O O TO[{room 2}] | $fllwhdst
+
 #$fllwhdst = {void meta: Follow {name 1} to the {room 2}}
 
+$follow = {follow} $follow
 
 ##############################################################################
 #
@@ -72,12 +96,23 @@ $vbfind the $object in the {room} = {find} $vbfind O $object O O {room}
 #$guide    = $gdcmd $gdmeta 
 
 #$gdcmd    = $vbguide {name 1} from the {beacon 1} to the {beacon 2}
+$vbguide {name 1} from the {beacon 1} to the {beacon 2} = {guide} $vbguide {name 1} O O FROM[{beacon 1}] O O TO[{beacon 2}]
+
 #$gdcmd    = meet {name 1} at the {beacon 1} and $guideto
+meet {name 1} at the {beacon 1} and $guideto = {guide} O {name 1} O O FROM[{beacon 1}] O $guideto
+
 #$gdcmd    = $gobeacon, meet {name 1}, and $guideto
+$gobeacon, meet {name 1}, and $guideto = {guide} FROM[$gobeacon], O {name 1}, and $guideto
+
 #$gdcmd    = $vbguide {name 1} to the {beacon 2}, $gdwhere
+$vbguide {name 1} to the {beacon 2}, $gdwhere = {guide} $vbguide {name 1} O O FROM[{beacon 2}], $gdwhere
 
 #$guideto  = $vbguide {pron} to the {beacon 2}
+$vbguide {pron} to the {beacon 2} = $vbguide {pron} O O TO[{beacon 2}]
+
 #$gdwhere  = you (may | can | will) find {pron} at the {beacon 1}
+you (may | can | will) find {pron} at the {beacon 1} = O (O | O | O) O {pron} O O FROM[{beacon 1}]
+
 #$gdmeta   = {void meta: The person being guided must deviate when indicated by the referee before reaching the {beacon 2}}
 
 ##############################################################################
@@ -87,27 +122,36 @@ $vbfind the $object in the {room} = {find} $vbfind O $object O O {room}
 ##############################################################################
 #; People
 #$someone  = me | $whowhere
+me | $whowhere = B-OPERATOR | $whowhere
 
 #; Place an object
 #$place    = $vbplace it on the {placement 2}
+$vbplace it on the {placement 2} = $vbplace O O O TO[{placement 2}]
 
 #; Object properties
 #$oprop    = biggest | largest | smallest | heaviest | lightest | thinnest
+biggest | largest | smallest | heaviest | lightest | thinnest = B-OPROP | B-OPROP | B-OPROP | B-OPROP | B-OPROP | B-OPROP
 
 #; Navigating
 #$goplace  = $vbgopl to the {placement 1}
+$vbgopl to the {placement 1} = $vbgopl O O {placement 1}
 #$gobeacon = $vbgopl to the {beacon 1}
+$vbgopl to the {beacon 1} = $vbgopl O O {beacon 1}
 #$goroom   = $vbgopl to the {room 1}
+$vbgopl to the {room 1} = $vbgopl O O {room 1}
 
 #; Take an object
 #$take     = $vbtake the $object
 #$takefrom = $take from the {placement 1}
+$take from the {placement 1} = $take O O FROM[{placement 1}]
 
 #; Deliver an object
 #$delivme  = $vbdeliver it to me
+$vbdeliver it to me = $vbdeliver O O TO[B-OPERATOR]
 #$delivto  = $vbdeliver it to {name}
+$vbdeliver it to {name} = $vbdeliver O O TO[{name}]
 #$delivat = $vbdeliver it to {name} at the {beacon}
-##$vbdeliver it to {name} at the {beacon} = X O O X O O TO(X)
+$vbdeliver it to {name} at the {beacon} = $vbdeliver O O TO[{name}] O O TO[{beacon}]
 
 #; Speak
 #$talk     = $answer | $speak
@@ -151,10 +195,16 @@ $vbfind the $object in the {room} = {find} $vbfind O $object O O {room}
 #
 ##############################################################################
 #$polite   = {void} | Please
-#$polite   = Could you
-#$polite   = Robot please
-#$polite   = Could you please
+{void} | Please = {void} | O
 
+#$polite   = Could you
+Could you = O O
+
+#$polite   = Robot please
+Robot please = O O
+
+#$polite   = Could you please
+Could you please = O O O
 
 ##############################################################################
 #
@@ -166,11 +216,11 @@ $vbfind the $object in the {room} = {find} $vbfind O $object O O {room}
 {placement} = PLACEMENT
 #{placement 1} = FROM-PLACEMENT
 #{placement 2} = TO-PLACEMENT
-{name} = PERSON
-{name 1} = PERSON
+{name} = NAME
+{name 1} = NAME
 {beacon} = BEACON
 #{beacon 1} = FROM-BEACON
 #{beacon 2} = TO-BEACON
-{pron} = PRON
+#{pron} = PRON
 {whattosay} = WHATTOSAY
 {question} = QUESTION

@@ -16,7 +16,7 @@ from gpsr_semantic_parser.generation import pairs_without_placeholders
 from gpsr_semantic_parser.generator import Generator, get_grounding_per_each_parse_by_cat
 from gpsr_semantic_parser.grammar import tree_printer
 from gpsr_semantic_parser.loading_helpers import load_all_2018
-from gpsr_semantic_parser.util import determine_unique_cat_data, save_data, flatten, merge_dicts
+from gpsr_semantic_parser.util import determine_unique_cat_data, save_data, flatten, merge_dicts, get_pairs_by_cats
 
 
 def validate_args(args):
@@ -49,22 +49,6 @@ def validate_args(args):
             args.name += "_g" + str(args.groundings)
         if args.turk:
             args.name += "_t"
-
-
-def get_pairs_by_cats(data, train_categories, test_categories):
-    train_pairs = []
-    for cat in train_categories:
-        # Cats are 1 indexed. Subtract to get 0 indexed
-        for pair in data[cat - 1].items():
-            train_pairs.append(pair)
-
-    test_pairs = []
-    for cat in test_categories:
-        # Cats are 1 indexed. Subtract to get 0 indexed
-        for pair in data[cat - 1].items():
-            test_pairs.append(pair)
-
-    return train_pairs, test_pairs
 
 
 def load_turk_data(path, lambda_parser):

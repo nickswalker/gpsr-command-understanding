@@ -18,10 +18,11 @@
 
 #; Rule for finding a specific (named) person
 #$findp    = $vbfind ( {name} | a person | someone )
-$vbfind ( {name} | a person | someone ) = $vbfind ( {name} | B-PERSON I-PERSON | B-PERSON )
+$vbfind ( {name} | a person | someone ) = $vbfind ( {name} | O B-PERSON | B-PERSON )
 
 #; A named or described person in the given place
 #$whowhere = {name} at the {beacon 1}
+{name} at the {beacon 1} = {name} O O {beacon 1}
 
 ##############################################################################
 #
@@ -29,6 +30,7 @@ $vbfind ( {name} | a person | someone ) = $vbfind ( {name} | B-PERSON I-PERSON |
 #
 ##############################################################################
 #$deliver  = $vbbring (me | to $whowhere) the {kobject} from the {placement}
+$vbbring (me | to $whowhere) the {kobject} from the {placement} = $vbbring (TO[B-OPERATOR] | O TO[$whowhere]) O {kobject} O O FROM[{placement}]
 #$deliver  = $takefrom and ($delivme | $delivat)
 #$deliver  = $takefrom and $place
 
@@ -39,9 +41,9 @@ $vbfind ( {name} | a person | someone ) = $vbfind ( {name} | B-PERSON I-PERSON |
 #
 ##############################################################################
 #$fndppl   = Tell me the name of the person at the {beacon}
-Tell me the name of the person at the {beacon} = {tell} O B-PERSON O I-INFO I-INFO I-INFO I-INFO O O {beacon}
+Tell me the name of the person at the {beacon} = {get_info} O TO[B-OPERATOR] O B-INFO O O FROM[B-PERSON] O O FROM[{beacon}]
 #$fndppl   = Tell me the name of the person in the {room}
-Tell me the name of the person in the {room} = {tell} O B-PERSON O I-INFO I-INFO I-INFO I-INFO O O {room}
+Tell me the name of the person in the {room} = {get_info} O TO[B-OPERATOR] O B-INFO O O FROM[B-PERSON] O O FROM[{room}]
 
 ##############################################################################
 #
@@ -49,7 +51,7 @@ Tell me the name of the person in the {room} = {tell} O B-PERSON O I-INFO I-INFO
 #
 ##############################################################################
 #$fndobj   = $vbfind the {kobject?} in the {room}
-$vbfind the {kobject?} in the {room} = $vbfind O {kobject?} O O {room}
+$vbfind the {kobject?} in the {room} = {find} $vbfind O {kobject?} O O FROM[{room}]
 {kobject?} = OBJECT
 
 

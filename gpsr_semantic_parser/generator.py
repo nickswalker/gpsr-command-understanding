@@ -24,6 +24,7 @@ class Generator:
             start='start', parser="lalr", transformer=TypeConverter())
             self.lambda_parser = Lark(annotation_spec,
                              start='start', parser="lalr", transformer=TypeConverter())
+            self.semantic_form_version = semantic_form_version
             self.rules = []
 
     def load_set_of_rules(self, grammar_file_paths, semantics_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
@@ -79,6 +80,7 @@ class Generator:
             # Check for any obvious errors in the annotation
             prod_wildcards = get_wildcards([prod])
             sem_wildcards = get_wildcards([sem]) if isinstance(sem, Tree) else set()
+
             if sem_wildcards.difference(prod_wildcards):
                 raise RuntimeError(
                     "Semantics rely on non-terminal {} that doesn't occur in rule: {}".format(sem_wildcards, line))
@@ -134,19 +136,32 @@ class Generator:
         grounding_rules[WildCard("pron")] = [Tree("expression", ["them"])]
         return merge_dicts(rules, grounding_rules)
 
-    def get_utterance_slot_pairs(self, random_source):
-        grounded_examples = []
+    def get_utterance_semantics_pairs(self, random_source, rule_sets, branch_cap=None):
+        all_pairs = {}
+        rules = [self.rules[index - 1] for index in rule_sets]
 
-        for rules, rules_anon, rules_ground, semantics in self.rules:
+        for rules, rules_anon, rules_ground, semantics in rules:
             cat_groundings = {}
 
-            pairs = generate_sentence_slot_pairs(ROOT_SYMBOL, rules_ground, semantics, 
-                                            yield_requires_semantics=True,
-                                            branch_cap=1,
-                                            random_generator=random_source)
-            for sentence, semantics in pairs:
-                print(tree_printer(sentence))
-                print(tree_printer(semantics))
+            pairs = []
+            if self.semantic_form_version == "slot":
+                pairs = generate_sentence_slot_pairs(ROOT_SYMBOL, rules_ground, semantics, 
+                                                yield_requires_semantics=True,
+                                                branch_cap=branch_cap,
+                                                random_generator=random_source)
+            else:
+                pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, semantics, 
+                                                yield_requires_semantics=True,
+                                                branch_cap=branch_cap,
+                                                random_generator=random_source)
+
+            for utterance, parse in pairs:
+                all_pairs[tree_printer(utterance)] = tree_printer(parse)
+            #for sentence, semantics in pairs:
+            #    print(tree_printer(sentence))
+            #    print(tree_printer(semantics))
+        return all_pairs
+
 
 
 def get_grounding_per_each_parse(generator, random_source):

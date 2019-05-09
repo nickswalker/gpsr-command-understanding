@@ -1,0 +1,96 @@
+#; grammar name Category II
+#; grammar tier Moderate
+#; import common.txt
+
+#$Main     = $deliver
+#$Main     = $fndppl
+#$Main     = $fndobj
+#$Main     = $guide
+#$Main     = $follow
+
+##############################################################################
+#
+# Production Rules required by common.txt
+#
+##############################################################################
+#; Define an object type
+#$object   = {aobject}
+{aobject} = OBJECT
+
+#; Rule for finding a specific (named) person
+#$findp    = $vbfind a $pgenders
+#$findp    = $vbfind a person {gesture} 
+#$findp    = $vbfind a person $pose
+
+#; A named or described person in the given place
+#$whowhere = the person {gesture} in the {room}
+the person {gesture} in the {room} = O B-PERSON {gesture} O O {room}
+
+{gesture} = GESTURE
+
+##############################################################################
+#
+# Manipulation
+#
+##############################################################################
+#$deliver  = $vbbtake the {aobject} from the {room} to the {placement 2}
+$vbbtake the {aobject} from the {room} to the {placement 2} = $vbbtake O {aobject} O O FROM[{room}] O O TO[{placement 2}]
+
+#$deliver  = $vbbring me the {aobject} from the {placement}
+$vbbring me the {aobject} from the {placement} = $vbbring TO[B-OPERATOR] O {aobject} O O FROM[{placement}]
+
+#$deliver  = $takefrom and ($delivme | $delivat)
+#$deliver  = $takefrom and $place
+
+##############################################################################
+#
+# Find people
+#
+##############################################################################
+#$fndppl   = Tell me the (name | gender | pose) of the person at the {beacon}
+Tell me the (name | gender | pose) of the person at the {beacon} = {get_info} O TO[B-OPERATOR] O (B-INFO | B-INFO | B-INFO) O O FROM[B-PERSON] O O FROM[{beacon}]
+
+#$fndppl   = Tell me the (name | gender | pose) of the person in the {room}
+Tell me the (name | gender | pose) of the person in the {room} = {get_info} O TO[B-OPERATOR] O (B-INFO | B-INFO | B-INFO) O O FROM[B-PERSON] O O FROM[{room}]
+
+#$fndppl   = Tell me how many people in the {room} are ($pgenderp | $pose)
+Tell me how many people in the {room} are ($pgenderp | $pose) = {count} O TO[B-OPERATOR] O O FROM[B-PERSON] O O FROM[{room}] O ($pgenderp | $pose)
+
+##############################################################################
+#
+# Find objects
+#
+##############################################################################
+#$fndobj   = $vbfind the {aobject?} in the {room}
+$vbfind the {aobject?} in the {room} = {find} $vbfind O {aobject?} O O {room}
+
+#$fndobj   = Tell me how many {category} there are on the {placement}
+Tell me how many {category} there are on the {placement} = {count} O TO[B-OPERATOR] O O {category} O O O O FROM[{placement}]
+
+#$fndobj   = Tell me what's the $oprop object on the {placement}
+Tell me what's the $oprop object on the {placement} = {find} O TO[B-OPERATOR] O O $oprop B-OBJECT O O FROM[{placement}]
+
+#$fndobj   = Tell me what's the $oprop {category} on the {placement}
+Tell me what's the $oprop {category} on the {placement} = {find} O TO[B-OPERATOR] O O $oprop {category} O O FROM[{placement}]
+
+#$fndobj   = $vbfind the {category} in the {room}
+$vbfind the {category} in the {room} = {find} $vbfind O {category} O O {room}
+
+{aobject?} = OBJECT
+{category} = OBJECT
+
+##############################################################################
+#
+# Rules
+#
+##############################################################################
+#; Find people
+
+#$pgenders = man | woman | boy | girl | male person | female person
+man | woman | boy | girl | male person | female person = B-GENDER | B-GENDER | B-GENDER | B-GENDER | B-GENDER B-PERSON | B-GENDER B-PERSON
+
+#$pgenderp = men | women | boys | girls | male | female
+men | women | boys | girls | male | female = B-GENDER | B-GENDER | B-GENDER | B-GENDER | B-GENDER | B-GENDER 
+
+#$pose     = sitting | standing | lying down
+sitting | standing | lying down = B-POSE | B-POSE | B-POSE I-POSE

@@ -40,8 +40,8 @@ def generate_sentences(start_tree, production_rules):
             yield sentence
 
 
-def generate_random_pair(start_symbols, production_rules, semantics_rules, yield_requires_semantics=False, generator=None):
-    return next(generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rules, yield_requires_semantics=yield_requires_semantics, branch_cap=1, generator=generator))
+def generate_random_pair(start_symbols, production_rules, semantics_rules, yield_requires_semantics=False, random_generator=None):
+    return next(generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rules, yield_requires_semantics=yield_requires_semantics, branch_cap=1, random_generator=random_generator))
 
 
 def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules, start_semantics=None, yield_requires_semantics=True, branch_cap=None, random_generator=None):
@@ -125,15 +125,24 @@ def generate_sentence_slot_pairs(start_tree, production_rules, semantics_rules, 
     frontier.put((start_tree, start_semantics))
     while not frontier.empty():
         sentence, semantics = frontier.get()
-        if semantics_rules.get(sentence):
-            # Let's see if the  expansion is associated with any semantics
-            semantics = semantics_rules.get(sentence)
+        #if not semantics:
+        #    semantics = semantics_rules.get(sentence)
+        #if semantics_rules.get(sentence):
+        #    if semantics and semantics.children[0].data == "intent":
+        #        semantics.children[1] = semantics_rules.get(sentence)
+        #    else:
+        #        semantics = semantics_rules.get(sentence)
             #print(semantics)
 
         expansions = list(expand_pair_slot(sentence, semantics, production_rules, semantics_rules, branch_cap=branch_cap, random_generator=random_generator))
         if not expansions:
-            #print(tree_printer(sentence))
+            #print("Sentence: ", sentence.pretty())
+            #print("Semantics: ", semantics.pretty())
             yield (sentence, semantics)
+            #print(sentence)
+            #print(semantics)
+            #print(semantics.children[0].data)
+            #print("---------------------")
             continue
 
         for pair in expansions:
@@ -188,11 +197,11 @@ def expand_pair(sentence, semantics, production_rules, branch_cap=None, random_g
 
 
 def expand_pair_slot(sentence, semantics, production_rules, semantics_rules, branch_cap=None, random_generator=None):
-        print("sentence: " + sentence.pretty())
-        if semantics:
-            print("semantics: " + semantics.pretty())
-        else:
-            print("semantics: None")
+        #print("sentence: " + sentence.pretty())
+        #if semantics:
+        #    print("semantics: " + semantics.pretty())
+        #else:
+        #    print("semantics: None")
 
         replace_token = list(sentence.scan_values(lambda x: x in production_rules.keys()))
 
@@ -203,7 +212,7 @@ def expand_pair_slot(sentence, semantics, production_rules, semantics_rules, bra
             replace_token = random_generator.choice(replace_token)
             replacement_rules = production_rules[replace_token]
             if branch_cap:
-                productions = random_generator.sample(replacement_rules, k=branch_cap)
+                productions = random_generator.sample(replacement_rules, k=min(branch_cap, len(replacement_rules)))
             else:
                 # Use all of the branches
                 productions = production_rules[replace_token]
@@ -213,12 +222,11 @@ def expand_pair_slot(sentence, semantics, production_rules, semantics_rules, bra
             replace_token = replace_token[0]
             productions = production_rules[replace_token]
 
-        print("replace: ", replace_token)
+        #print("replace: ", replace_token)
 
         for production in productions:
-            print("production: ", production)
             modified_sentence = copy.deepcopy(sentence)
-            replace_child_in_tree(modified_sentence, replace_token, production, only_once=True)
+            replace_child_in_tree(modified_sentence, replace_token, copy.deepcopy(production), only_once=True)
             modified_sentence = DiscardVoid().visit(modified_sentence)
 
             # Normalize any chopped up text fragments to make sure we can pull semantics for these cases
@@ -230,33 +238,77 @@ def expand_pair_slot(sentence, semantics, production_rules, semantics_rules, bra
             if semantics:
                 modified_semantics = copy.deepcopy(semantics)
 
-                sem_substitute = semantics_rules.get(replace_token)
-                if sem_substitute:
-                    sem_substitute = sem_substitute.copy()
-                elif isinstance(replace_token, WildCard):
-                    sem_replace_token = Tree('expression', [replace_token])
-                    sem = semantics_rules.get(sem_replace_token)
-                    sem_substitute = Tree('expression', [])
-                    if sem:
-                        sem = sem.children[0]
-                        words = production.children[0].split(" ")
-                        for i, word in enumerate(words):
-                            tag = Token('WORD', "B-" + sem) if i == 0 else Token('WORD', "I-" + sem)
-                            sem_substitute.children.append(tag)
-                    else:
-                        sem_substitute.children.append(Token('WORD', "O"))
+                sem_substitute = get_semantic_substitute(replace_token, copy.deepcopy(production), semantics_rules)
+
+                if len(sem_substitute.children) > 0 and isinstance(sem_substitute.children[0], Tree) and sem_substitute.children[0].data == "intent":
+                    #copy slot data
+                    slot = Tree('expression', sem_substitute.children[1].children)
+                    #replace with previous slot data
+                    sem_substitute.children[1].children = [modified_semantics]
+                    #now intent is the first child, with previous slot info
+                    modified_semantics = sem_substitute
+                    #replace the token in previous slot info with
+                    replace_child_in_tree(modified_semantics, replace_token, slot, only_once=True)
                 else:
-                    sem_substitute = production.copy()
-                    replace_words_in_tree(sem_substitute, Token('WORD', 'O'))
+                    replace_child_in_tree(modified_semantics, replace_token, sem_substitute, only_once=True)
 
-                print("sem_substitute", sem_substitute.pretty())
-                replace_child_in_tree(modified_semantics, replace_token, sem_substitute)
 
+                #print("replace_token", replace_token)
+                #print("sem_substitute", sem_substitute.pretty())
+            else:
+                modified_semantics = get_semantic_substitute(replace_token, copy.deepcopy(production), semantics_rules)
+
+            DiscardVoid().visit(modified_semantics)
+            if isinstance(modified_semantics, Tree):
+                CombineExpressions().visit(modified_semantics)
+            #print(tree_printer(sentence_filled))
+            #print(modified_semantics)
             yield sentence_filled, modified_semantics
-            #yield sentence_filled, semantics
+            #print("-----------------------")
 
 
-        print("---------------------------------")
+def get_semantic_substitute(replace_token, production, semantics_rules):
+    
+    sem_substitute = None
+    sem_replace = semantics_rules.get(replace_token)
+    if sem_replace:
+        return copy.deepcopy(sem_replace)
+
+    sem_production = semantics_rules.get(production)
+    if sem_production:
+        if (len(production.children) == 1) and isinstance(production.children[0], WildCard):
+            pass
+        else:
+            return copy.deepcopy(sem_production)
+
+    if isinstance(replace_token, WildCard):
+        #print("expanding wildcard: ", replace_token)
+        sem_replace_token = Tree('expression', [replace_token])
+        sem = semantics_rules.get(sem_replace_token)
+
+        return iob2_tagging(sem, production)
+
+    sem_substitute = copy.deepcopy(production)
+    replace_words_in_tree(sem_substitute, Token('WORD', 'O'))
+    return sem_substitute
+
+def iob2_tagging(sem, production):
+
+    sem_substitute = Tree('expression', [])
+    words = production.children[0].split(" ")
+
+    if sem:
+        sem = copy.deepcopy(sem.children[0])
+        for i, word in enumerate(words):
+            tag = Token('WORD', "B-" + sem) if i == 0 else Token('WORD', "I-" + sem)
+            sem_substitute.children.append(tag)
+    else:
+        for i, word in enumerate(words):
+            tag = Token('WORD', "O")
+            sem_substitute.children.append(tag)
+    
+    return sem_substitute
+    
 
 
 def expand_all_semantics(production_rules, semantics_rules):

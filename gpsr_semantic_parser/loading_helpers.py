@@ -105,12 +105,12 @@ def load_all_2018(generator, grammar_dir):
     cat2_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")])
     cat3_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")])
 
-    cat1_rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"), *paths)
-    cat2_rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"), *paths)
-    cat3_rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"), *paths)
-    cat1_rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
-    cat2_rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
-    cat3_rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
+    cat1_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")], *paths)
+    cat2_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")], *paths)
+    cat3_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")], *paths)
+    cat1_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")])
+    cat2_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")])
+    cat3_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")])
 
     cat1_semantics = generator.load_semantics_rules(join(grammar_dir, "gpsr_category_1_semantics.txt"))
     cat2_semantics = generator.load_semantics_rules(
@@ -118,17 +118,4 @@ def load_all_2018(generator, grammar_dir):
     cat3_semantics = generator.load_semantics_rules(join(grammar_dir, "gpsr_category_3_semantics.txt"))
 
     return [(cat1_rules, cat1_rules_anon, cat1_rules_ground, cat1_semantics), (cat2_rules, cat2_rules_anon, cat2_rules_ground, cat2_semantics), (cat3_rules, cat3_rules_anon, cat3_rules_ground, cat3_semantics)]
-
-def load_slot(generator, grammar_dir):
-    common_path = join(grammar_dir, "common_rules.txt")
-
-    paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
-
-    cat1_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")])
-    cat1_rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"), *paths)
-    cat1_rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
-    cat1_semantics = generator.load_semantics_rules([join(grammar_dir, "gpsr_category_1_slot.txt"), join(grammar_dir, "common_rules_slot.txt")])
-    #cat1_semantics = generator.load_semantics_rules([join(grammar_dir, "gpsr_category_1_semantics.txt")])
-
-    return [(cat1_rules, cat1_rules_anon, cat1_rules_ground, cat1_semantics)]
 
