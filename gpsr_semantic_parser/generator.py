@@ -1,32 +1,43 @@
 import os
 
-from lark import Lark, Tree
+from lark import Lark, Tree, exceptions
 
 from gpsr_semantic_parser.generation import generate_sentence_parse_pairs, expand_pair_full
-from gpsr_semantic_parser.grammar import TypeConverter, expand_shorthand
+from gpsr_semantic_parser.grammar import TypeConverter, expand_shorthand, CombineExpressions
 from gpsr_semantic_parser.util import get_wildcards, has_placeholders
 
-GENERATOR_GRAMMARS={2018:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt")),
-                    2019:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt"))}
+GENERATOR_GRAMMARS={2018:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt")),
+                    2019:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt"))}
 
 class Generator:
     def __init__(self, grammar_format_version=2018):
         with  open(GENERATOR_GRAMMARS[grammar_format_version][0]) as grammar_spec, open(GENERATOR_GRAMMARS[grammar_format_version][1]) as annotation_spec:
-            self.generator_grammar_parser = Lark(grammar_spec,
-            start='start', parser="lalr", transformer=TypeConverter())
-            self.lambda_parser = Lark(annotation_spec,
-                             start='start', parser="lalr", transformer=TypeConverter())
+            grammar_spec = grammar_spec.read()
+            annotation_spec = annotation_spec.read()
+        self.generator_grammar_parser = Lark(grammar_spec,
+        start='rule', parser="lalr", transformer=TypeConverter())
+        self.generator_sequence_parser = Lark(grammar_spec,
+        start='top_expression', parser="lalr", transformer=TypeConverter())
+        self.lambda_parser = Lark(annotation_spec,
+                         start='start', parser="lalr", transformer=TypeConverter())
 
-
-    def parse_production_rule(self, line):
+    def parse_production_rule(self, line, expand=True):
         #print(line)
-        parsed = self.generator_grammar_parser.parse(line)
-        rhs_list_expanded = expand_shorthand(parsed.children[1])
+        try:
+            parsed = self.generator_grammar_parser.parse(line)
+        except exceptions.LarkError as e:
+            print(line)
+            print(e)
+            raise e
+        # Clean up any
+        #CombineExpressions().visit(parsed.children[1])
+        rhs_list_expanded = [parsed.children[1]]
+        if expand:
+            rhs_list_expanded = expand_shorthand(parsed.children[1])
         #print(parsed.pretty())
         return parsed.children[0], rhs_list_expanded
 
-
-    def load_rules(self, grammar_file_paths):
+    def load_rules(self, grammar_file_paths, expand_shorthand=True):
         """
         :param grammar_file_paths: list of file paths
         :return: dictionary with NonTerminal key and values for all productions
@@ -43,7 +54,7 @@ class Generator:
                         # We only care about lines that start with a nonterminal (denoted by $)
                         continue
                     # parse into possible productions
-                    lhs, rhs_productions = self.parse_production_rule(line)
+                    lhs, rhs_productions = self.parse_production_rule(line, expand_shorthand)
                     # add to dictionary, if already there then append to list of rules
                     # using set to avoid duplicates
                     if lhs not in production_rules:
@@ -54,10 +65,23 @@ class Generator:
 
     def parse_rule(self, line, rule_dict):
         prod, semantics = line.split("=")
-        prod = self.generator_grammar_parser.parse(prod.strip())
+        try:
+            prod = self.generator_sequence_parser.parse(prod.strip())
+        except exceptions.LarkError as e:
+            print(prod)
+            print(e)
+            raise e
+
         expanded_prod_heads = expand_shorthand(prod)
         sem = semantics.strip()
-        sem = self.lambda_parser.parse(sem)
+
+        try:
+            sem = self.lambda_parser.parse(sem)
+        except exceptions.LarkError as e:
+            print(sem)
+            print(e)
+            raise e
+
         sem_wildcards = get_wildcards([sem]) if isinstance(sem, Tree) else set()
         for head in expanded_prod_heads:
             # Check for any obvious errors in the annotation

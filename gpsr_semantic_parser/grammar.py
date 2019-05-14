@@ -8,6 +8,14 @@ from lark import Tree, Transformer, Visitor
 
 
 class TypeConverter(Transformer):
+    def bare_choice(self, children):
+        return Tree("choice", children)
+    def top_expression(self, children):
+        # Bake the top expression down
+        if len(children) == 1 and isinstance(children[0], Tree) and children[0].data == "expression":
+            return children[0]
+        return Tree("expression", children)
+
     def non_terminal(self, children):
         return NonTerminal(children[0])
 
@@ -54,9 +62,6 @@ class TypeConverter(Transformer):
 class DiscardVoid(Visitor):
     def expression(self, tree):
         tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonymized)) and x.name == "void"), tree.children))
-
-
-
 
 
 class ToString(Transformer):
@@ -145,20 +150,31 @@ class CombineExpressions(Visitor):
 def expand_shorthand(tree):
     in_progress = [tree]
     output = []
+    combiner = CombineExpressions()
     while len(in_progress) != 0:
         current = in_progress.pop()
-        choices = list(current.find_data("choice"))
-        if len(choices) == 0:
+        choice = None
+        # Find the unmade choice that's furthest up the tree
+        for subtree in current.iter_subtrees_topdown():
+            if subtree.data == "choice":
+                choice = subtree
+                break
+        if not choice:
+            # All choices expanded!
+            # Choices will make a mess of unnecessarily nested expressions. Clean
+            # up.
+            combiner.visit(current)
             output.append(current)
             continue
-        for choice in choices:
-            for option in choice.children:
-                choice_made_tree = deepcopy(tree)
-                if choice_made_tree == choice:
-                    in_progress.append(option)
-                else:
-                    choice_parent = list(choice_made_tree.find_pred(lambda subtree: any([child == choice for child in subtree.children])))[0]
-                    replace_child(choice_parent, choice, option, only_once=True)
-                    in_progress.append(choice_made_tree)
+       # Make the choice in every way
+        for option in choice.children:
+            choice_made_tree = deepcopy(current)
+            # Is this choice the root of the tree? No parent in this case
+            if choice_made_tree == choice:
+                in_progress.append(option)
+            else:
+                choice_parent = list(choice_made_tree.find_pred(lambda subtree: any([child == choice for child in subtree.children])))[0]
+                replace_child(choice_parent, choice, option, only_once=True)
+                in_progress.append(choice_made_tree)
 
     return output

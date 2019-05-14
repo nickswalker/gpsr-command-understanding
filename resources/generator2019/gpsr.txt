@@ -1,19 +1,19 @@
-; grammar name GPSR Grammar
+﻿; grammar name GPSR Grammar
 ; grammar tier High
 ; import common.txt
 
-$Main     = $pmain | $main
-$pmain    = $polite $main
+$Main     = $ptask | $task
+$ptask    = $polite $task
 
-;$main     = $fndppl
-;$main     = $fndobj
-;$main     = $guide
-;$main     = $follow
-;$main     = $followout
-;$main     = $incomplete
-;$main     = $man
-;$main     = $complexman
-$main     = $partyhost
+$task     = $fndppl
+$task     = $fndobj
+$task     = $guide
+$task     = $follow
+$task     = $followout
+$task     = $incomplete
+$task     = $man
+$task     = $complexman
+$task     = $partyhost
 
 ##############################################################################
 #

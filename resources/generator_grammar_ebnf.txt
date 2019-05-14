@@ -1,9 +1,9 @@
-?start:       rule | top_expression
+?start:       rule
 rule:         non_terminal "=" top_expression
-?top_expression: (expression | choice)+
-expression:   ( WORD | non_terminal | wildcard | COMMA | PERIOD)+
-choice:       "(" _choice_args ")" | _choice_args
-_choice_args:  (expression | "(" expression ")" ) "|" expression [("|" expression)+]
+top_expression: expression+ | bare_choice
+?expression: (non_terminal|wildcard |COMMA|PERIOD|choice|WORD)+ | "(" (non_terminal|wildcard|COMMA|PERIOD|choice|WORD)+ ")"
+choice:       "(" expression+ ("|" expression+ )+  ")"
+bare_choice:  expression+ ("|" expression+ )+
 
 non_terminal: "$"CNAME
 wildcard:     "{" _card_type meta? OBFUSCATED?"}"
@@ -24,7 +24,7 @@ object_alike_wildcard:      "object alike" | "aobject"
 
 name_wildcard:      "name" [WORD | INT] | "female" | "male"
 question_wildcard:  "question"
-pronoun_wildcard:   "pron"
+pronoun_wildcard:   "pron" "pos"?
 void_wildcard:      "void"
 gesture_wildcard:   "gesture"
 category_wildcard:   "category" INT?

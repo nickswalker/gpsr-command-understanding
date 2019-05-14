@@ -93,6 +93,9 @@ def chunker(seq, size):
 
 
 def save_data(data, out_path):
+    if len(data)== 0:
+        print("Set is empty, not saving file")
+        return
     data = sorted(data, key=lambda x: len(x[0]))
     with open(out_path, "w") as f:
         for sentence, parse in data:

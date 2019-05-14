@@ -132,6 +132,7 @@ $whattosay = a joke
 $vbbtake   = bring | take
 $vbplace   = put | place
 $vbbring   = bring | give
+$vbclean   = clean
 $vbdeliver = $vbbring | deliver
 $vbtake    = get | grasp | take | pick up
 $vbspeak   = tell | say
@@ -140,7 +141,7 @@ $vbgor     = $vbgopl | enter
 $vbfind    = find | locate | look for
 $vbguide   = guide | escort | take | lead | accompany
 $vbfollow  = follow
- 
+
 
 ##############################################################################
 #
