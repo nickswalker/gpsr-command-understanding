@@ -45,7 +45,7 @@ the {gesture} person in the {room} = O {gesture} B-PERSON O O {room}
 #$complexman  = $cmanwarn $cmancmd
 
 #$cmancmd     = Pour some cereals into the bowl
-Pour some cereals into the bowl = {pour} O O B-OBJECT O O TO[B-OBJECT]
+Pour some cereals into the bowl = {pour} O O B-OBJECT O O TO[B-CONTAINER]
 
 #$cmancmd     = $goroom {void meta: All access doors to {room 1} bust be closed.}
 $goroom {void meta: All access doors to {room 1} bust be closed.} = {navigate} $goroom
@@ -145,7 +145,7 @@ $gobeacon, meet the $ernamperobj, and $vbfollow it {void meta: Destination is {r
 $fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $goroom = {follow_guide} $fllwoutdest O {name 1} O O FROM[{beacon 1}], $vbfollow {pron}, O TO[$goroom]
 
 #$followout   = $fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbguide {pron} back
-$fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbguide {pron} back = {follow_guide} $fllwoutdest O {name 1} O O FROM[{beacon 1}], $vbfollow {pron}, O $vbguide {pron} TO[B-LOCATION]
+$fllwoutdest meet {name 1} at the {beacon 1}, $vbfollow {pron}, and $vbguide {pron} back = {follow_guide} $fllwoutdest O {name 1} O O FROM[{beacon 1}], $vbfollow {pron}, O $vbguide {pron} TO[B-OPERATOR]
 
 #$fllwoutdest = {void meta: The robot must follow {name 1} outside the arena}
 

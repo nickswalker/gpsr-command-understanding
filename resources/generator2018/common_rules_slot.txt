@@ -156,6 +156,7 @@ $vbdeliver it to {name} at the {beacon} = $vbdeliver O O TO[{name}] O O TO[{beac
 #; Speak
 #$talk     = $answer | $speak
 #$answer   = answer a {question}
+answer a {question} = B-WHATTOSAY I-WHATTOSAY I-WHATTOSAY
 #$speak    = $vbspeak $whattosay
 
 
@@ -223,4 +224,4 @@ Could you please = O O O
 #{beacon 2} = TO-BEACON
 #{pron} = PRON
 {whattosay} = WHATTOSAY
-{question} = QUESTION
+#{question} = QUESTION
