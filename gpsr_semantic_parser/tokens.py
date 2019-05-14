@@ -24,16 +24,26 @@ class WildCard(NonTerminal):
         self.type = type.strip() if type else None
         self.extra = extra.strip() if extra else None
         super(WildCard, self).__init__(name)
+
     def __str__(self):
         obfuscated_str = '?' if self.obfuscated else ""
         type_str = self.type if self.type else ""
         extra_str = self.extra if self.extra else ""
         return "Wildcard(" + '{} {} {}'.format(self.name, type_str, extra_str, obfuscated_str).strip() + ')'
+
     def to_human_readable(self):
         obfuscated_str = '?' if self.obfuscated else ""
         type_str = self.type if self.type else ""
         extra_str = self.extra if self.extra else ""
         return '{' + "{} {} {} {}".format(self.name, type_str, extra_str, obfuscated_str).strip() + '}'
+
+    def to_snake_case(self):
+        items = [self.name]
+        if self.type: items.append(self.type)
+        if self.extra: items.append(self.extra)
+        if self.obfuscated: items.append("?")
+        return "_".join(items)
+
     def __hash__(self):
         return hash(self.__str__())
     def __eq__(self, other):

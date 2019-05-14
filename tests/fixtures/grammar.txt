@@ -1,5 +1,5 @@
 $Main = ($speak | $bring)
-$speak = say hi
-$bring = bring it to me $when
+$speak = say hi to him right now please
+$bring = bring it to (me | {pron} ) $when
 $when = (now | later)
 
