@@ -2,16 +2,24 @@ import os
 
 from lark import Lark, Tree, exceptions
 
-from gpsr_semantic_parser.generation import generate_sentence_parse_pairs, expand_pair_full
+from gpsr_semantic_parser.generation import generate_sentence_parse_pairs, generate_sentence_slot_pairs, expand_pair_full
 from gpsr_semantic_parser.grammar import TypeConverter, expand_shorthand, CombineExpressions
-from gpsr_semantic_parser.util import get_wildcards, has_placeholders
+from gpsr_semantic_parser.util import get_wildcards, has_placeholders, merge_dicts
+from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
+from gpsr_semantic_parser.grammar import tree_printer
+from gpsr_semantic_parser.loading_helpers import load_wildcard_rules, make_anonymized_grounding_rules
 
-GENERATOR_GRAMMARS={2018:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt")),
-                    2019:(os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt"), os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt"))}
+from itertools import zip_longest
+
+GENERATOR_GRAMMARS={2018:os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt"),
+                    2019:os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt")}
+
+SEMANTIC_FORMS={"lambda": os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt"),
+                "slot": os.path.abspath(os.path.dirname(__file__) + "/../resources/slot_ebnf.txt")}
 
 class Generator:
-    def __init__(self, grammar_format_version=2018):
-        with  open(GENERATOR_GRAMMARS[grammar_format_version][0]) as grammar_spec, open(GENERATOR_GRAMMARS[grammar_format_version][1]) as annotation_spec:
+    def __init__(self, grammar_format_version=2018, semantic_form_version="lambda"):
+        with  open(GENERATOR_GRAMMARS[grammar_format_version]) as grammar_spec, open(SEMANTIC_FORMS[semantic_form_version]) as annotation_spec:
             grammar_spec = grammar_spec.read()
             annotation_spec = annotation_spec.read()
         self.generator_grammar_parser = Lark(grammar_spec,
@@ -20,6 +28,16 @@ class Generator:
         start='top_expression', parser="lalr", transformer=TypeConverter())
         self.lambda_parser = Lark(annotation_spec,
                          start='start', parser="lalr", transformer=TypeConverter())
+        self.semantic_form_version = semantic_form_version
+        self.rules = []
+
+    def load_set_of_rules(self, grammar_file_paths, semantics_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+        rules_raw = self.load_rules(grammar_file_paths)
+        rules_anon = self.prepare_anonymized_rules(grammar_file_paths)
+        rules_ground = self.prepare_grounded_rules(grammar_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
+        rules_semantic = self.load_semantics_rules(semantics_file_paths)
+
+        self.rules.append([rules_raw, rules_anon, rules_ground, rules_semantic])
 
     def parse_production_rule(self, line, expand=True):
         #print(line)
@@ -82,15 +100,17 @@ class Generator:
             print(e)
             raise e
 
-        sem_wildcards = get_wildcards([sem]) if isinstance(sem, Tree) else set()
-        for head in expanded_prod_heads:
+        expanded_sem_heads = expand_shorthand(sem)
+        for prod, sem in zip_longest(expanded_prod_heads, expanded_sem_heads, fillvalue=expanded_sem_heads[0]):
             # Check for any obvious errors in the annotation
-            head_wildcards = get_wildcards([head])
-            if sem_wildcards.difference(head_wildcards):
+            prod_wildcards = get_wildcards([prod])
+            sem_wildcards = get_wildcards([sem]) if isinstance(sem, Tree) else set()
+
+            if sem_wildcards.difference(prod_wildcards):
                 raise RuntimeError(
                     "Semantics rely on non-terminal {} that doesn't occur in rule: {}".format(sem_wildcards, line))
 
-            rule_dict[head] = sem
+            rule_dict[prod] = sem
 
     def load_semantics_rules(self, semantics_file_paths):
         """
@@ -110,6 +130,62 @@ class Generator:
                     self.parse_rule(cleaned, prod_to_semantics)
 
         return prod_to_semantics
+
+    def prepare_grounded_rules(self, grammar_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+
+        if not isinstance(grammar_file_paths, list):
+            grammar_file_paths = [grammar_file_paths]
+        rules = self.load_rules(grammar_file_paths)
+        grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
+
+        # This part of the grammar won't lend itself to any useful generalization from rephrasings
+        rules[WildCard("question")] = [Tree("expression",["question"])]
+        rules[WildCard("pron")] = [Tree("expression",["them"])]
+        return merge_dicts(rules, grounding_rules)
+
+    def prepare_anonymized_rules(self, grammar_file_paths, show_debug_details=False):
+
+        if not isinstance(grammar_file_paths, list):
+            grammar_file_paths = [grammar_file_paths]
+        rules = self.load_rules(grammar_file_paths)
+
+        all_rule_trees = [tree for _, trees in rules.items() for tree in trees ]
+        groundable_terms = get_wildcards(all_rule_trees)
+        groundable_terms.add(WildCard("object", "1"))
+        groundable_terms.add(WildCard("category", "1"))
+        groundable_terms.add(WildCard("whattosay"))
+        grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)
+
+        # We'll use the indeterminate pronoun for convenience
+        grounding_rules[WildCard("pron")] = [Tree("expression", ["them"])]
+        return merge_dicts(rules, grounding_rules)
+
+    def get_utterance_semantics_pairs(self, random_source, rule_sets, branch_cap=None):
+        all_pairs = {}
+        rules = [self.rules[index - 1] for index in rule_sets]
+
+        for rules, rules_anon, rules_ground, semantics in rules:
+            cat_groundings = {}
+
+            pairs = []
+            if self.semantic_form_version == "slot":
+                pairs = generate_sentence_slot_pairs(ROOT_SYMBOL, rules_ground, semantics,
+                                                yield_requires_semantics=True,
+                                                branch_cap=branch_cap,
+                                                random_generator=random_source)
+            else:
+                pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, semantics,
+                                                yield_requires_semantics=True,
+                                                branch_cap=branch_cap,
+                                                random_generator=random_source)
+
+            for utterance, parse in pairs:
+                all_pairs[tree_printer(utterance)] = tree_printer(parse)
+            #for sentence, semantics in pairs:
+            #    print(tree_printer(sentence))
+            #    print(tree_printer(semantics))
+        return all_pairs
+
 
 
 def get_grounding_per_each_parse(generator, random_source):

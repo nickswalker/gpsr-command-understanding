@@ -7,17 +7,17 @@ import os
 import random
 import argparse
 import shutil
-from collections import Counter
 
-import lark
+from os.path import join
+from lark import lark, Tree, Token
+from collections import Counter
 import more_itertools
 
-from gpsr_semantic_parser.generation import pairs_without_placeholders
-from gpsr_semantic_parser.generator import Generator, get_grounding_per_each_parse_by_cat
+from gpsr_semantic_parser.generator import Generator
+from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
+from gpsr_semantic_parser.generation import generate_sentences
+from gpsr_semantic_parser.util import determine_unique_cat_data, save_slot_data, flatten, get_pairs_by_cats, merge_dicts
 from gpsr_semantic_parser.grammar import tree_printer
-from gpsr_semantic_parser.loading_helpers import load_all_2018
-from gpsr_semantic_parser.util import determine_unique_cat_data, save_data, flatten, merge_dicts, get_pairs_by_cats
-
 
 def validate_args(args):
     if args.test_categories != args.train_categories:
@@ -34,21 +34,15 @@ def validate_args(args):
             print("Please ensure split percentages sum to 1")
             exit(1)
 
-    if not (args.anonymized or args.groundings or args.turk):
-        print("Must use at least one of anonymized or grounded pairs")
-
     if not args.name:
         train_cats = "".join([str(x) for x in args.train_categories])
         test_cats = "".join([str(x) for x in args.test_categories])
         args.name = "{}_{}".format(train_cats, test_cats)
-        if args.use_parse_split:
-            args.name += "_parse"
-        if args.anonymized:
-            args.name += "_a"
-        if args.groundings:
-            args.name += "_g" + str(args.groundings)
-        if args.turk:
-            args.name += "_t"
+
+    if args.use_parse_split:
+        args.name += "_parse"
+    if args.turk:
+        args.name += "_t"
 
 
 def load_turk_data(path, lambda_parser):
@@ -74,31 +68,24 @@ def load_turk_data(path, lambda_parser):
                 print("Skipping malformed parse: {}".format(target_sequence))
     return pairs
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-s","--split", default=[.7,.1,.2], nargs='+', type=float)
     parser.add_argument("-trc","--train-categories", default=[1, 2, 3], nargs='+', type=int)
     parser.add_argument("-tc","--test-categories", default=[1, 2, 3], nargs='+', type=int)
     parser.add_argument("-p","--use-parse-split", action='store_true', default=False)
-    parser.add_argument("-g","--groundings", required=False, type=int, default=None)
-    parser.add_argument("-a","--anonymized", required=False, default=True, action="store_true")
-    parser.add_argument("-na","--no-anonymized", required=False, dest="anonymized", action="store_false")
+    parser.add_argument("-b","--branch-cap", default=None, type=int)
     parser.add_argument("-t","--turk", required=False, default=None, type=str)
     parser.add_argument("--name", default=None, type=str)
     parser.add_argument("--seed", default=0, required=False, type=int)
-    parser.add_argument("-i","--incremental-datasets", action='store_true', required=False)
     parser.add_argument("-f", "--force-overwrite", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
     validate_args(args)
-
-    cmd_gen = Generator(grammar_format_version=2018)
+    
+    cmd_gen = Generator(grammar_format_version=2018, semantic_form_version="slot")
+    #cmd_gen = Generator(grammar_format_version=2018, semantic_form_version="lambda")
     random_source = random.Random(args.seed)
-
-    different_test_dist = False
-    if args.test_categories != args.train_categories:
-        different_test_dist = True
 
     pairs_out_path = os.path.join(os.path.abspath(os.path.dirname(__file__) + "/../.."), "data", args.name)
     train_out_path = os.path.join(pairs_out_path, "train.txt")
@@ -109,28 +96,41 @@ def main():
     if args.force_overwrite and os.path.isdir(pairs_out_path):
         shutil.rmtree(pairs_out_path)
     os.mkdir(pairs_out_path)
-    
+
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
+    common_path = join(grammar_dir, "common_rules.txt")
+    paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
+    grammar_file_paths = [common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")]
+    semantics_file_paths = [join(grammar_dir, "gpsr_category_1_slot.txt"), join(grammar_dir, "common_rules_slot.txt")]
 
-    generator = load_all_2018(cmd_gen, grammar_dir)
+    cmd_gen.load_set_of_rules(grammar_file_paths, semantics_file_paths, *paths)
 
-    pairs = [{}, {}, {}]
-    if args.anonymized:
-        pairs = [pairs_without_placeholders(rules, semantics) for _, rules, _, semantics in generator]
+    grammar_file_paths = [common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")]
+    semantics_file_paths = [join(grammar_dir, "gpsr_category_2_slot.txt"), join(grammar_dir, "common_rules_slot.txt")]
 
-    # For now this only works with all data
-    if args.groundings and len(args.train_categories) == 3:
-        for i in range(args.groundings):
-            groundings = get_grounding_per_each_parse_by_cat(generator,random_source)
-            for cat_pairs, groundings in zip(pairs, groundings):
-                for utt, parse_anon, _ in groundings:
-                    cat_pairs[tree_printer(utt)] = tree_printer(parse_anon)
+    cmd_gen.load_set_of_rules(grammar_file_paths, semantics_file_paths, *paths)
 
-    if args.turk and len(args.train_categories) == 3:
-        turk_pairs = load_turk_data(args.turk, cmd_gen.lambda_parser)
-        pairs[0] = merge_dicts(pairs[0], turk_pairs)
+    grammar_file_paths = [common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")]
+    semantics_file_paths = [join(grammar_dir, "gpsr_category_3_slot.txt"), join(grammar_dir, "common_rules_slot.txt")]
 
-    #pairs_in = [pairs_without_placeholders(rules, semantics, only_in_grammar=True) for _, rules, _, semantics in generator]
+    cmd_gen.load_set_of_rules(grammar_file_paths, semantics_file_paths, *paths)
+
+    #generator = cmd_gen.rules[2]
+    #for k,v in generator[2].items():
+    #    print(k)
+    #    print(v)
+    #    print("-------------------------------------------------------------------")
+
+    pairs = []
+    pairs.append(cmd_gen.get_utterance_semantics_pairs(random_source, [1], args.branch_cap))
+    pairs.append(cmd_gen.get_utterance_semantics_pairs(random_source, [2], args.branch_cap))
+    pairs.append(cmd_gen.get_utterance_semantics_pairs(random_source, [3], args.branch_cap))
+    #pairs = [cmd_gen.get_utterance_semantics_pairs(random_source, [cat], args.branch_cap) for cat in [1, 2, 3]]
+
+    #if args.turk and len(args.train_categories) == 3:
+    #    turk_pairs = load_turk_data(args.turk, cmd_gen.lambda_parser)
+    #    pairs[0] = merge_dicts(pairs[0], turk_pairs)
+
     by_utterance, by_parse = determine_unique_cat_data(pairs)
 
     if args.use_parse_split:
@@ -147,6 +147,10 @@ def main():
     if args.test_categories == args.train_categories:
         # If we're training and testing on the same distributions, these should match exactly
         assert train_pairs == test_pairs
+
+    different_test_dist = False
+    if args.test_categories != args.train_categories:
+        different_test_dist = True
 
     train_percentage, val_percentage, test_percentage = args.split
     if different_test_dist:
@@ -165,23 +169,9 @@ def main():
         val = flatten(val)
         test = flatten(test)
 
-    # With this switch, we'll simulate getting data one batch at a time
-    # so we can assess how quickly we improve
-    if args.incremental_datasets:
-        limit = 16
-        count = 1
-        while limit < len(train):
-            data_to_write = train[:limit]
-            data_to_write = sorted(data_to_write, key=lambda x: len(x[0]))
-            with open("".join(train_out_path.split(".")[:-1]) + str(count) + ".txt", "w") as f:
-                for sentence, parse in data_to_write:
-                    f.write(sentence + '\n' + str(parse) + '\n')
-            limit += 16
-            count += 1
-
-    save_data(train, train_out_path)
-    save_data(val, val_out_path)
-    save_data(test, test_out_path)
+    save_slot_data(train, train_out_path)
+    save_slot_data(val, val_out_path)
+    save_slot_data(test, test_out_path)
 
     utterance_vocab = Counter()
     parse_vocab = Counter()
@@ -192,13 +182,8 @@ def main():
             parse_vocab[token] += 1
 
     info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, train_percentage, val_percentage, test_percentage)
-    total_train_set = len(train) + len(val)
-    if different_test_dist:
-        total_test_set = len(test)
-    else:
-        total_train_set += len(test)
-        total_test_set = total_train_set
-    info += "Exact split percentage: {:.2f}/{:.2f}/{:.2f} split\n".format(len(train)/total_train_set, len(val)/total_train_set, len(test)/total_test_set)
+    total = len(train) + len(val) + len(test)
+    info += "Exact split percentage: {:.2f}/{:.2f}/{:.2f} split\n".format(len(train)/total, len(val)/total, len(test)/total)
 
     info += "train={} val={} test={}".format(len(train), len(val), len(test))
     print(info)
@@ -212,7 +197,7 @@ def main():
         f.write("\n\nParse vocab\n")
         for token, count in sorted(parse_vocab.items(), key=operator.itemgetter(1), reverse=True):
             f.write("{} {}\n".format(token, str(count)))
-
+    
 
 if __name__ == "__main__":
     main()

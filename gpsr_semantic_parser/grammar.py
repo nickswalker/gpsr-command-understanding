@@ -88,6 +88,26 @@ class ToString(Transformer):
                 children[i] = "\" " + child[1:-1] + " \""
         return "( {} )".format(" ".join(map(str,children)))
 
+    def slot_pred(self, children):
+        output = ""
+        pred_name = children[0]
+        for child in children[1:]:
+            if isinstance(child, str):
+                words = child.split(" ")
+                for word in words:
+                    if word in ["O", ","]:
+                        output += word + " "
+                    else:
+                        split = word.split("-")
+                        if len(split) > 1:
+                            inserted = split[0] + "-"
+                            inserted += "_".join(split[1:-1])
+                            inserted += "_".join([pred_name, split[-1]])
+                        else:
+                            inserted = "_".join([pred_name, split[0]])
+                        output += inserted + " "
+        return output.strip()
+
     def lambda_abs(self, children):
         return "( lambda {} )".format(" ".join(map(str,children)))
 

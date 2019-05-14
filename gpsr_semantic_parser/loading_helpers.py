@@ -95,48 +95,6 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
     return production_rules
 
 
-def prepare_grounded_rules(generator, common_rules_path, category_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
-    """
-        Prepare the production rules for a given GPSR category.
-        :param common_rules_path:
-        :param category_path:
-        :return:
-        """
-    if not isinstance(category_paths, list):
-        category_paths = [category_paths]
-    rules = generator.load_rules([common_rules_path] + category_paths)
-    grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
-
-    # This part of the grammar won't lend itself to any useful generalization from rephrasings
-    rules[WildCard("question")] = [Tree("expression",["question"])]
-    rules[WildCard("pron")] = [Tree("expression",["them"])]
-    return merge_dicts(rules, grounding_rules)
-
-
-def prepare_anonymized_rules(generator, common_rules_path, category_paths, show_debug_details=False):
-    """
-    Prepare the production rules for a given GPSR category, making some
-    typical adjustments to make the grammar usable
-    :param common_rules_path:
-    :param category_path:
-    :return:
-    """
-    if not isinstance(category_paths, list):
-        category_paths = [category_paths]
-    rules = generator.load_rules([common_rules_path] + category_paths)
-
-    all_rule_trees = [tree for _, trees in rules.items() for tree in trees ]
-    groundable_terms = get_wildcards(all_rule_trees)
-    groundable_terms.add(WildCard("object", "1"))
-    groundable_terms.add(WildCard("category", "1"))
-    groundable_terms.add(WildCard("whattosay"))
-    grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)
-
-    # We'll use the indeterminate pronoun for convenience
-    grounding_rules[WildCard("pron")] = [Tree("expression", ["them"])]
-    return merge_dicts(rules, grounding_rules)
-
-
 def load_all_2018(generator, grammar_dir, expand_shorthand=True):
 
     common_path = join(grammar_dir, "common_rules.txt")
@@ -147,12 +105,12 @@ def load_all_2018(generator, grammar_dir, expand_shorthand=True):
     cat2_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")])
     cat3_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")])
 
-    cat1_rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"), *paths)
-    cat2_rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"), *paths)
-    cat3_rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"), *paths)
-    cat1_rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"))
-    cat2_rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr_category_2_grammar.txt"))
-    cat3_rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr_category_3_grammar.txt"))
+    cat1_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")], *paths)
+    cat2_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")], *paths)
+    cat3_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")], *paths)
+    cat1_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")])
+    cat2_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")])
+    cat3_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")])
 
     cat1_semantics = generator.load_semantics_rules(join(grammar_dir, "gpsr_category_1_semantics.txt"))
     cat2_semantics = generator.load_semantics_rules(
@@ -169,9 +127,9 @@ def load_all_2019(generator, grammar_dir, expand_shorthand=True):
     paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
 
     rules = generator.load_rules([common_path, join(grammar_dir, "gpsr.txt")], expand_shorthand=expand_shorthand)
-    rules_ground = prepare_grounded_rules(generator, common_path, join(grammar_dir, "gpsr.txt"), *paths)
-    rules_anon = prepare_anonymized_rules(generator, common_path, join(grammar_dir, "gpsr.txt"))
+    rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr.txt")], *paths)
+    rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr.txt")])
 
     semantics = generator.load_semantics_rules(join(grammar_dir, "gpsr_semantics.txt"))
 
-    return (rules, rules_anon, rules_ground, semantics)
+    return rules, rules_anon, rules_ground, semantics

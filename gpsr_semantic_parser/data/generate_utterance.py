@@ -17,5 +17,5 @@ paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml
 generator = Generator()
 rules = load_all_2018(generator, grammar_dir)
 
-utterance, parse = generate_random_pair(ROOT_SYMBOL, rules[0][1], rules[0][3], generator=random.Random())
+utterance, parse = generate_random_pair(ROOT_SYMBOL, rules[0][1], rules[0][3], random_generator=random.Random())
 print(tree_printer(utterance))

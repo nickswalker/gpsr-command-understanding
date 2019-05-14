@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from gpsr_semantic_parser.tokens import WildCard, NonTerminal
+from lark import lark, Token
 
 
 def merge_dicts(x, y):
@@ -35,6 +36,25 @@ def replace_child_in_tree(tree, child_target, replacement, only_once=False):
         if only_once and did_replace:
             return did_replace
     return did_replace
+
+
+def replace_words_in_tree(tree, replacement):
+    for tree in tree.iter_subtrees():
+        for i, child in enumerate(tree.children):
+            if (isinstance(child, Token) and child.type == 'WORD') or (type(child) is str):
+                tree.children[i] = replacement
+
+
+def replace_slots_in_tree(tree, slot):
+    first = True
+    for tree in tree.iter_subtrees():
+        for i, child in enumerate(tree.children):
+            if (isinstance(child, Token) and child.type == 'WORD') or (type(child) is str):
+                if first:
+                    tree.children[i] = "B-" + slot
+                    first = False
+                else:
+                    tree.children[i] = "I-" + slot
 
 
 def get_wildcards(trees):
@@ -101,6 +121,19 @@ def save_data(data, out_path):
         for sentence, parse in data:
             f.write(sentence + '\n' + str(parse) + '\n')
 
+def save_slot_data(data, out_path):
+    data = sorted(data, key=lambda x: len(x[0]))
+    with open(out_path, "w") as f:
+        for sentence, parse in data:
+            sentence_tokens = sentence.split(" ")
+            parse_tokens = parse.split(" ")
+            width = max(len(x) for x in [*sentence_tokens, *parse_tokens])
+            sentence_str = " ".ljust(width+1) + " ".join(token.ljust(width) for token in sentence_tokens)
+            f.write(sentence_str + "\n")
+            f.write(" ".join(token.ljust(width) for token in parse_tokens) + "\n")
+            #print(sentence_str)
+            #print(" ".join(token.ljust(width) for token in parse_tokens))
+
 
 def flatten(original):
     flattened = []
@@ -108,3 +141,18 @@ def flatten(original):
         for utterance in utterances:
             flattened.append((utterance, parse))
     return flattened
+
+def get_pairs_by_cats(data, train_categories, test_categories):
+    train_pairs = []
+    for cat in train_categories:
+        # Cats are 1 indexed. Subtract to get 0 indexed
+        for pair in data[cat - 1].items():
+            train_pairs.append(pair)
+
+    test_pairs = []
+    for cat in test_categories:
+        # Cats are 1 indexed. Subtract to get 0 indexed
+        for pair in data[cat - 1].items():
+            test_pairs.append(pair)
+
+    return train_pairs, test_pairs
