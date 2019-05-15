@@ -4,7 +4,7 @@ import csv
 
 from gpsr_semantic_parser.generator import Generator, get_grounding_per_each_parse
 from gpsr_semantic_parser.grammar import tree_printer
-from gpsr_semantic_parser.loading_helpers import load_all_2018
+from gpsr_semantic_parser.loading_helpers import load_all_2018_by_cat
 from gpsr_semantic_parser.util import chunker
 
 seed = 0
@@ -18,7 +18,7 @@ def main():
     out_file_path = os.path.abspath(
         os.path.dirname(__file__) + "/../../data/rephrasings_data_{}_{}.csv".format(seed, groundings_per_parse))
     cmd_gen = Generator(grammar_format_version=2018)
-    generator = load_all_2018(cmd_gen, grammar_dir)
+    generator = load_all_2018_by_cat(cmd_gen, grammar_dir)
 
     all_examples = []
     for i in range(groundings_per_parse):

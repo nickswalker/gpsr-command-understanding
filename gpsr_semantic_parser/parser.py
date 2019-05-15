@@ -11,7 +11,7 @@ class ToEBNF(Transformer):
         output = ""
         for child in children:
             if isinstance(child, WildCard):
-                output += "\"{" + child.name + "}\""
+                output += " \"" + child.to_human_readable() + "\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             elif isinstance(child, tuple):
@@ -29,7 +29,7 @@ class ToEBNF(Transformer):
         output = "("
         for child in children:
             if isinstance(child, WildCard):
-                output += "\"{" + child.name + "}\""
+                output += " \"" + child.to_human_readable() + "\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             else:

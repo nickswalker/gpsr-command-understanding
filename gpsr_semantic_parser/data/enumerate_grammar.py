@@ -5,7 +5,7 @@ from os.path import join
 
 from gpsr_semantic_parser.generator import Generator
 from gpsr_semantic_parser.grammar import tree_printer
-from gpsr_semantic_parser.loading_helpers import load_all_2018
+from gpsr_semantic_parser.loading_helpers import load_all_2018_by_cat
 from gpsr_semantic_parser.tokens import ROOT_SYMBOL
 from gpsr_semantic_parser.generation import generate_sentences, expand_all_semantics, pairs_without_placeholders
 from gpsr_semantic_parser.util import has_placeholders, determine_unique_cat_data
@@ -13,10 +13,11 @@ from gpsr_semantic_parser.util import has_placeholders, determine_unique_cat_dat
 
 def get_annotated_sentences(sentences_and_pairs):
     sentences, pairs = sentences_and_pairs
+    expanded_sentences = set([tree_printer(x) for x in sentences])
     annotated_sentences = set(pairs.keys())
     # Only keep annotations that cover sentences actually in the grammar
-    useless_annotations = annotated_sentences.difference(sentences)
-    annotated_sentences.intersection_update(sentences)
+    useless_annotations = annotated_sentences.difference(expanded_sentences)
+    annotated_sentences.intersection_update(expanded_sentences)
     return annotated_sentences
 
 def main():
@@ -24,10 +25,7 @@ def main():
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
     cmd_gen = Generator(grammar_format_version=2018)
-    generator = load_all_2018(cmd_gen, grammar_dir)
-
-
-
+    generator = load_all_2018_by_cat(cmd_gen, grammar_dir)
 
     cat_sentences = [set(generate_sentences(ROOT_SYMBOL, rules)) for _,rules, _, _ in generator]
     pairs = [{utterance: parse for utterance, parse in expand_all_semantics(rules, semantics)} for _, rules, _, semantics in generator]
@@ -69,14 +67,10 @@ def main():
 
     out_paths = [join(out_root, str(i)+"_pairs.txt") for i in range(1, 4)]
 
-
     for cat_out_path, pairs in zip(out_paths,all_pairs):
         with open(cat_out_path, "w") as f:
             for sentence, parse in pairs.items():
-                if has_placeholders(sentence) or has_placeholders(parse):
-                    print("Skipping pair for {} because it still has placeholders after expansion".format(tree_printer(sentence)))
-                    continue
-                f.write(tree_printer(sentence) + '\n' + tree_printer(parse) + '\n')
+                f.write(sentence+ '\n' + parse+ '\n')
 
     meta_out_path = join(out_root, "annotations_meta.txt")
     with open(meta_out_path, "w") as f:
@@ -88,7 +82,7 @@ def main():
             f.write("\t unique parses: {}\n".format(len(unique_parses)))
             cat_sen_lengths.append([len(tree_printer(sentence).split(" ")) for sentence in sen])
             avg_sentence_length = np.mean(cat_sen_lengths[i])
-            cat_parse_lengths.append([len(tree_printer(parse).split(" ")) for parse in unique_parses])
+            cat_parse_lengths.append([len(parse.split(" ")) for parse in unique_parses])
             avg_parse_length = np.mean(cat_parse_lengths[i])
             f.write("\t avg sentence length (tokens): {:.2f} avg parse length (tokens): {:.2f}\n".format(avg_sentence_length, avg_parse_length))
 

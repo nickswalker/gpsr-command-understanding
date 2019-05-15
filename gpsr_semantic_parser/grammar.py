@@ -66,7 +66,13 @@ class DiscardVoid(Visitor):
 
 class ToString(Transformer):
     def __default__(self, data, children, meta):
-        return " ".join(map(str, children))
+        as_str = ""
+        for child in children:
+            if isinstance(child, WildCard):
+                as_str += " " + child.to_human_readable()
+            else:
+                as_str += " " + str(child)
+        return as_str
 
     def non_terminal(self, children):
         return "${}".format(" ".join(children))

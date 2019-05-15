@@ -2,11 +2,15 @@
 import os
 import unittest
 
-from gpsr_semantic_parser.generation import generate_sentence_parse_pairs
+from lark import exceptions
+
+from gpsr_semantic_parser.generation import generate_sentences
 from gpsr_semantic_parser.generator import Generator
-from gpsr_semantic_parser.grammar import NonTerminal, tree_printer
-from gpsr_semantic_parser.loading_helpers import load_all_2018, load_all_2019
+from gpsr_semantic_parser.grammar import tree_printer
+from gpsr_semantic_parser.loading_helpers import load_all_2019, \
+    load_all_2018
 from gpsr_semantic_parser.parser import Parser
+from gpsr_semantic_parser.tokens import ROOT_SYMBOL
 
 GRAMMAR_DIR = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -23,22 +27,45 @@ class TestParsers(unittest.TestCase):
         print(test.pretty())
 
     def test_parse_all_of_2018(self):
-        pass
+        generator = Generator(grammar_format_version=2018)
+
+        grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
+        rules = load_all_2018(generator, grammar_dir)
+
+        sentences = generate_sentences(ROOT_SYMBOL, rules[0])
+        parser = Parser(rules[0])
+        sentences = set([tree_printer(x) for x in sentences])
+        succeeded = 0
+        for sentence in sentences:
+            print(sentence)
+            try:
+                print(parser.parse(sentence).pretty())
+            except exceptions.LarkError as e:
+                print(e)
+                continue
+            succeeded += 1
+
+        self.assertEqual(succeeded, len(sentences))
+
 
     def test_parse_all_of_2019(self):
-        generator = Generator(grammar_format_version=2019)
-        all_2019 = load_all_2019(generator, GRAMMAR_DIR, expand_shorthand=False)
-        parser = Parser(all_2019[1])
-        test = parser.parse("deliver snacks to everyone in the {location}.")
-        print(test.pretty())
+        generator = Generator(grammar_format_version=2018)
 
-    def test_parse_choice(self):
-        generator = Generator(grammar_format_version=2019)
-        test = generator.generator_grammar_parser.parse("$test = ( front | back | main | rear ) $ndoor")
-        print(test.pretty())
+        grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
+        rules = load_all_2019(generator, grammar_dir)
 
-        test = generator.generator_grammar_parser.parse("$phpeople    = (everyone | all the (people | men | women | guests | elders | children))")
+        sentences = generate_sentences(ROOT_SYMBOL, rules[0])
+        parser = Parser(rules[0])
+        sentences = set([tree_printer(x) for x in sentences])
+        succeeded = 0
+        for sentence in sentences:
+            print(sentence)
+            try:
+                print(parser.parse(sentence).pretty())
+            except exceptions.LarkError as e:
+                print(e)
+                continue
+            succeeded += 1
 
-        print(test.pretty())
-        print(tree_printer(test))
+        self.assertEqual(succeeded, len(sentences))
 

@@ -119,6 +119,22 @@ def load_all_2018(generator, grammar_dir, expand_shorthand=True):
 
     return [(cat1_rules, cat1_rules_anon, cat1_rules_ground, cat1_semantics), (cat2_rules, cat2_rules_anon, cat2_rules_ground, cat2_semantics), (cat3_rules, cat3_rules_anon, cat3_rules_ground, cat3_semantics)]
 
+def load_all_2018(generator, grammar_dir, expand_shorthand=True):
+
+    common_path = join(grammar_dir, "common_rules.txt")
+
+    paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
+    grammar_files = [common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"), join(grammar_dir, "gpsr_category_2_grammar.txt"), join(grammar_dir, "gpsr_category_3_grammar.txt")]
+    rules = generator.load_rules(grammar_files)
+
+    rules_ground = generator.prepare_grounded_rules(grammar_files, *paths)
+    rules_anon = generator.prepare_anonymized_rules(grammar_files)
+
+    semantics = generator.load_semantics_rules(
+        [join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt"),  join(grammar_dir, "gpsr_category_3_semantics.txt")])
+
+    return rules, rules_anon, rules_ground, semantics
+
 
 def load_all_2019(generator, grammar_dir, expand_shorthand=True):
 

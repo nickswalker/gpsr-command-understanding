@@ -5,7 +5,7 @@ import unittest
 from gpsr_semantic_parser.generation import generate_sentence_parse_pairs
 from gpsr_semantic_parser.generator import Generator
 from gpsr_semantic_parser.grammar import NonTerminal, tree_printer, expand_shorthand
-from gpsr_semantic_parser.loading_helpers import load_all_2018, load_all_2019
+from gpsr_semantic_parser.loading_helpers import load_all_2018_by_cat, load_all_2019
 from gpsr_semantic_parser.parser import Parser
 
 GRAMMAR_DIR_2018 = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
@@ -57,7 +57,7 @@ class TestGenerator(unittest.TestCase):
 
     def test_load_2018(self):
         generator = Generator(grammar_format_version=2018)
-        all_2018= load_all_2018(generator, GRAMMAR_DIR_2018, expand_shorthand=False)
+        all_2018= load_all_2018_by_cat(generator, GRAMMAR_DIR_2018, expand_shorthand=False)
 
     def test_load_2019(self):
         generator = Generator(grammar_format_version=2019)
