@@ -37,10 +37,11 @@ class TestParsers(unittest.TestCase):
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
-            print(sentence)
             try:
-                print(parser.parse(sentence).pretty())
+                parsed = parser.parse(sentence)
+                parsed_pretty = parsed.pretty()
             except exceptions.LarkError as e:
+                print(sentence)
                 print(e)
                 continue
             succeeded += 1
@@ -59,10 +60,12 @@ class TestParsers(unittest.TestCase):
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
-            print(sentence)
+
             try:
-                print(parser.parse(sentence).pretty())
+                parsed = parser.parse(sentence)
+                parsed_pretty = parsed.pretty()
             except exceptions.LarkError as e:
+                print(sentence)
                 print(e)
                 continue
             succeeded += 1

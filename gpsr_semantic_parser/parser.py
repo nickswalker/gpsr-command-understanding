@@ -1,4 +1,4 @@
-from lark import Transformer, lark, Lark, Tree
+from lark import Transformer, Lark
 
 from gpsr_semantic_parser.tokens import NonTerminal, WildCard
 
@@ -11,7 +11,10 @@ class ToEBNF(Transformer):
         output = ""
         for child in children:
             if isinstance(child, WildCard):
-                output += " \"" + child.to_human_readable() + "\""
+                if child.name == "void":
+                    output += ""
+                else:
+                    output += " \"" + child.to_human_readable() + "\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             elif isinstance(child, tuple):
@@ -29,7 +32,10 @@ class ToEBNF(Transformer):
         output = "("
         for child in children:
             if isinstance(child, WildCard):
-                output += " \"" + child.to_human_readable() + "\""
+                if child.name == "void":
+                    output += ""
+                else:
+                    output += " \"" + child.to_human_readable() + "\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             else:
@@ -66,7 +72,6 @@ class Parser(object):
         %import common.WS
         %ignore WS
 """
-        print(as_ebnf)
         self._parser = Lark(as_ebnf,  start='main')
 
     def parse(self, utterance):

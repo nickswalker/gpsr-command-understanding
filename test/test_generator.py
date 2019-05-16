@@ -58,14 +58,22 @@ class TestGenerator(unittest.TestCase):
     def test_load_2018(self):
         generator = Generator(grammar_format_version=2018)
         all_2018= load_all_2018_by_cat(generator, GRAMMAR_DIR_2018, expand_shorthand=False)
+        # To manually inspect correctness for now...
+        """for nonterm, rules in all_2018[0].items():
+            print(nonterm)
+            print("")
+            for rule in rules:
+                print(rule.pretty())
+            print("---")"""
 
     def test_load_2019(self):
         generator = Generator(grammar_format_version=2019)
         all_2019 = load_all_2019(generator, GRAMMAR_DIR_2019, expand_shorthand=False)
 
-        for nonterm, rules in all_2019[0].items():
+        # To manually inspect correctness for now...
+        """for nonterm, rules in all_2019[0].items():
             print(nonterm)
             print("")
             for rule in rules:
                 print(rule.pretty())
-            print("---")
+            print("---")"""
