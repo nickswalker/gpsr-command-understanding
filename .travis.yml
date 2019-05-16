@@ -1,0 +1,16 @@
+language: python
+dist: xenial
+
+python:
+  - "2.7"
+  - "3.6"
+  - "3.7"
+
+matrix:
+  allow_failures:
+    - python: "2.7"
+
+# command to run tests
+script:
+  - python -m unittest discover
+
