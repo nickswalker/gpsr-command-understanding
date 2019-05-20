@@ -131,12 +131,12 @@ class Generator:
 
         return prod_to_semantics
 
-    def prepare_grounded_rules(self, grammar_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+    def prepare_grounded_rules(self, grammar_file_paths, entities):
 
         if not isinstance(grammar_file_paths, list):
             grammar_file_paths = [grammar_file_paths]
         rules = self.load_rules(grammar_file_paths)
-        grounding_rules = load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
+        grounding_rules = load_wildcard_rules(*entities)
 
         # This part of the grammar won't lend itself to any useful generalization from rephrasings
         rules[WildCard("question")] = [Tree("expression",["question"])]

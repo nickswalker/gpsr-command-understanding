@@ -23,7 +23,23 @@ def make_anonymized_grounding_rules(wildcards, show_details=False):
     return grounding_rules
 
 
-def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+def load_entities_from_xml(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
+    object_parser = ObjectParser(objects_xml_file)
+    locations_parser = LocationParser(locations_xml_file)
+    names_parser = NameParser(names_xml_file)
+    gestures_parser = GesturesParser(gestures_xml_file)
+
+    objects = object_parser.all_objects()
+    categories = object_parser.all_categories()
+    names = names_parser.all_names()
+    locations = locations_parser.get_all_locations()
+    rooms = locations_parser.get_all_rooms()
+    gestures = gestures_parser.get_gestures()
+
+    return objects, categories, names, locations, rooms, gestures
+
+
+def load_wildcard_rules(objects, categories, names, locations, rooms, gestures):
     """
     Loads in the grounding rules for all the wildcard classes.
     :param objects_xml_file:
@@ -32,24 +48,12 @@ def load_wildcard_rules(objects_xml_file, locations_xml_file, names_xml_file, ge
     :param gestures_xml_file:
     :return:
     """
-    object_parser = ObjectParser(objects_xml_file)
-    locations_parser = LocationParser(locations_xml_file)
-    names_parser = NameParser(names_xml_file)
-    gestures_parser = GesturesParser(gestures_xml_file)
-
-    objects = object_parser.all_objects()
     objects = [[x] for x in sorted(objects)]
-    categories = object_parser.all_categories()
     categories = [[x] for x in sorted(categories)]
-    names = names_parser.all_names()
     names = [[x] for x in sorted(names)]
-    locations = locations_parser.get_all_locations()
     locations = [[x] for x in sorted(locations)]
-    rooms = locations_parser.get_all_rooms()
     rooms = [[x] for x in sorted(rooms)]
-    gestures = gestures_parser.get_gestures()
     gestures = [[x] for x in sorted(gestures)]
-
 
     production_rules = {}
     # add objects
@@ -100,14 +104,15 @@ def load_all_2018_by_cat(generator, grammar_dir, expand_shorthand=True):
     common_path = join(grammar_dir, "common_rules.txt")
 
     paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
+    entities = load_entities_from_xml(*paths)
 
     cat1_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")])
     cat2_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")])
     cat3_rules = generator.load_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")])
 
-    cat1_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")], *paths)
-    cat2_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")], *paths)
-    cat3_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")], *paths)
+    cat1_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")], entities)
+    cat2_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")], entities)
+    cat3_rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")], entities)
     cat1_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_1_grammar.txt")])
     cat2_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_2_grammar.txt")])
     cat3_rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr_category_3_grammar.txt")])
@@ -125,16 +130,17 @@ def load_all_2018(generator, grammar_dir, expand_shorthand=True):
     common_path = join(grammar_dir, "common_rules.txt")
 
     paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
+    entities = load_entities_from_xml(*paths)
     grammar_files = [common_path, join(grammar_dir, "gpsr_category_1_grammar.txt"), join(grammar_dir, "gpsr_category_2_grammar.txt"), join(grammar_dir, "gpsr_category_3_grammar.txt")]
     rules = generator.load_rules(grammar_files)
 
-    rules_ground = generator.prepare_grounded_rules(grammar_files, *paths)
+    rules_ground = generator.prepare_grounded_rules(grammar_files, entities)
     rules_anon = generator.prepare_anonymized_rules(grammar_files)
 
     semantics = generator.load_semantics_rules(
         [join(grammar_dir, "gpsr_category_1_semantics.txt"), join(grammar_dir, "gpsr_category_2_semantics.txt"),  join(grammar_dir, "gpsr_category_3_semantics.txt")])
 
-    return rules, rules_anon, rules_ground, semantics
+    return rules, rules_anon, rules_ground, semantics, entities
 
 
 def load_all_2019(generator, grammar_dir, expand_shorthand=True):
@@ -142,11 +148,12 @@ def load_all_2019(generator, grammar_dir, expand_shorthand=True):
     common_path = join(grammar_dir, "common_rules.txt")
 
     paths = tuple(map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
+    entities = load_entities_from_xml(*paths)
 
     rules = generator.load_rules([common_path, join(grammar_dir, "gpsr.txt")], expand_shorthand=expand_shorthand)
-    rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr.txt")], *paths)
+    rules_ground = generator.prepare_grounded_rules([common_path, join(grammar_dir, "gpsr.txt")], entities)
     rules_anon = generator.prepare_anonymized_rules([common_path, join(grammar_dir, "gpsr.txt")])
 
     semantics = generator.load_semantics_rules(join(grammar_dir, "gpsr_semantics.txt"))
 
-    return rules, rules_anon, rules_ground, semantics
+    return rules, rules_anon, rules_ground, semantics, entities

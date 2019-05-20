@@ -1,7 +1,7 @@
-nltk
 allennlp>=0.8.2
 awscli
 boto3
+editdistance
 lark-parser
 nltk
 pandas
