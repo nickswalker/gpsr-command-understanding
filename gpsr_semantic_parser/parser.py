@@ -75,7 +75,7 @@ class GrammarBasedParser(object):
     Lark-based Earley parser synthesized from the generator grammar.
     "Hard"; only parses things that are exactly in the grammar.
     """
-    def __init__(self, rules: object) -> object:
+    def __init__(self, rules):
         rules = rules
         rch_to_ebnf = ToEBNF()
         as_ebnf = ""
@@ -105,9 +105,10 @@ class NearestNeighborParser(object):
     """
     A wrapper class that maps out-of-grammar sentences to their nearest neighbor by edit distance.
     """
-    def __init__(self, parser, neighbors):
+    def __init__(self, parser, neighbors, distance_threshold=20):
         self.parser = parser
         self.neighbors = neighbors
+        self.distance_threshold = distance_threshold
 
     def parse(self, utterance):
         smallest_distance = 100

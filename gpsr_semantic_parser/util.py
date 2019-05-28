@@ -1,3 +1,4 @@
+import itertools
 from collections import defaultdict
 
 from gpsr_semantic_parser.tokens import WildCard, NonTerminal
@@ -127,7 +128,7 @@ def save_slot_data(data, out_path):
         for sentence, parse in data:
             sentence_tokens = sentence.split(" ")
             parse_tokens = parse.split(" ")
-            width = max(len(x) for x in [*sentence_tokens, *parse_tokens])
+            width = max(len(x) for x in itertools.chain(sentence_tokens, parse_tokens))
             sentence_str = " ".ljust(width+1) + " ".join(token.ljust(width) for token in sentence_tokens)
             f.write(sentence_str + "\n")
             f.write(" ".join(token.ljust(width) for token in parse_tokens) + "\n")

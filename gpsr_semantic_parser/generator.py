@@ -9,7 +9,10 @@ from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_
 from gpsr_semantic_parser.grammar import tree_printer
 from gpsr_semantic_parser.loading_helpers import load_wildcard_rules, make_anonymized_grounding_rules
 
-from itertools import zip_longest
+try:
+    from itertools import izip_longest as zip_longest
+except ImportError:
+    from itertools import zip_longest
 
 GENERATOR_GRAMMARS={2018:os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt"),
                     2019:os.path.abspath(os.path.dirname(__file__) + "/../resources/generator_grammar_ebnf.txt")}

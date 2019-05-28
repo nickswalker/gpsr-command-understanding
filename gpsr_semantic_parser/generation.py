@@ -5,7 +5,11 @@ from lark import Tree, Token
 from gpsr_semantic_parser.grammar import CombineExpressions, tree_printer, DiscardVoid
 from gpsr_semantic_parser.util import get_placeholders, replace_child_in_tree, replace_words_in_tree, has_placeholders
 from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
-from queue import Queue
+try:
+    from queue import Queue as queue
+except ImportError:
+    from Queue import queue
+from yieldfrom import yieldfrom, From, Return
 
 
 def generate_sentences(start_tree, production_rules):
@@ -68,7 +72,7 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
     else:
         assert isinstance(start_tree, Tree)
 
-    frontier = Queue()
+    frontier = queue()
     frontier.put((start_tree, start_semantics))
     while not frontier.empty():
         sentence, semantics = frontier.get()
@@ -149,7 +153,6 @@ def generate_sentence_slot_pairs(start_tree, production_rules, semantics_rules, 
             frontier.put(pair)
 
 
-
 def expand_pair_full(sentence, semantics, production_rules, branch_cap=None, random_generator=None):
     return generate_sentence_parse_pairs(sentence, production_rules, {}, start_semantics=semantics,
                                        branch_cap=branch_cap, random_generator=random_generator)
@@ -159,7 +162,7 @@ def expand_pair(sentence, semantics, production_rules, branch_cap=None, random_g
         replace_token = list(sentence.scan_values(lambda x: x in production_rules.keys()))
 
         if not replace_token:
-            return None
+            return
 
         if random_generator:
             replace_token = random_generator.choice(replace_token)
@@ -206,7 +209,7 @@ def expand_pair_slot(sentence, semantics, production_rules, semantics_rules, bra
         replace_token = list(sentence.scan_values(lambda x: x in production_rules.keys()))
 
         if not replace_token:
-            return None
+            return
 
         if random_generator:
             replace_token = random_generator.choice(replace_token)
@@ -310,7 +313,7 @@ def iob2_tagging(sem, production):
     return sem_substitute
     
 
-
+@yieldfrom
 def expand_all_semantics(production_rules, semantics_rules):
     """
     Expands all semantics rules
@@ -319,8 +322,7 @@ def expand_all_semantics(production_rules, semantics_rules):
     """
 #    for utterance, parse in [list(semantics_rules.items())[-1]]:
     for utterance, parse in semantics_rules.items():
-        yield from generate_sentence_parse_pairs(utterance, production_rules, semantics_rules, False)
-    return
+        yield From(generate_sentence_parse_pairs(utterance, production_rules, semantics_rules, False))
 
 
 def pairs_without_placeholders(rules, semantics, only_in_grammar=False):

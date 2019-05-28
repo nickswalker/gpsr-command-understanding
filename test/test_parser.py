@@ -43,7 +43,7 @@ class TestParsers(unittest.TestCase):
             if parsed:
                 succeeded += 1
 
-        self.assertEqual(succeeded, len(sentences))
+        self.assertEqual(len(sentences), succeeded)
 
     def test_parse_all_of_2019(self):
         generator = Generator(grammar_format_version=2018)
@@ -60,7 +60,7 @@ class TestParsers(unittest.TestCase):
             if parsed:
                 succeeded += 1
 
-        self.assertEqual(succeeded, len(sentences))
+        self.assertEqual(len(sentences), succeeded)
 
     def test_nearest_neighbor_parser(self):
         generator = Generator(grammar_format_version=2018)
@@ -77,9 +77,9 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(nearest_neighbor_parser.parse(tweaked), expected_parse)
 
     def test_anonymizer(self):
-        entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["corridor"],["bedroom", "kitchen", "living room"], ["waving"])
+        entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["corridor"],["counter"],["bedroom", "kitchen", "living room"], ["waving"])
         anonymizer = Anonymizer(*entities)
-        self.assertEqual("Bring me the {object} from the {location placement} and give it to {name} (who is {gesture}) in the {location beacon}", anonymizer.anonymize("Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"))
+        self.assertEqual("Bring me the {object} from the {location room} and give it to {name} (who is {gesture}) in the {location}", anonymizer.anonymize("Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"))
 
     def test_parse_all_2019_anonymized(self):
         generator = Generator(grammar_format_version=2019)
@@ -105,4 +105,4 @@ class TestParsers(unittest.TestCase):
                 print()
                 print(parser.parse(anonymizer.anonymize(sentence)))
 
-        self.assertEqual(num_tested, succeeded)
+        self.assertEqual(succeeded, num_tested)
