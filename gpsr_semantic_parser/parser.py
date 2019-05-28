@@ -17,8 +17,16 @@ class ToEBNF(Transformer):
             if isinstance(child, WildCard):
                 if child.name == "void":
                     output += ""
-                else:
+                elif child.name == "location" and (child.type == "beacon" or child.type == "placement"):
+                    # A location can be both a beacon and a placement, which gives the anonymizer
+                    # two options which it must check. Instead, we'll just call these vanilla
+                    # locations, which *does* mean that incorrect location types might be anonymized
+                    # together with correct ones (i.e. we'll accept some sentences not in the grammar).
+                    output += " \"{" + child.name + "}\""
+                elif child.name == "location":
                     output += " \"" + child.to_human_readable() + "\""
+                else:
+                    output += " \"{" + child.name + "}\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             elif isinstance(child, tuple):
@@ -39,8 +47,12 @@ class ToEBNF(Transformer):
                 # Voids are filtered out of input sequences so we can/must ignore these rules
                 if child.name == "void":
                     output += ""
-                else:
+                elif child.name == "location" and (child.type == "beacon" or child.type == "placement"):
+                    output += " \"{" + child.name + "}\""
+                elif child.name == "location":
                     output += " \"" + child.to_human_readable() + "\""
+                else:
+                    output += " \"{" + child.name + "}\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             else:
@@ -114,10 +126,12 @@ class NearestNeighborParser(object):
 
 
 class Anonymizer(object):
-    def __init__(self, objects, categories, names, locations, rooms, gestures):
+    def __init__(self, objects, categories, names, locations, beacons, placements, rooms, gestures):
         self.names = names
         self.categories = categories
         self.locations = locations
+        self.beacons = beacons
+        self.placements = placements
         self.rooms = rooms
         self.objects = objects
         self.gestures = gestures
@@ -125,22 +139,34 @@ class Anonymizer(object):
         for name in self.names:
             replacements[name] = "{name}"
 
-        for room in self.rooms:
-            replacements[room] = "{room}"
-
         for location in self.locations:
             replacements[location] = "{location}"
 
+        for room in self.rooms:
+            replacements[room] = "{location room}"
+
+        # Note they're we're explicitly clumping beacons and placements (which may overlap)
+        # together to make anonymizing/parsing easier.
+        """
+        for beacon in self.beacons:
+            replacements[beacon] = "{location beacon}"
+
+        for placement in self.placements:
+            replacements[placement] = "{location placement}"
+        """
         for object in self.objects:
             replacements[object] = "{object}"
 
         for gesture in self.gestures:
             replacements[gesture] = "{gesture}"
 
+        for category in self.categories:
+            replacements[category] = "{category}"
+
+
         # use these three lines to do the replacement
         self.rep = dict((re.escape(k), v) for k, v in replacements.items())
-        self.pattern = re.compile("|".join(self.rep.keys()))
-
+        self.pattern = re.compile("\\b(" + "|".join(self.rep.keys()) + ")\\b")
 
     def anonymize(self, utterance):
         return self.pattern.sub(lambda m: self.rep[re.escape(m.group(0))], utterance)

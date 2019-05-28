@@ -58,9 +58,8 @@ class LocationParser(object):
     '''return dictionary of room:location_list'''
     def get_room_locations(self):
         room_locations = {}
-        tree = ET.parse(self.location_file)
         #get root (rooms in this case)
-        root = tree.getroot()
+        root = self.tree.getroot()
         #for each room in rooms check if it has child with name equal to location_obj
         for room in root.findall("./room"):
             location_list = []
@@ -72,9 +71,8 @@ class LocationParser(object):
 
     def get_all_locations(self):
         locations = []
-        #parse xml
+
         root = self.tree.getroot()
-        #for each room in rooms check if it has child with name equal to location_obj
         for location in root.findall("./room/location"):
             locations.append(location.attrib['name'])
         return locations
@@ -89,7 +87,7 @@ class LocationParser(object):
                         all_placements.append(location.attrib['name'])
         return all_placements
 
-    def parse_beacons(self):
+    def get_all_beacons(self):
         all_beacons = []
         root = self.tree.getroot()
         for room in root.findall("./room"):

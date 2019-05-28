@@ -32,14 +32,17 @@ def load_entities_from_xml(objects_xml_file, locations_xml_file, names_xml_file,
     objects = object_parser.all_objects()
     categories = object_parser.all_categories()
     names = names_parser.all_names()
-    locations = locations_parser.get_all_locations()
+    locations = locations_parser.\
+        get_all_locations()
+    beacons = locations_parser.get_all_beacons()
+    placements = locations_parser.get_all_placements()
     rooms = locations_parser.get_all_rooms()
     gestures = gestures_parser.get_gestures()
 
-    return objects, categories, names, locations, rooms, gestures
+    return objects, categories, names, locations, beacons, placements, rooms, gestures
 
 
-def load_wildcard_rules(objects, categories, names, locations, rooms, gestures):
+def load_wildcard_rules(objects, categories, names, locations, beacons, placements, rooms, gestures):
     """
     Loads in the grounding rules for all the wildcard classes.
     :param objects_xml_file:
@@ -52,6 +55,8 @@ def load_wildcard_rules(objects, categories, names, locations, rooms, gestures):
     categories = [[x] for x in sorted(categories)]
     names = [[x] for x in sorted(names)]
     locations = [[x] for x in sorted(locations)]
+    beacons = [[x] for x in sorted(beacons)]
+    placements = [[x] for x in sorted(placements)]
     rooms = [[x] for x in sorted(rooms)]
     gestures = [[x] for x in sorted(gestures)]
 
@@ -64,8 +69,8 @@ def load_wildcard_rules(objects, categories, names, locations, rooms, gestures):
     production_rules[WildCard('object2')] = objects
     production_rules[WildCard('object', '1')] = objects
     production_rules[WildCard('object', '2')] = objects
-    production_rules[WildCard('category')] = [["objects"]]
-    production_rules[WildCard('category', '1')] = [["objects"]]
+    production_rules[WildCard('category')] = categories
+    production_rules[WildCard('category', '1')] = categories
     production_rules[WildCard('object', 'known', obfuscated=True)] = categories
     production_rules[WildCard('object', 'alike', obfuscated=True)] = categories
     production_rules[WildCard('object', obfuscated=True)] = categories
@@ -74,12 +79,12 @@ def load_wildcard_rules(objects, categories, names, locations, rooms, gestures):
     production_rules[WildCard('name', '1')] = names
     production_rules[WildCard('name', '2')] = names
     # add locations
-    production_rules[WildCard('location', 'placement')] = locations
-    production_rules[WildCard('location', 'placement', '1')] = locations
-    production_rules[WildCard('location', 'placement', '2')] = locations
-    production_rules[WildCard('location','beacon')] = locations
-    production_rules[WildCard('location','beacon', '1')] = locations
-    production_rules[WildCard('location','beacon','2')] = locations
+    production_rules[WildCard('location', 'placement')] = placements
+    production_rules[WildCard('location', 'placement', '1')] = placements
+    production_rules[WildCard('location', 'placement', '2')] = placements
+    production_rules[WildCard('location','beacon')] = beacons
+    production_rules[WildCard('location','beacon', '1')] = beacons
+    production_rules[WildCard('location','beacon','2')] = beacons
     production_rules[WildCard('location','room')] = rooms
     production_rules[WildCard('location','room', '1')] = rooms
     production_rules[WildCard('location','room', '2')] = rooms
