@@ -95,11 +95,12 @@ class GrammarBasedParser(object):
 """
         self._parser = Lark(as_ebnf,  start='main')
 
-    def parse(self, utterance):
+    def __call__(self, utterance):
         try:
             return self._parser.parse(utterance)
         except lark.exceptions.LarkError as e:
             return None
+
 
 class NearestNeighborParser(object):
     """
@@ -110,7 +111,7 @@ class NearestNeighborParser(object):
         self.neighbors = neighbors
         self.distance_threshold = distance_threshold
 
-    def parse(self, utterance):
+    def __call__(self, utterance):
         smallest_distance = 100
         nearest = None
         for i in self.neighbors:
@@ -123,7 +124,7 @@ class NearestNeighborParser(object):
 
         if smallest_distance >= 10:
             return None
-        return self.parser.parse(nearest)
+        return self.parser(nearest)
 
 
 class Anonymizer(object):
@@ -169,7 +170,7 @@ class Anonymizer(object):
         self.rep = dict((re.escape(k), v) for k, v in replacements.items())
         self.pattern = re.compile("\\b(" + "|".join(self.rep.keys()) + ")\\b")
 
-    def anonymize(self, utterance):
+    def __call__(self, utterance):
         return self.pattern.sub(lambda m: self.rep[re.escape(m.group(0))], utterance)
 
 
@@ -179,5 +180,5 @@ class NaiveAnonymizingParser(object):
         self.parser = parser
         self.anonymizer = anonymizer
 
-    def parse(self, utterance):
-        return self.parser.parse(self.anonymizer.anonymize(utterance))
+    def __call__(self, utterance):
+        return self.parser(self.anonymizer(utterance))

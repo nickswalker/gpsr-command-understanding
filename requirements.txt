@@ -1,10 +1,7 @@
 allennlp>=0.8.2;python_version  > '3.0'
-awscli
-boto3
 editdistance
 future;python_version < '3.0'
 lark-parser
-jupyter
 nltk
 pandas
 xmltodict

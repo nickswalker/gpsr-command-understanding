@@ -23,9 +23,9 @@ class TestParsers(unittest.TestCase):
         generator = Generator(grammar_format_version=2019)
         grammar = generator.load_rules(os.path.join(FIXTURE_DIR, "grammar.txt"), expand_shorthand=False)
         parser = GrammarBasedParser(grammar)
-        test = parser.parse("say hi to him right now please")
+        test = parser("say hi to him right now please")
         print(test.pretty())
-        test = parser.parse("bring it to {pron} now")
+        test = parser("bring it to {pron} now")
         print(test.pretty())
 
     def test_parse_all_of_2018(self):
@@ -39,7 +39,7 @@ class TestParsers(unittest.TestCase):
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
-            parsed = parser.parse(sentence)
+            parsed = parser(sentence)
             if parsed:
                 succeeded += 1
 
@@ -56,7 +56,7 @@ class TestParsers(unittest.TestCase):
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
-            parsed = parser.parse(sentence)
+            parsed = parser(sentence)
             if parsed:
                 succeeded += 1
 
@@ -72,14 +72,14 @@ class TestParsers(unittest.TestCase):
         nearest_neighbor_parser = NearestNeighborParser(parser, sentences)
         some_sentence = sentences[0]
         tweaked = some_sentence[:-1]
-        expected_parse = parser.parse(some_sentence)
-        self.assertEqual(nearest_neighbor_parser.parse(some_sentence), expected_parse)
-        self.assertEqual(nearest_neighbor_parser.parse(tweaked), expected_parse)
+        expected_parse = parser(some_sentence)
+        self.assertEqual(nearest_neighbor_parser(some_sentence), expected_parse)
+        self.assertEqual(nearest_neighbor_parser(tweaked), expected_parse)
 
     def test_anonymizer(self):
         entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["corridor"],["counter"],["bedroom", "kitchen", "living room"], ["waving"])
         anonymizer = Anonymizer(*entities)
-        self.assertEqual("Bring me the {object} from the {location room} and give it to {name} (who is {gesture}) in the {location}", anonymizer.anonymize("Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"))
+        self.assertEqual("Bring me the {object} from the {location room} and give it to {name} (who is {gesture}) in the {location}", anonymizer("Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"))
 
     def test_parse_all_2019_anonymized(self):
         generator = Generator(grammar_format_version=2019)
@@ -96,13 +96,13 @@ class TestParsers(unittest.TestCase):
         succeeded = 0
         for sentence, parse in itertools.islice(sentences, num_tested):
             sentence = tree_printer(sentence)
-            parsed = parser.parse(sentence)
+            parsed = parser(sentence)
             if parsed:
                 succeeded += 1
             else:
                 print(sentence)
-                print(anonymizer.anonymize(sentence))
+                print(anonymizer(sentence))
                 print()
-                print(parser.parse(anonymizer.anonymize(sentence)))
+                print(parser(anonymizer(sentence)))
 
         self.assertEqual(succeeded, num_tested)
