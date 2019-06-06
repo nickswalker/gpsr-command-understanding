@@ -1,7 +1,10 @@
+from collections import defaultdict
+
 import editdistance
 import lark
 from lark import Transformer, Lark
 
+from gpsr_semantic_parser.grammar import DiscardVoid, WildcardSimplifier
 from gpsr_semantic_parser.tokens import NonTerminal, WildCard
 
 import re
@@ -15,18 +18,7 @@ class ToEBNF(Transformer):
         output = ""
         for child in children:
             if isinstance(child, WildCard):
-                if child.name == "void":
-                    output += ""
-                elif child.name == "location" and (child.type == "beacon" or child.type == "placement"):
-                    # A location can be both a beacon and a placement, which gives the anonymizer
-                    # two options which it must check. Instead, we'll just call these vanilla
-                    # locations, which *does* mean that incorrect location types might be anonymized
-                    # together with correct ones (i.e. we'll accept some sentences not in the grammar).
-                    output += " \"{" + child.name + "}\""
-                elif child.name == "location":
-                    output += " \"" + child.to_human_readable() + "\""
-                else:
-                    output += " \"{" + child.name + "}\""
+                output += " \"" + child.to_human_readable() + "\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             elif isinstance(child, tuple):
@@ -44,15 +36,7 @@ class ToEBNF(Transformer):
         output = "("
         for child in children:
             if isinstance(child, WildCard):
-                # Voids are filtered out of input sequences so we can/must ignore these rules
-                if child.name == "void":
-                    output += ""
-                elif child.name == "location" and (child.type == "beacon" or child.type == "placement"):
-                    output += " \"{" + child.name + "}\""
-                elif child.name == "location":
-                    output += " \"" + child.to_human_readable() + "\""
-                else:
-                    output += " \"{" + child.name + "}\""
+                output += " \"" + child.to_human_readable() + "\""
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             else:
@@ -79,6 +63,8 @@ class GrammarBasedParser(object):
         rules = rules
         rch_to_ebnf = ToEBNF()
         as_ebnf = ""
+        void_remover = DiscardVoid()
+        wildcard_simplifier = WildcardSimplifier()
         for non_term, productions in rules.items():
             # TODO: bake this into WildCard and NonTerminal types
             non_term_name = non_term.name.lower()
@@ -86,7 +72,10 @@ class GrammarBasedParser(object):
                 non_term_name = "wild_"+non_term.to_snake_case()
             line = "!" + non_term_name + ": ("
             for production in productions:
-                 line += rch_to_ebnf(production) + "\n\t| "
+                void_remover.visit(production)
+                wildcard_simplifier.visit(production)
+                line += rch_to_ebnf(production) + "\n\t| "
+
             line = line[:-4] + " )\n"
             as_ebnf += line
         as_ebnf += """
@@ -107,6 +96,7 @@ class NearestNeighborParser(object):
     A wrapper class that maps out-of-grammar sentences to their nearest neighbor by edit distance.
     """
     def __init__(self, parser, neighbors, distance_threshold=20):
+
         self.parser = parser
         self.neighbors = neighbors
         self.distance_threshold = distance_threshold
@@ -139,39 +129,70 @@ class Anonymizer(object):
         self.gestures = gestures
         replacements = {}
         for name in self.names:
-            replacements[name] = "{name}"
+            replacements[name] = "name"
 
         for location in self.locations:
-            replacements[location] = "{location}"
+            replacements[location] = "location"
+
 
         for room in self.rooms:
-            replacements[room] = "{location room}"
+            replacements[room] = "location room"
 
         # Note they're we're explicitly clumping beacons and placements (which may overlap)
         # together to make anonymizing/parsing easier.
         """
         for beacon in self.beacons:
-            replacements[beacon] = "{location beacon}"
+            replacements[beacon] = "location beacon"
 
         for placement in self.placements:
-            replacements[placement] = "{location placement}"
+            replacements[placement] = "location placement"
         """
         for object in self.objects:
-            replacements[object] = "{object}"
+            replacements[object] = "object"
 
         for gesture in self.gestures:
-            replacements[gesture] = "{gesture}"
+            replacements[gesture] = "gesture"
 
         for category in self.categories:
-            replacements[category] = "{category}"
+            replacements[category] = "category"
 
-
-        # use these three lines to do the replacement
-        self.rep = dict((re.escape(k), v) for k, v in replacements.items())
-        self.pattern = re.compile("\\b(" + "|".join(self.rep.keys()) + ")\\b")
+        self.rep = replacements
+        escaped = dict((re.escape(k), v) for k, v in replacements.items())
+        self.pattern = re.compile("\\b(" + "|".join(escaped.keys()) + ")\\b")
 
     def __call__(self, utterance):
-        return self.pattern.sub(lambda m: self.rep[re.escape(m.group(0))], utterance)
+        type_count = defaultdict(lambda: 0)
+        scrubbed = utterance
+        for match in self.pattern.finditer(utterance):
+            type = self.rep[match.group()]
+            type_count[type] += 1
+
+        num_type_anon_so_far = defaultdict(lambda: 0)
+        while True:
+            match = self.pattern.search(scrubbed)
+            if not match:
+                break
+            string = match.groups()[0]
+            replacement_type = self.rep[string]
+            if type_count[replacement_type] > 1:
+                current_num = num_type_anon_so_far[replacement_type] + 1
+                replacement_string = "{" + self.rep[string] + " " + str(current_num) + "}"
+                num_type_anon_so_far[replacement_type] += 1
+            else:
+                replacement_string = "{" + self.rep[string] + "}"
+            scrubbed = scrubbed.replace(string, replacement_string, 1)
+
+        return scrubbed
+
+
+class MappingParser(object):
+    def __init__(self, parser, mapping):
+        self.parser = parser
+        self.mapping = mapping
+
+    def parse(self, utterance):
+        parse = self.parser.parse(utterance)
+        return self.mapping.get(parse, None)
 
 
 class NaiveAnonymizingParser(object):

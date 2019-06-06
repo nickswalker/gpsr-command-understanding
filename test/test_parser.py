@@ -42,6 +42,8 @@ class TestParsers(unittest.TestCase):
             parsed = parser(sentence)
             if parsed:
                 succeeded += 1
+            else:
+                print(sentence)
 
         self.assertEqual(len(sentences), succeeded)
 
@@ -79,7 +81,12 @@ class TestParsers(unittest.TestCase):
     def test_anonymizer(self):
         entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["corridor"],["counter"],["bedroom", "kitchen", "living room"], ["waving"])
         anonymizer = Anonymizer(*entities)
-        self.assertEqual("Bring me the {object} from the {location room} and give it to {name} (who is {gesture}) in the {location}", anonymizer("Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"))
+        self.assertEqual(anonymizer(
+            "Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"),
+                         "Bring me the {object} from the {location room} and give it to {name} (who is {gesture}) in the {location}")
+        self.assertEqual(
+            anonymizer("Bring the apple from the kitchen and put it next to the other apple in the bedroom"),
+            "Bring the {object 1} from the {location room 1} and put it next to the other {object 2} in the {location room 2}")
 
     def test_parse_all_2019_anonymized(self):
         generator = Generator(grammar_format_version=2019)

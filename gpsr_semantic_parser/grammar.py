@@ -26,21 +26,19 @@ class TypeConverter(Transformer):
         if "obj" in typed.data:
             if "alike" in typed.data:
                 type = "alike"
-                extra = typed.children[0] if len(typed.children) > 1 else None
             elif "known" in typed.data:
                 type = "known"
-                extra = typed.children[0] if len(typed.children) > 1 else None
             return WildCard("object", type, extra)
         elif "loc" in typed.data:
+            # the type token (e.g. placement) is elided from the tree, so the extra
+            # will be the only element in this list
+            extra = typed.children[0] if len(typed.children) > 0 else None
             if "beacon" in typed.data:
                 type = "beacon"
-                extra = typed.children[0] if len(typed.children) > 1 else None
             elif "placement" in typed.data:
                 type ="placement"
-                extra = typed.children[0] if len(typed.children) > 1 else None
             elif "room" in typed.data:
                 type = "room"
-                extra = typed.children[0] if len(typed.children) > 1 else None
             return WildCard("location", type, extra)
         elif "category" in typed.data:
             return WildCard("category", type)
@@ -60,8 +58,28 @@ class TypeConverter(Transformer):
 
 
 class DiscardVoid(Visitor):
+    """
+    Throw away generator annotations meant for the referee
+    """
     def expression(self, tree):
         tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonymized)) and x.name == "void"), tree.children))
+
+
+class WildcardSimplifier(Visitor):
+    """
+    Throw away detailed information on wildcards, keeping just the type
+    """
+
+    def expression(self, tree):
+        cleaned_children = []
+        for child in tree.children:
+            # Rooms are actually mostly disjoint with locations, so we can reliably distinguish the two at delex time
+            if isinstance(child, WildCard) and ((
+                                                        child.name == "location" and child.type != "room") or child.name == "object" or child.name == "name"):
+                cleaned_children.append(WildCard(child.name))
+            else:
+                cleaned_children.append(child)
+        tree.children = cleaned_children
 
 
 class ToString(Transformer):

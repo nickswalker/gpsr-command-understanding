@@ -26,6 +26,11 @@ class TestGenerator(unittest.TestCase):
         test = self.generator.generator_grammar_parser.parse("$test = {pron} went to the mall and {location} $go $home")
         print(test.pretty())
 
+    def test_parse_wildcards(self):
+        test = self.generator.generator_sequence_parser.parse(
+            "Go to the {location placement 1} and get the {kobject}. Then give it to {name 1} who is next to {name 2} at the {location beacon 1} in the {location room}")
+        print(test.pretty())
+
     def test_expand_shorthand(self):
         test = self.generator.generator_grammar_parser.parse("$test    = top choice | (level one (level two alpha | level two beta))")
         result = expand_shorthand(test)

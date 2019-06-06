@@ -12,13 +12,13 @@ meta: "meta:" (WORD | wildcard | COMMA | PERIOD | INT)+
 _card_type: (location_wildcard_super | name_wildcard | object_wildcard_super | void_wildcard | pronoun_wildcard | question_wildcard | gesture_wildcard | category_wildcard | whattosay_wildcard)
 
 ?location_wildcard_super: loc_beacon_wildcard | loc_placement_wildcard | loc_room_wildcard | location_wildcard
-location_wildcard:  "location" WORD? INT?
+location_wildcard:  "location"
 loc_placement_wildcard: "location"? "placement" INT?
 loc_beacon_wildcard:    "location"? "beacon" INT?
 loc_room_wildcard:      "location"? "room" INT?
 
 ?object_wildcard_super: object_alike_wildcard | object_known_wildcard | object_wildcard
-object_wildcard:            "object" (WORD | INT)?
+object_wildcard:            "object" INT?
 object_known_wildcard:      "object known" | "kobject"
 object_alike_wildcard:      "object alike" | "aobject"
 
