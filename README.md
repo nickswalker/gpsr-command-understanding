@@ -1,4 +1,4 @@
-# gpsr_semantic_parser
+# GPSR Command Understanding [![Build Status](https://travis-ci.org/nickswalker/gpsr-command-understanding.svg?branch=master)](https://travis-ci.org/nickswalker/gpsr-command-understanding)
 
 A semantic parser for the [RoboCup@Home](http://www.robocupathome.org/) _General Purpose Service Robot_ task.
 
@@ -11,9 +11,12 @@ A semantic parser for the [RoboCup@Home](http://www.robocupathome.org/) _General
 
 Set up a virtual environment using at least Python 3.6:
 
-    python3.6 -m virtualenv venv
+    python3.7 -m virtualenv venv
     source venv/bin/activate
     pip install -r requirements.txt
+    
+Baseline models (fuzzy parsers constructed directly from the generator grammar) will work under Python 2.7 so you can
+easily use this with ROS.
 
 ### Generation
 

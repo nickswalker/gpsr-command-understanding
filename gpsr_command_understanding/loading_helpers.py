@@ -2,9 +2,9 @@ from os.path import join
 
 from lark import Tree
 
-from gpsr_semantic_parser.tokens import Anonymized, WildCard
-from gpsr_semantic_parser.util import merge_dicts, get_wildcards
-from gpsr_semantic_parser.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser
+from gpsr_command_understanding.tokens import Anonymized, WildCard
+from gpsr_command_understanding.util import merge_dicts, get_wildcards
+from gpsr_command_understanding.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser
 
 
 def make_anonymized_grounding_rules(wildcards, show_details=False):

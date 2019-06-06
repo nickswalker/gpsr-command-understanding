@@ -2,11 +2,11 @@
 import os
 import unittest
 
-from gpsr_semantic_parser.generation import generate_sentence_parse_pairs
-from gpsr_semantic_parser.generator import Generator
-from gpsr_semantic_parser.grammar import NonTerminal, tree_printer, expand_shorthand
-from gpsr_semantic_parser.loading_helpers import load_all_2018_by_cat, load_all_2019
-from gpsr_semantic_parser.parser import GrammarBasedParser
+from gpsr_command_understanding.generation import generate_sentence_parse_pairs
+from gpsr_command_understanding.generator import Generator
+from gpsr_command_understanding.grammar import NonTerminal, tree_printer, expand_shorthand
+from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, load_all_2019
+from gpsr_command_understanding.parser import GrammarBasedParser
 
 GRAMMAR_DIR_2018 = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
 GRAMMAR_DIR_2019 = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")

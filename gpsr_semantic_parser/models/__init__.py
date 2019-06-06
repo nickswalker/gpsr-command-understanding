@@ -1,4 +1,0 @@
-import gpsr_semantic_parser.models.seq2seq_data_reader
-import gpsr_semantic_parser.models.seq2seq
-import gpsr_semantic_parser.models.metrics
-import gpsr_semantic_parser.models.seq2seq_predictor

@@ -2,9 +2,10 @@ import copy
 
 from lark import Tree, Token
 
-from gpsr_semantic_parser.grammar import CombineExpressions, tree_printer, DiscardVoid
-from gpsr_semantic_parser.util import get_placeholders, replace_child_in_tree, replace_words_in_tree, has_placeholders
-from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
+from gpsr_command_understanding.grammar import CombineExpressions, tree_printer, DiscardVoid
+from gpsr_command_understanding.util import get_placeholders, replace_child_in_tree, replace_words_in_tree, \
+    has_placeholders
+from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 try:
     from queue import Queue as queue
 except ImportError:

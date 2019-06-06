@@ -13,11 +13,12 @@ from lark import lark, Tree, Token
 from collections import Counter
 import more_itertools
 
-from gpsr_semantic_parser.generator import Generator
-from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
-from gpsr_semantic_parser.generation import generate_sentences
-from gpsr_semantic_parser.util import determine_unique_cat_data, save_slot_data, flatten, get_pairs_by_cats, merge_dicts
-from gpsr_semantic_parser.grammar import tree_printer
+from gpsr_command_understanding.generator import Generator
+from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
+from gpsr_command_understanding.generation import generate_sentences
+from gpsr_command_understanding.util import determine_unique_cat_data, save_slot_data, flatten, get_pairs_by_cats, \
+    merge_dicts
+from gpsr_command_understanding.grammar import tree_printer
 
 def validate_args(args):
     if args.test_categories != args.train_categories:

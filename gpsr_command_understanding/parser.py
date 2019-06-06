@@ -4,8 +4,8 @@ import editdistance
 import lark
 from lark import Transformer, Lark
 
-from gpsr_semantic_parser.grammar import DiscardVoid, WildcardSimplifier
-from gpsr_semantic_parser.tokens import NonTerminal, WildCard
+from gpsr_command_understanding.grammar import DiscardVoid, WildcardSimplifier
+from gpsr_command_understanding.tokens import NonTerminal, WildCard
 
 import re
 
@@ -78,6 +78,7 @@ class GrammarBasedParser(object):
 
             line = line[:-4] + " )\n"
             as_ebnf += line
+        print(as_ebnf)
         as_ebnf += """
         %import common.WS
         %ignore WS
@@ -112,7 +113,10 @@ class NearestNeighborParser(object):
             if d == 0:
                 break
 
-        if smallest_distance >= 10:
+        if smallest_distance >= self.distance_threshold:
+            # print(utterance)
+            # print(nearest)
+            # print(smallest_distance)
             return None
         return self.parser(nearest)
 
@@ -133,7 +137,6 @@ class Anonymizer(object):
 
         for location in self.locations:
             replacements[location] = "location"
-
 
         for room in self.rooms:
             replacements[room] = "location room"

@@ -2,12 +2,13 @@ import os
 
 from lark import Lark, Tree, exceptions
 
-from gpsr_semantic_parser.generation import generate_sentence_parse_pairs, generate_sentence_slot_pairs, expand_pair_full
-from gpsr_semantic_parser.grammar import TypeConverter, expand_shorthand, CombineExpressions
-from gpsr_semantic_parser.util import get_wildcards, has_placeholders, merge_dicts
-from gpsr_semantic_parser.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
-from gpsr_semantic_parser.grammar import tree_printer
-from gpsr_semantic_parser.loading_helpers import load_wildcard_rules, make_anonymized_grounding_rules
+from gpsr_command_understanding.generation import generate_sentence_parse_pairs, generate_sentence_slot_pairs, \
+    expand_pair_full
+from gpsr_command_understanding.grammar import TypeConverter, expand_shorthand, CombineExpressions
+from gpsr_command_understanding.util import get_wildcards, has_placeholders, merge_dicts
+from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
+from gpsr_command_understanding.grammar import tree_printer
+from gpsr_command_understanding.loading_helpers import load_wildcard_rules, make_anonymized_grounding_rules
 
 try:
     from itertools import izip_longest as zip_longest

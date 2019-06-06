@@ -3,7 +3,7 @@ from os.path import join
 
 from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
-from gpsr_semantic_parser.models.seq2seq_data_reader import Seq2SeqDatasetReader
+from gpsr_command_understanding.models.seq2seq_data_reader import Seq2SeqDatasetReader
 
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")

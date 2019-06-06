@@ -1,8 +1,8 @@
 from copy import deepcopy
 
-from gpsr_semantic_parser.util import replace_child
+from gpsr_command_understanding.util import replace_child
 
-from gpsr_semantic_parser.tokens import  *
+from gpsr_command_understanding.tokens import *
 
 from lark import Tree, Transformer, Visitor
 

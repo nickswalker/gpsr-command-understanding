@@ -20,11 +20,11 @@ from allennlp.nn import util
 from allennlp.nn.beam_search import BeamSearch
 from allennlp.training.metrics import BLEU
 
-from gpsr_semantic_parser.generator import Generator
-from gpsr_semantic_parser.models.metrics import TokenSequenceAccuracy, ParseValidity
+from gpsr_command_understanding.generator import Generator
+from gpsr_command_understanding.models.metrics import TokenSequenceAccuracy, ParseValidity
 
 
-@Model.register("seq2seq_slot")
+@Model.register("seq2seq")
 class Seq2Seq(Model):
     """
     This ``SimpleSeq2Seq`` class is a :class:`Model` which takes a sequence, encodes it, and then
@@ -100,7 +100,7 @@ class Seq2Seq(Model):
         else:
             self._bleu = None
 
-        self._token_based_metrics = [TokenSequenceAccuracy(), ParseValidity(Generator(semantic_form_version="slot").lambda_parser)]
+        self._token_based_metrics = [TokenSequenceAccuracy(), ParseValidity(Generator().lambda_parser)]
 
         # At prediction time, we use a beam search to find the most likely sequence of target tokens.
         beam_size = beam_size or 1

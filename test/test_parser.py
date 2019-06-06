@@ -6,13 +6,14 @@ import unittest
 
 from lark import exceptions
 
-from gpsr_semantic_parser.generation import generate_sentences, generate_sentence_parse_pairs
-from gpsr_semantic_parser.generator import Generator
-from gpsr_semantic_parser.grammar import tree_printer
-from gpsr_semantic_parser.loading_helpers import load_all_2019, \
+from gpsr_command_understanding.generation import generate_sentences, generate_sentence_parse_pairs
+from gpsr_command_understanding.generator import Generator
+from gpsr_command_understanding.grammar import tree_printer
+from gpsr_command_understanding.loading_helpers import load_all_2019, \
     load_all_2018, load_entities_from_xml
-from gpsr_semantic_parser.parser import GrammarBasedParser, NearestNeighborParser, Anonymizer, NaiveAnonymizingParser
-from gpsr_semantic_parser.tokens import ROOT_SYMBOL
+from gpsr_command_understanding.parser import GrammarBasedParser, NearestNeighborParser, Anonymizer, \
+    NaiveAnonymizingParser
+from gpsr_command_understanding.tokens import ROOT_SYMBOL
 
 GRAMMAR_DIR = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -96,6 +97,18 @@ class TestParsers(unittest.TestCase):
 
         sentences = generate_sentence_parse_pairs(ROOT_SYMBOL, rules[2], {},yield_requires_semantics=False,random_generator=random.Random(1))
         parser = GrammarBasedParser(rules[0])
+
+        # Bring me the apple from the fridge to the kitchen
+        # ---straight anon to clusters--->
+        # Bring me the {ob}  from the {loc} to the {loc}
+        # ---Grammar based parser--->
+        # (Failure; grammar has numbers on locs)
+
+        # Bring me the apple from the fridge to the kitchen
+        # ---id naive number anon--->
+        # Bring me the {ob}  from the {loc 1} to the {loc 2}
+        # ---Grammar based parser--->
+        # (Failure; wrong numbers, or maybe)
 
         anonymizer = Anonymizer(*rules[-1])
         parser = NaiveAnonymizingParser(parser, anonymizer)

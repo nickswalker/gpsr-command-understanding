@@ -12,11 +12,12 @@ from collections import Counter
 import lark
 import more_itertools
 
-from gpsr_semantic_parser.generation import pairs_without_placeholders
-from gpsr_semantic_parser.generator import Generator, get_grounding_per_each_parse_by_cat
-from gpsr_semantic_parser.grammar import tree_printer
-from gpsr_semantic_parser.loading_helpers import load_all_2018
-from gpsr_semantic_parser.util import determine_unique_cat_data, save_data, flatten, merge_dicts, get_pairs_by_cats
+from gpsr_command_understanding.generation import pairs_without_placeholders
+from gpsr_command_understanding.generator import Generator, get_grounding_per_each_parse_by_cat
+from gpsr_command_understanding.grammar import tree_printer
+from gpsr_command_understanding.loading_helpers import load_all_2018
+from gpsr_command_understanding.util import determine_unique_cat_data, save_data, flatten, merge_dicts, \
+    get_pairs_by_cats
 
 
 def validate_args(args):

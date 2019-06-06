@@ -1,7 +1,7 @@
 import itertools
 from collections import defaultdict
 
-from gpsr_semantic_parser.tokens import WildCard, NonTerminal
+from gpsr_command_understanding.tokens import WildCard, NonTerminal
 from lark import lark, Token
 
 
