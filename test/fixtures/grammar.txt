@@ -1,5 +1,5 @@
-$Main = ($speak | $bring)
+$Main = ($speak | $bring | $wild)
 $speak = say hi to him right now please
 $bring = bring it to (me | {pron} ) $when
 $when = (now | later)
-
+$wild = Find {name} who is {gesture} by the {beacon} in the {room} and bring {pron} the {kobject} from the {placement}

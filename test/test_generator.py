@@ -22,6 +22,15 @@ class TestGenerator(unittest.TestCase):
         print(test.pretty())
         #parse_rule("$vbgopl to the {room 1}, $vbfind (someone | a person), and answer a {question} = (say (answer {question}) (lambda $1:e (person $1) (at $1 {room 1})))", rules)
 
+    def test_ignore_comment(self):
+        test = self.generator.generator_grammar_parser.parse("")
+        test = self.generator.generator_grammar_parser.parse("# this is a comment")
+        test = self.generator.generator_grammar_parser.parse("; this is a comment")
+        test = self.generator.generator_grammar_parser.parse("// this is a comment")
+        test = self.generator.generator_grammar_parser.parse('; grammar name Category I')
+        test = self.generator.lambda_parser.parse("# test")
+
+
     def test_parse_basic(self):
         test = self.generator.generator_grammar_parser.parse("$test = {pron} went to the mall and {location} $go $home")
         print(test.pretty())
@@ -30,6 +39,12 @@ class TestGenerator(unittest.TestCase):
         test = self.generator.generator_sequence_parser.parse(
             "Go to the {location placement 1} and get the {kobject}. Then give it to {name 1} who is next to {name 2} at the {location beacon 1} in the {location room}")
         print(test.pretty())
+        self.assertEqual(self.generator.generator_sequence_parser.parse("{location room}"),
+                         self.generator.generator_sequence_parser.parse("{room}"))
+        self.assertEqual(self.generator.generator_sequence_parser.parse("{location beacon}"),
+                         self.generator.generator_sequence_parser.parse("{beacon}"))
+        self.assertEqual(self.generator.generator_sequence_parser.parse("{kobject}"),
+                         self.generator.generator_sequence_parser.parse("{object known}"))
 
     def test_expand_shorthand(self):
         test = self.generator.generator_grammar_parser.parse("$test    = top choice | (level one (level two alpha | level two beta))")
@@ -57,8 +72,9 @@ class TestGenerator(unittest.TestCase):
     def test_generate(self):
         generator = Generator(grammar_format_version=2018)
         grammar = generator.load_rules(os.path.join(FIXTURE_DIR, "grammar.txt"))
-        semantics = generator.load_rules(os.path.join(FIXTURE_DIR, "semantics.txt"))
+        semantics = generator.load_semantics_rules(os.path.join(FIXTURE_DIR, "semantics.txt"))
         pairs = list(generate_sentence_parse_pairs(NonTerminal("Main"),grammar, semantics))
+        self.assertEqual(len(pairs), 6)
 
     def test_load_2018(self):
         generator = Generator(grammar_format_version=2018)

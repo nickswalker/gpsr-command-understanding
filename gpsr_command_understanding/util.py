@@ -2,7 +2,7 @@ import itertools
 from collections import defaultdict
 
 from gpsr_command_understanding.tokens import WildCard, NonTerminal
-from lark import lark, Token
+from lark import Token
 
 
 def merge_dicts(x, y):
@@ -122,6 +122,7 @@ def save_data(data, out_path):
         for sentence, parse in data:
             f.write(sentence + '\n' + str(parse) + '\n')
 
+
 def save_slot_data(data, out_path):
     data = sorted(data, key=lambda x: len(x[0]))
     with open(out_path, "w") as f:
@@ -142,6 +143,7 @@ def flatten(original):
         for utterance in utterances:
             flattened.append((utterance, parse))
     return flattened
+
 
 def get_pairs_by_cats(data, train_categories, test_categories):
     train_pairs = []

@@ -1,0 +1,3 @@
+$speak = (speak)
+$bring = (bring)
+Find {name} who is {gesture} by the {beacon} in the {room} and bring {pron} the {kobject} from the {placement} = (test {name} {gesture} {beacon} {room} {kobject} {placement})

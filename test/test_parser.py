@@ -11,8 +11,8 @@ from gpsr_command_understanding.generator import Generator
 from gpsr_command_understanding.grammar import tree_printer
 from gpsr_command_understanding.loading_helpers import load_all_2019, \
     load_all_2018, load_entities_from_xml
-from gpsr_command_understanding.parser import GrammarBasedParser, NearestNeighborParser, Anonymizer, \
-    NaiveAnonymizingParser
+from gpsr_command_understanding.parser import GrammarBasedParser, NearestNeighborParser, AnonymizingParser
+from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
 from gpsr_command_understanding.tokens import ROOT_SYMBOL
 
 GRAMMAR_DIR = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
@@ -33,10 +33,10 @@ class TestParsers(unittest.TestCase):
         generator = Generator(grammar_format_version=2018)
 
         grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
-        rules = load_all_2018(generator, grammar_dir)
+        rules, rules_anon, _, _, _ = load_all_2018(generator, grammar_dir)
 
-        sentences = generate_sentences(ROOT_SYMBOL, rules[0])
-        parser = GrammarBasedParser(rules[0])
+        sentences = generate_sentences(ROOT_SYMBOL, rules)
+        parser = GrammarBasedParser(rules)
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
@@ -52,10 +52,10 @@ class TestParsers(unittest.TestCase):
         generator = Generator(grammar_format_version=2018)
 
         grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
-        rules = load_all_2019(generator, grammar_dir)
+        rules, rules_anon, _, _, _ = load_all_2019(generator, grammar_dir)
 
-        sentences = generate_sentences(ROOT_SYMBOL, rules[0])
-        parser = GrammarBasedParser(rules[0])
+        sentences = generate_sentences(ROOT_SYMBOL, rules)
+        parser = GrammarBasedParser(rules)
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
@@ -81,22 +81,29 @@ class TestParsers(unittest.TestCase):
 
     def test_anonymizer(self):
         entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["corridor"],["counter"],["bedroom", "kitchen", "living room"], ["waving"])
+        numbering_anonymizer = NumberingAnonymizer(*entities)
         anonymizer = Anonymizer(*entities)
-        self.assertEqual(anonymizer(
-            "Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"),
-                         "Bring me the {object} from the {location room} and give it to {name} (who is {gesture}) in the {location}")
+        no_duplicates = "Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"
+        self.assertEqual(anonymizer(no_duplicates
+                                    ),
+                         "Bring me the <object> from the <room> and give it to <name> (who is <gesture>) in the <location>")
+        self.assertEqual(anonymizer(no_duplicates), numbering_anonymizer(no_duplicates))
+        duplicates = "Bring the apple from the kitchen and put it next to the other apple in the bedroom"
+        self.assertEqual(anonymizer(duplicates),
+                         "Bring the <object> from the <room> and put it next to the other <object> in the <room>")
         self.assertEqual(
-            anonymizer("Bring the apple from the kitchen and put it next to the other apple in the bedroom"),
-            "Bring the {object 1} from the {location room 1} and put it next to the other {object 2} in the {location room 2}")
+            numbering_anonymizer(duplicates),
+            "Bring the <object 1> from the <room 1> and put it next to the other <object 2> in the <room 2>")
 
     def test_parse_all_2019_anonymized(self):
         generator = Generator(grammar_format_version=2019)
 
         grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
-        rules = load_all_2019(generator, grammar_dir)
+        rules, rules_anon, rules_ground, semantics, entities = load_all_2019(generator, grammar_dir)
 
-        sentences = generate_sentence_parse_pairs(ROOT_SYMBOL, rules[2], {},yield_requires_semantics=False,random_generator=random.Random(1))
-        parser = GrammarBasedParser(rules[0])
+        sentences = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, {}, yield_requires_semantics=False,
+                                                  random_generator=random.Random(1))
+        parser = GrammarBasedParser(rules_anon)
 
         # Bring me the apple from the fridge to the kitchen
         # ---straight anon to clusters--->
@@ -110,8 +117,8 @@ class TestParsers(unittest.TestCase):
         # ---Grammar based parser--->
         # (Failure; wrong numbers, or maybe)
 
-        anonymizer = Anonymizer(*rules[-1])
-        parser = NaiveAnonymizingParser(parser, anonymizer)
+        anonymizer = Anonymizer(*entities)
+        parser = AnonymizingParser(parser, anonymizer)
         num_tested = 1000
         succeeded = 0
         for sentence, parse in itertools.islice(sentences, num_tested):

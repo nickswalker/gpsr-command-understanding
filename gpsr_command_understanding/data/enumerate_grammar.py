@@ -20,6 +20,7 @@ def get_annotated_sentences(sentences_and_pairs):
     annotated_sentences.intersection_update(expanded_sentences)
     return annotated_sentences
 
+
 def main():
     out_root = os.path.abspath(os.path.dirname(__file__) + "/../../data")
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
@@ -43,7 +44,7 @@ def main():
         else:
             unique.append(cat_sentences[i])
 
-    all_sentences = set().union(*cat_sentences)
+    all_sentences = [tree_printer(x) for x in set().union(*cat_sentences)]
     all_pairs = pairs
 
     annotated = [get_annotated_sentences(x) for x in zip(cat_sentences, pairs)]

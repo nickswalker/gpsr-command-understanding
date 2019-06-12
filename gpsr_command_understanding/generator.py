@@ -4,11 +4,12 @@ from lark import Lark, Tree, exceptions
 
 from gpsr_command_understanding.generation import generate_sentence_parse_pairs, generate_sentence_slot_pairs, \
     expand_pair_full
-from gpsr_command_understanding.grammar import TypeConverter, expand_shorthand, CombineExpressions
+from gpsr_command_understanding.grammar import TypeConverter, expand_shorthand, CombineExpressions, \
+    make_anonymized_grounding_rules
 from gpsr_command_understanding.util import get_wildcards, has_placeholders, merge_dicts
 from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_wildcard_rules, make_anonymized_grounding_rules
+from gpsr_command_understanding.loading_helpers import load_wildcard_rules
 
 try:
     from itertools import izip_longest as zip_longest
@@ -21,15 +22,16 @@ GENERATOR_GRAMMARS={2018:os.path.abspath(os.path.dirname(__file__) + "/../resour
 SEMANTIC_FORMS={"lambda": os.path.abspath(os.path.dirname(__file__) + "/../resources/lambda_ebnf.txt"),
                 "slot": os.path.abspath(os.path.dirname(__file__) + "/../resources/slot_ebnf.txt")}
 
+
 class Generator:
     def __init__(self, grammar_format_version=2018, semantic_form_version="lambda"):
         with  open(GENERATOR_GRAMMARS[grammar_format_version]) as grammar_spec, open(SEMANTIC_FORMS[semantic_form_version]) as annotation_spec:
             grammar_spec = grammar_spec.read()
             annotation_spec = annotation_spec.read()
         self.generator_grammar_parser = Lark(grammar_spec,
-        start='rule', parser="lalr", transformer=TypeConverter())
+                                             start='rule_start', parser="lalr", transformer=TypeConverter())
         self.generator_sequence_parser = Lark(grammar_spec,
-        start='top_expression', parser="lalr", transformer=TypeConverter())
+                                              start='expression_start', parser="lalr", transformer=TypeConverter())
         self.lambda_parser = Lark(annotation_spec,
                          start='start', parser="lalr", transformer=TypeConverter())
         self.semantic_form_version = semantic_form_version
@@ -44,13 +46,13 @@ class Generator:
         self.rules.append([rules_raw, rules_anon, rules_ground, rules_semantic])
 
     def parse_production_rule(self, line, expand=True):
-        #print(line)
         try:
             parsed = self.generator_grammar_parser.parse(line)
         except exceptions.LarkError as e:
-            print(line)
-            print(e)
             raise e
+
+        if len(parsed.children) == 0:
+            return None, []
         # Clean up any
         #CombineExpressions().visit(parsed.children[1])
         rhs_list_expanded = [parsed.children[1]]
@@ -68,24 +70,28 @@ class Generator:
             grammar_file_paths = [grammar_file_paths]
         production_rules = {}
         for grammar_file_path in grammar_file_paths:
-            with open(grammar_file_path) as f:
+            # TODO: Figure out why generator files have a byte order mark (BOM)
+            with open(grammar_file_path, encoding="utf-8-sig") as f:
                 for line in f:
                     line = line.strip()
-                    # TODO: Rely on the grammar to ignore comments instead..
-                    if len(line) == 0 or line[0] != '$':
-                        # We only care about lines that start with a nonterminal (denoted by $)
-                        continue
                     # parse into possible productions
                     lhs, rhs_productions = self.parse_production_rule(line, expand_shorthand)
+                    # Skip emtpy LHS (comments)
                     # add to dictionary, if already there then append to list of rules
                     # using set to avoid duplicates
-                    if lhs not in production_rules:
+                    if not lhs:
+                        continue
+                    elif lhs not in production_rules:
                         production_rules[lhs] = rhs_productions
                     else:
                         production_rules[lhs].extend(rhs_productions)
         return production_rules
 
     def parse_rule(self, line, rule_dict):
+        # Probably a comment line
+        if "=" not in line:
+            return
+        # TODO: Properly compose these grammars so that we don't have to manually interface them
         prod, semantics = line.split("=")
         try:
             prod = self.generator_sequence_parser.parse(prod.strip())
@@ -93,6 +99,10 @@ class Generator:
             print(prod)
             print(e)
             raise e
+
+        # Probably a comment
+        if len(prod.children) == 0:
+            return
 
         expanded_prod_heads = expand_shorthand(prod)
         sem = semantics.strip()
@@ -129,8 +139,6 @@ class Generator:
             with open(semantics_file_path) as f:
                 for line in f:
                     cleaned = line.strip()
-                    if len(cleaned) == 0 or cleaned[0] == '#':
-                        continue
                     self.parse_rule(cleaned, prod_to_semantics)
 
         return prod_to_semantics
@@ -189,7 +197,6 @@ class Generator:
             #    print(tree_printer(sentence))
             #    print(tree_printer(semantics))
         return all_pairs
-
 
 
 def get_grounding_per_each_parse(generator, random_source):

@@ -8,6 +8,10 @@ from lark import Tree, Transformer, Visitor
 
 
 class TypeConverter(Transformer):
+    """
+    Tree post-processor which takes Lark grammar rules as hints to wrap up
+    special types of terminals
+    """
     def bare_choice(self, children):
         return Tree("choice", children)
     def top_expression(self, children):
@@ -65,23 +69,6 @@ class DiscardVoid(Visitor):
         tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonymized)) and x.name == "void"), tree.children))
 
 
-class WildcardSimplifier(Visitor):
-    """
-    Throw away detailed information on wildcards, keeping just the type
-    """
-
-    def expression(self, tree):
-        cleaned_children = []
-        for child in tree.children:
-            # Rooms are actually mostly disjoint with locations, so we can reliably distinguish the two at delex time
-            if isinstance(child, WildCard) and ((
-                                                        child.name == "location" and child.type != "room") or child.name == "object" or child.name == "name"):
-                cleaned_children.append(WildCard(child.name))
-            else:
-                cleaned_children.append(child)
-        tree.children = cleaned_children
-
-
 class ToString(Transformer):
     def __default__(self, data, children, meta):
         as_str = ""
@@ -90,7 +77,7 @@ class ToString(Transformer):
                 as_str += " " + child.to_human_readable()
             else:
                 as_str += " " + str(child)
-        return as_str
+        return as_str[1:]
 
     def non_terminal(self, children):
         return "${}".format(" ".join(children))
@@ -192,6 +179,12 @@ class CombineExpressions(Visitor):
 
 
 def expand_shorthand(tree):
+    """
+    A choice in a rule can be expanded into several different rules enumerating each combination of branch selections.
+    This makes each choice and returns the list of resulting expressions
+    :param tree:
+    :return:
+    """
     in_progress = [tree]
     output = []
     combiner = CombineExpressions()
@@ -222,3 +215,32 @@ def expand_shorthand(tree):
                 in_progress.append(choice_made_tree)
 
     return output
+
+
+def make_anonymized_grounding_rules(wildcards, show_details=False):
+    """
+    Generates a single special-token substitution for each wildcard.
+    :param wildcards:
+    :return:
+    """
+    grounding_rules = {}
+    for wildcard in wildcards:
+        if show_details:
+            prod = Anonymized(wildcard.to_human_readable())
+        else:
+            # Room is an exception; it's disjoint with location
+            if wildcard.type and wildcard.type == "room":
+                prod = Anonymized("room")
+            else:
+                prod = Anonymized(wildcard.name)
+        grounding_rules[wildcard] = [Tree("expression", [prod])]
+    return grounding_rules
+
+
+def rule_dict_to_str(rules):
+    out = ""
+    for non_term, productions in rules.items():
+        out += non_term.to_human_readable() + "\n"
+        for production in productions:
+            out += "\t" + tree_printer(production) + "\n"
+    return out

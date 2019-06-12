@@ -1,4 +1,5 @@
-?start:       rule
+?rule_start:       rule |
+?expression_start: top_expression |
 rule:         non_terminal "=" top_expression
 top_expression: expression+ | bare_choice
 ?expression: (non_terminal|wildcard |COMMA|PERIOD|choice|WORD)+ | "(" (non_terminal|wildcard|COMMA|PERIOD|choice|WORD)+ ")"
@@ -30,11 +31,11 @@ gesture_wildcard:   "gesture"
 category_wildcard:   "category" INT?
 whattosay_wildcard: "whattosay"
 
-COMMENT: /(#|;).*/
 COMMA: ","
 PERIOD: "."
 OBFUSCATED:    "?"
 WORD: (LETTER | "'")+
+COMMENT: ("#"|";"|"//") /[^\n]/*
 
 %ignore COMMENT
 %import common.ESCAPED_STRING

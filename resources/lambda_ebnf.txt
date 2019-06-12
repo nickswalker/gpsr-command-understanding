@@ -1,4 +1,4 @@
-?start:         expression
+?start:         expression |
 
 expression:    lambda_abs
                      | predicate
@@ -52,7 +52,9 @@ ARG:          "$"INT
 TYPE:         "e"
 COMMA: ","
 PERIOD: "."
+COMMENT: ("#"|";"|"//") /[^\n]/*
 
+%ignore COMMENT
 %import common.WORD
 %import common.ESCAPED_STRING
 %import common.INT

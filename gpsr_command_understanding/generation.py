@@ -84,7 +84,7 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
         if not expansions:
             # If we couldn't replace anything else, this sentence is done!
             if semantics:
-                semantics = DiscardVoid().visit(semantics)
+                DiscardVoid().visit(semantics)
                 sem_placeholders_remaining = get_placeholders(semantics)
                 sentence_placeholders_remaining = get_placeholders(sentence)
                 # Are there placeholders in the semantics that aren't left in the sentence? These will never get expanded,
@@ -116,6 +116,7 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
         """if not modified_semantics:
             print(sentence_filled.pretty())
         """
+
 
 def generate_sentence_slot_pairs(start_tree, production_rules, semantics_rules, start_semantics=None, yield_requires_semantics=True, branch_cap=None, random_generator=None):
 
@@ -296,6 +297,7 @@ def get_semantic_substitute(replace_token, production, semantics_rules):
     replace_words_in_tree(sem_substitute, Token('WORD', 'O'))
     return sem_substitute
 
+
 def iob2_tagging(sem, production):
 
     sem_substitute = Tree('expression', [])
@@ -321,7 +323,6 @@ def expand_all_semantics(production_rules, semantics_rules):
     :param production_rules:
     :param semantics_rules:
     """
-#    for utterance, parse in [list(semantics_rules.items())[-1]]:
     for utterance, parse in semantics_rules.items():
         yield From(generate_sentence_parse_pairs(utterance, production_rules, semantics_rules, False))
 

@@ -2,25 +2,8 @@ from os.path import join
 
 from lark import Tree
 
-from gpsr_command_understanding.tokens import Anonymized, WildCard
-from gpsr_command_understanding.util import merge_dicts, get_wildcards
+from gpsr_command_understanding.tokens import WildCard
 from gpsr_command_understanding.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser
-
-
-def make_anonymized_grounding_rules(wildcards, show_details=False):
-    """
-    Generates a single special-token substitution for each wildcard.
-    :param wildcards:
-    :return:
-    """
-    grounding_rules = {}
-    for term in wildcards:
-        if show_details:
-            prod = Anonymized(term.to_human_readable())
-        else:
-            prod = Anonymized(term.name)
-        grounding_rules[term] = [Tree("expression", [prod])]
-    return grounding_rules
 
 
 def load_entities_from_xml(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):

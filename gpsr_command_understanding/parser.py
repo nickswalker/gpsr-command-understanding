@@ -1,13 +1,12 @@
-from collections import defaultdict
+from copy import deepcopy
 
 import editdistance
 import lark
-from lark import Transformer, Lark
+from lark import Transformer, Lark, Tree
 
-from gpsr_command_understanding.grammar import DiscardVoid, WildcardSimplifier
+from gpsr_command_understanding.grammar import DiscardVoid
 from gpsr_command_understanding.tokens import NonTerminal, WildCard
-
-import re
+from gpsr_command_understanding.util import get_wildcards
 
 
 class ToEBNF(Transformer):
@@ -18,7 +17,7 @@ class ToEBNF(Transformer):
         output = ""
         for child in children:
             if isinstance(child, WildCard):
-                output += " \"" + child.to_human_readable() + "\""
+                output += " " + "wild_" + child.to_snake_case()
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             elif isinstance(child, tuple):
@@ -26,7 +25,7 @@ class ToEBNF(Transformer):
                 # like other strings
                 output += child[1]
             else:
-                output += " \"" + str(child) + "\" "
+                output += " \"" + str(child) + "\""
         return output
 
     def non_terminal(self, children):
@@ -59,12 +58,20 @@ class GrammarBasedParser(object):
     Lark-based Earley parser synthesized from the generator grammar.
     "Hard"; only parses things that are exactly in the grammar.
     """
-    def __init__(self, rules):
-        rules = rules
+
+    def __init__(self, grammar_rules):
+        # We need to destructively modify the rules a bit
+        rules = deepcopy(grammar_rules)
         rch_to_ebnf = ToEBNF()
         as_ebnf = ""
         void_remover = DiscardVoid()
-        wildcard_simplifier = WildcardSimplifier()
+
+        all_wildcard_lhs = [non_term for non_term, _ in rules.items() if isinstance(non_term, WildCard)]
+        if len(all_wildcard_lhs) == 0:
+            all_rule_trees = [tree for _, trees in rules.items() for tree in trees]
+            wildcards = get_wildcards(all_rule_trees)
+            for wildcard in wildcards:
+                rules[wildcard] = [Tree("expression", [wildcard.to_human_readable()])]
         for non_term, productions in rules.items():
             # TODO: bake this into WildCard and NonTerminal types
             non_term_name = non_term.name.lower()
@@ -73,11 +80,11 @@ class GrammarBasedParser(object):
             line = "!" + non_term_name + ": ("
             for production in productions:
                 void_remover.visit(production)
-                wildcard_simplifier.visit(production)
                 line += rch_to_ebnf(production) + "\n\t| "
 
             line = line[:-4] + " )\n"
             as_ebnf += line
+
         print(as_ebnf)
         as_ebnf += """
         %import common.WS
@@ -89,6 +96,8 @@ class GrammarBasedParser(object):
         try:
             return self._parser.parse(utterance)
         except lark.exceptions.LarkError as e:
+            # If you want to see what part didn't fall in the grammar
+            # print(e)
             return None
 
 
@@ -103,7 +112,7 @@ class NearestNeighborParser(object):
         self.distance_threshold = distance_threshold
 
     def __call__(self, utterance):
-        smallest_distance = 100
+        smallest_distance = float("inf")
         nearest = None
         for i in self.neighbors:
             d = editdistance.eval(i, utterance)
@@ -121,84 +130,23 @@ class NearestNeighborParser(object):
         return self.parser(nearest)
 
 
-class Anonymizer(object):
-    def __init__(self, objects, categories, names, locations, beacons, placements, rooms, gestures):
-        self.names = names
-        self.categories = categories
-        self.locations = locations
-        self.beacons = beacons
-        self.placements = placements
-        self.rooms = rooms
-        self.objects = objects
-        self.gestures = gestures
-        replacements = {}
-        for name in self.names:
-            replacements[name] = "name"
-
-        for location in self.locations:
-            replacements[location] = "location"
-
-        for room in self.rooms:
-            replacements[room] = "location room"
-
-        # Note they're we're explicitly clumping beacons and placements (which may overlap)
-        # together to make anonymizing/parsing easier.
-        """
-        for beacon in self.beacons:
-            replacements[beacon] = "location beacon"
-
-        for placement in self.placements:
-            replacements[placement] = "location placement"
-        """
-        for object in self.objects:
-            replacements[object] = "object"
-
-        for gesture in self.gestures:
-            replacements[gesture] = "gesture"
-
-        for category in self.categories:
-            replacements[category] = "category"
-
-        self.rep = replacements
-        escaped = dict((re.escape(k), v) for k, v in replacements.items())
-        self.pattern = re.compile("\\b(" + "|".join(escaped.keys()) + ")\\b")
-
-    def __call__(self, utterance):
-        type_count = defaultdict(lambda: 0)
-        scrubbed = utterance
-        for match in self.pattern.finditer(utterance):
-            type = self.rep[match.group()]
-            type_count[type] += 1
-
-        num_type_anon_so_far = defaultdict(lambda: 0)
-        while True:
-            match = self.pattern.search(scrubbed)
-            if not match:
-                break
-            string = match.groups()[0]
-            replacement_type = self.rep[string]
-            if type_count[replacement_type] > 1:
-                current_num = num_type_anon_so_far[replacement_type] + 1
-                replacement_string = "{" + self.rep[string] + " " + str(current_num) + "}"
-                num_type_anon_so_far[replacement_type] += 1
-            else:
-                replacement_string = "{" + self.rep[string] + "}"
-            scrubbed = scrubbed.replace(string, replacement_string, 1)
-
-        return scrubbed
-
-
 class MappingParser(object):
+    """
+    Map parser output to some other value specified in a predefined lookup table
+    """
     def __init__(self, parser, mapping):
         self.parser = parser
         self.mapping = mapping
 
-    def parse(self, utterance):
-        parse = self.parser.parse(utterance)
+    def __call__(self, utterance):
+        parse = self.parser(utterance)
         return self.mapping.get(parse, None)
 
 
-class NaiveAnonymizingParser(object):
+class AnonymizingParser(object):
+    """
+    Pass input utterances through an anonymizer before parsing
+    """
     def __init__(self, parser, anonymizer):
 
         self.parser = parser
