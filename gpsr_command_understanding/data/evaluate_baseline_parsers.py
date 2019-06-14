@@ -1,20 +1,16 @@
-import copy
+#!/usr/bin/env python
 import itertools
 import os
 import sys
 import editdistance
 
-from gpsr_command_understanding.generation import generate_sentences, generate_sentence_parse_pairs, \
-    expand_all_semantics
 from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.grammar import tree_printer, rule_dict_to_str
-from gpsr_command_understanding.loading_helpers import load_all_2018, load_all_2018_by_cat
+
+from gpsr_command_understanding.loading_helpers import load_all_2018
 from gpsr_command_understanding.models.noop_tokenizer import NoOpTokenizer
 from gpsr_command_understanding.models.seq2seq_data_reader import Seq2SeqDatasetReader
-from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser, \
-    MappingParser, KNearestNeighborParser
+from gpsr_command_understanding.parser import  AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer
-from gpsr_command_understanding.util import has_placeholders
 from nltk.metrics.distance import edit_distance, jaccard_distance
 
 GRAMMAR_DIR = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
@@ -44,9 +40,10 @@ def sweep_thresh(neighbors, test_pairs, anonymizer, metric, thresh_vals=range(0,
             percent_of_considered = 0.0
         else:
             percent_of_considered = 100.0 * float(correct) / parsed
-        print("thresh={0} Parsed {1} out of {2} correctly ({3:.2f}%). {4} at all ({5:.2f}%)".format(thresh, correct,
+        print("thresh={0} {1} out of total {2} correctly ({3:.2f}%). {4} of selected {5} ({6:.2f}%)".format(thresh, correct,
                                                                                                     num_paraphrases,
                                                                                                     percent_correct,
+                                                                                                            correct,
                                                                                                     parsed,
                                                                                                     percent_of_considered))
 

@@ -52,6 +52,7 @@ done
 
 results_dirs=${results_path}/*
 test_name=$(basename $test_path)
+data_root_path=$(dirname "${test_path}")
 dataset_name=$(basename $(dirname "${test_path}"))
 summary_path="${results_path}"/${dataset_name}_${test_name}_results_summary.txt
 
@@ -63,6 +64,7 @@ if [[ ${use_cpu} = "true" ]]; then
     gpu_arg=""
 fi
 
+python -m gpsr_command_understanding.data.evaluate_baseline_parsers ${data_root_path}/train.txt ${data_root_path}/val.txt ${data_root_path}/test.txt > ${results_path}/baselines.txt
 for dir in $results_dirs; do
     if [[ ! -d $dir ]]; then
         continue

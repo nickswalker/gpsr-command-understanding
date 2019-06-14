@@ -11,7 +11,7 @@ from gpsr_command_understanding.generator import Generator
 from gpsr_command_understanding.grammar import tree_printer
 from gpsr_command_understanding.loading_helpers import load_all_2019, \
     load_all_2018, load_entities_from_xml
-from gpsr_command_understanding.parser import GrammarBasedParser, NearestNeighborParser, AnonymizingParser
+from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
 from gpsr_command_understanding.tokens import ROOT_SYMBOL
 
@@ -72,7 +72,8 @@ class TestParsers(unittest.TestCase):
         sentences = generate_sentences(ROOT_SYMBOL, rules[0])
         parser = GrammarBasedParser(rules[0])
         sentences = list(set([tree_printer(x) for x in sentences]))
-        nearest_neighbor_parser = NearestNeighborParser(parser, sentences)
+        neighbors = [(sentence, parser(sentence)) for sentence in sentences]
+        nearest_neighbor_parser = KNearestNeighborParser(neighbors)
         some_sentence = sentences[0]
         tweaked = some_sentence[:-1]
         expected_parse = parser(some_sentence)

@@ -74,6 +74,8 @@ fi
 
 experiment_files=${experiment_path}/*.json
 summary_path=${results_path}/training_summary.txt
+# Clear the file
+echo "" > $summary_path
 for file in ${experiment_files}; do
     name=$(basename $file)
     # remove .json extension
