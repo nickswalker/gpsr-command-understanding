@@ -18,14 +18,12 @@ $vbfind the {category} in the {room} = (find (λ$1:e (and (is_a $1 {category}) (
 $vbfind the {aobject?} in the {room} = (find (λ$1:e (and (is_a $1 {aobject?}) (at $1 {room}))))
 
 Tell me how many people in the {room} are (boys | men | male) = (say (count (λ$1:e (person $1) (male $1) (at $1 {room}))))
-Tell me how many people in the {room} are (girls | women | female) = (say (count (λ$1:e (person $1) (male $1) (at $1 {room}))))
+Tell me how many people in the {room} are (girls | women | female) = (say (count (λ$1:e (person $1) (female $1) (at $1 {room}))))
 
 Tell me how many people in the {room} are lying down = (say (count (λ$1:e (person $1) (lying $1) (at $1 {room}))))
 Tell me how many people in the {room} are sitting = (say (count (λ$1:e (person $1) (sitting $1) (at $1 {room}))))
 Tell me how many people in the {room} are standing = (say (count (λ$1:e (person $1) (standing $1) (at $1 {room}))))
 
-# May need to rethink pose predicates in order to do this...
-#Tell me the $pose of the person in the {room} = (say (count (λ$1:e (person $1) (male $1) (at $1 {room}))))
 
 ###################################################################
 # Bring

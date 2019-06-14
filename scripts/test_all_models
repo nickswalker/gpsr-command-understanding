@@ -70,8 +70,8 @@ for dir in $results_dirs; do
     model_name=$(basename $dir)
     model_path="${dir}/model.tar.gz"
     output_path="${dir}/evaluation_${test_name}"
-    allennlp evaluate ${model_path} ${test_path} --output-file "${output_path}" --include-package gpsr_semantic_parser $gpu_arg
-    allennlp predict ${model_path} ${test_path}   --output-file "${dir}/predictions_${test_name}" --use-dataset-reader --predictor command_parser --include-package gpsr_semantic_parser --batch-size 64 $gpu_arg
+    allennlp evaluate ${model_path} ${test_path} --output-file "${output_path}" --include-package gpsr_command_understanding $gpu_arg
+    allennlp predict ${model_path} ${test_path}   --output-file "${dir}/predictions_${test_name}" --use-dataset-reader --predictor command_parser --include-package gpsr_command_understanding --batch-size 64 $gpu_arg
     echo -e "\n ${model_name}" >> ${summary_path}
     cat "${dir}/evaluation_${test_name}" >> ${summary_path}
 done

@@ -15,17 +15,18 @@ import more_itertools
 from gpsr_command_understanding.generation import pairs_without_placeholders
 from gpsr_command_understanding.generator import Generator, get_grounding_per_each_parse_by_cat
 from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_all_2018
+from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat
 from gpsr_command_understanding.util import determine_unique_cat_data, save_data, flatten, merge_dicts, \
     get_pairs_by_cats
 
+EPS = 0.00001
 
 def validate_args(args):
     if args.test_categories != args.train_categories:
         if len(set(args.test_categories).intersection(set(args.train_categories))) > 0:
             print("Can't have partial overlap of train and test categories")
             exit(1)
-        if abs(1.0 - (args.split[0] + args.split[1])) > 0.00001:
+        if abs(1.0 - (args.split[0] + args.split[1])) > EPS:
             print("Please ensure train and val percentage sum to 1.0 when using different train and test distributions")
             exit(1)
         print("Because train and test distributions are different, using as much of test (100%) as possible")
@@ -35,24 +36,29 @@ def validate_args(args):
             print("Please ensure split percentages sum to 1")
             exit(1)
 
-    if not (args.anonymized or args.groundings or args.turk):
+    if not (args.anonymized or args.groundings or args.paraphrasings):
         print("Must use at least one of anonymized or grounded pairs")
+        exit(1)
+
+    if args.match_form_split and not args.use_form_split:
+        print("Cannot match form split if not configured to produce form split")
+        exit(1)
 
     if not args.name:
         train_cats = "".join([str(x) for x in args.train_categories])
         test_cats = "".join([str(x) for x in args.test_categories])
         args.name = "{}_{}".format(train_cats, test_cats)
-        if args.use_parse_split:
-            args.name += "_parse"
+        if args.use_form_split:
+            args.name += "_form"
         if args.anonymized:
             args.name += "_a"
         if args.groundings:
             args.name += "_g" + str(args.groundings)
-        if args.turk:
-            args.name += "_t"
+        if args.paraphrasings:
+            args.name += "_p"
 
 
-def load_turk_data(path, lambda_parser):
+def load_data(path, lambda_parser):
     pairs = {}
     with open(path) as f:
         line_generator = more_itertools.peekable(enumerate(f))
@@ -81,11 +87,12 @@ def main():
     parser.add_argument("-s","--split", default=[.7,.1,.2], nargs='+', type=float)
     parser.add_argument("-trc","--train-categories", default=[1, 2, 3], nargs='+', type=int)
     parser.add_argument("-tc","--test-categories", default=[1, 2, 3], nargs='+', type=int)
-    parser.add_argument("-p","--use-parse-split", action='store_true', default=False)
+    parser.add_argument("-p", "--use-form-split", action='store_true', default=False)
     parser.add_argument("-g","--groundings", required=False, type=int, default=None)
     parser.add_argument("-a","--anonymized", required=False, default=True, action="store_true")
+    parser.add_argument("-m", "--match-form-split", required=False, default=None, type=str)
     parser.add_argument("-na","--no-anonymized", required=False, dest="anonymized", action="store_false")
-    parser.add_argument("-t","--turk", required=False, default=None, type=str)
+    parser.add_argument("-t", "--paraphrasings", required=False, default=None, type=str)
     parser.add_argument("--name", default=None, type=str)
     parser.add_argument("--seed", default=0, required=False, type=int)
     parser.add_argument("-i","--incremental-datasets", action='store_true', required=False)
@@ -97,9 +104,7 @@ def main():
     cmd_gen = Generator(grammar_format_version=2018)
     random_source = random.Random(args.seed)
 
-    different_test_dist = False
-    if args.test_categories != args.train_categories:
-        different_test_dist = True
+    different_test_dist = (args.test_categories != args.train_categories)
 
     pairs_out_path = os.path.join(os.path.abspath(os.path.dirname(__file__) + "/../.."), "data", args.name)
     train_out_path = os.path.join(pairs_out_path, "train.txt")
@@ -113,7 +118,7 @@ def main():
     
     grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
-    generator = load_all_2018(cmd_gen, grammar_dir)
+    generator = load_all_2018_by_cat(cmd_gen, grammar_dir)
 
     pairs = [{}, {}, {}]
     if args.anonymized:
@@ -124,44 +129,72 @@ def main():
         for i in range(args.groundings):
             groundings = get_grounding_per_each_parse_by_cat(generator,random_source)
             for cat_pairs, groundings in zip(pairs, groundings):
-                for utt, parse_anon, _ in groundings:
-                    cat_pairs[tree_printer(utt)] = tree_printer(parse_anon)
+                for utt, form_anon, _ in groundings:
+                    cat_pairs[tree_printer(utt)] = tree_printer(form_anon)
 
-    if args.turk and len(args.train_categories) == 3:
-        turk_pairs = load_turk_data(args.turk, cmd_gen.lambda_parser)
-        pairs[0] = merge_dicts(pairs[0], turk_pairs)
+    if args.paraphrasings and len(args.train_categories) == 3:
+        paraphrasing_pairs = load_data(args.paraphrasings, cmd_gen.lambda_parser)
+        pairs[0] = merge_dicts(pairs[0], paraphrasing_pairs)
 
     #pairs_in = [pairs_without_placeholders(rules, semantics, only_in_grammar=True) for _, rules, _, semantics in generator]
-    by_utterance, by_parse = determine_unique_cat_data(pairs)
+    by_command, by_form = determine_unique_cat_data(pairs)
 
-    if args.use_parse_split:
-        data_to_split = by_parse
+    if args.use_form_split:
+        data_to_split = by_form
     else:
-        data_to_split = by_utterance
+        data_to_split = by_command
     train_pairs, test_pairs = get_pairs_by_cats(data_to_split, args.train_categories, args.test_categories)
 
-    # Randomize for the split, but then sort by utterance length before we save out so that things are easier to read.
+    # Randomize for the split, but then sort by command length before we save out so that things are easier to read.
     # If these lists are the same, they need to be shuffled the same way...
     random.Random(args.seed).shuffle(train_pairs)
     random.Random(args.seed).shuffle(test_pairs)
 
-    if args.test_categories == args.train_categories:
-        # If we're training and testing on the same distributions, these should match exactly
-        assert train_pairs == test_pairs
-
-    train_percentage, val_percentage, test_percentage = args.split
-    if different_test_dist:
-        # Just one split for the first dist, then use all of test
-        split1 = int(train_percentage * len(train_pairs))
-        train, val, test = train_pairs[:split1], train_pairs[split1:], test_pairs
+    # Peg this split to match the split in another dataset. Helpful for making them mergeable while still preserving
+    # the no-form-seen-before property of the form split
+    if args.match_form_split:
+        train_match = load_data(args.match_form_split + "/train.txt", cmd_gen.lambda_parser)
+        train_match = set(train_match.values())
+        val_match = load_data(args.match_form_split + "/val.txt", cmd_gen.lambda_parser)
+        val_match = set(val_match.values())
+        test_match = load_data(args.match_form_split + "/test.txt", cmd_gen.lambda_parser)
+        test_match = set(test_match.values())
+        train_percentage = len(train_match) / (len(train_match) + len(val_match) + len(test_match))
+        val_percentage = len(val_match) / (len(train_match) + len(val_match) + len(test_match))
+        test_percentage = len(test_match) / (len(train_match) + len(val_match) + len(test_match))
+        train = []
+        val = []
+        test = []
+        # TODO: Square this away with test dist param. Probably drop the cat params
+        for form, commands in itertools.chain(train_pairs):
+            target = None
+            if form in train_match:
+                target = train
+            elif form in val_match:
+                target = val
+            elif form in test_match:
+                target = test
+            else:
+                print(form)
+                continue
+                # assert False
+            target.append((form, commands))
     else:
-        split1 = int(train_percentage * len(train_pairs))
-        split2 = int((train_percentage + val_percentage) * len(train_pairs))
-        train, val, test = train_pairs[:split1], train_pairs[split1:split2], train_pairs[split2:]
+        train_percentage, val_percentage, test_percentage = args.split
+        if different_test_dist:
+            # Just one split for the first dist, then use all of test
+            split1 = int(train_percentage * len(train_pairs))
+            train, val, test = train_pairs[:split1], train_pairs[split1:], test_pairs
+        else:
+            # If we're training and testing on the same distributions, these should match exactly
+            assert train_pairs == test_pairs
+            split1 = int(train_percentage * len(train_pairs))
+            split2 = int((train_percentage + val_percentage) * len(train_pairs))
+            train, val, test = train_pairs[:split1], train_pairs[split1:split2], train_pairs[split2:]
 
-    # Parse splits would have stored parse-(utterance list) pairs, so lets
+    # Parse splits would have stored parse-(command list) pairs, so lets
     # flatten out those lists if we need to.
-    if args.use_parse_split:
+    if args.use_form_split:
         train = flatten(train)
         val = flatten(val)
         test = flatten(test)
@@ -184,11 +217,11 @@ def main():
     save_data(val, val_out_path)
     save_data(test, test_out_path)
 
-    utterance_vocab = Counter()
+    command_vocab = Counter()
     parse_vocab = Counter()
-    for utterance, parse in itertools.chain(train, val, test):
-        for token in utterance.split(" "):
-            utterance_vocab[token] += 1
+    for command, parse in itertools.chain(train, val, test):
+        for token in command.split(" "):
+            command_vocab[token] += 1
         for token in parse.split(" "):
             parse_vocab[token] += 1
 
@@ -207,7 +240,7 @@ def main():
         f.write(info)
 
         f.write("\n\nUtterance vocab\n")
-        for token, count in sorted(utterance_vocab.items(), key=operator.itemgetter(1), reverse=True):
+        for token, count in sorted(command_vocab.items(), key=operator.itemgetter(1), reverse=True):
             f.write("{} {}\n".format(token, str(count)))
 
         f.write("\n\nParse vocab\n")

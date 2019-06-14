@@ -1,3 +1,5 @@
+import operator
+
 from copy import deepcopy
 
 import editdistance
@@ -7,6 +9,8 @@ from lark import Transformer, Lark, Tree
 from gpsr_command_understanding.grammar import DiscardVoid
 from gpsr_command_understanding.tokens import NonTerminal, WildCard
 from gpsr_command_understanding.util import get_wildcards
+
+from queue import PriorityQueue
 
 
 class ToEBNF(Transformer):
@@ -85,7 +89,7 @@ class GrammarBasedParser(object):
             line = line[:-4] + " )\n"
             as_ebnf += line
 
-        print(as_ebnf)
+        # print(as_ebnf)
         as_ebnf += """
         %import common.WS
         %ignore WS
@@ -101,33 +105,42 @@ class GrammarBasedParser(object):
             return None
 
 
-class NearestNeighborParser(object):
+class KNearestNeighborParser(object):
     """
     A wrapper class that maps out-of-grammar sentences to their nearest neighbor by edit distance.
     """
-    def __init__(self, parser, neighbors, distance_threshold=20):
 
-        self.parser = parser
+    def __init__(self, neighbors, k=3, distance_threshold=None, confidence_threshold=None, metric=editdistance.eval):
+        assert (k > 0)
         self.neighbors = neighbors
         self.distance_threshold = distance_threshold
+        self.k = k
+        self.metric = metric
 
     def __call__(self, utterance):
-        smallest_distance = float("inf")
-        nearest = None
-        for i in self.neighbors:
-            d = editdistance.eval(i, utterance)
-            if d < smallest_distance:
-                smallest_distance = d
-                nearest = i
+        q = PriorityQueue()
+        for neighbor, parse in self.neighbors:
+            d = self.metric(neighbor, utterance)
+            q.put_nowait((d, (neighbor, parse)))
             if d == 0:
-                break
+                # Exact match returns the known parse
+                return parse
 
-        if smallest_distance >= self.distance_threshold:
-            # print(utterance)
-            # print(nearest)
-            # print(smallest_distance)
+        # Get the top k (lowest distance/priority) and see how they vote
+        answer_votes = {}
+        for i in range(self.k):
+            d, (neighbor, parse) = q.get()
+            if d > self.distance_threshold:
+                continue
+            answer_votes[parse] = answer_votes.get(parse, 0) + 1
+
+        # Reverse to get highest num votes first
+        answers_by_num_votes = sorted(answer_votes.items(), key=operator.itemgetter(1), reverse=True)
+
+        # All of our neighbors must've been too far away
+        if len(answers_by_num_votes) == 0:
             return None
-        return self.parser(nearest)
+        return answers_by_num_votes[0][0]
 
 
 class MappingParser(object):

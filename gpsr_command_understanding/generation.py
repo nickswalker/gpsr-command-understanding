@@ -85,6 +85,7 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
             # If we couldn't replace anything else, this sentence is done!
             if semantics:
                 DiscardVoid().visit(semantics)
+                CombineExpressions().visit(semantics)
                 sem_placeholders_remaining = get_placeholders(semantics)
                 sentence_placeholders_remaining = get_placeholders(sentence)
                 # Are there placeholders in the semantics that aren't left in the sentence? These will never get expanded,
@@ -331,14 +332,14 @@ def pairs_without_placeholders(rules, semantics, only_in_grammar=False):
     pairs = expand_all_semantics(rules, semantics)
     out = {}
     all_utterances_in_grammar = set(generate_sentences(ROOT_SYMBOL, rules))
-    for utterance, parse in pairs:
-        if has_placeholders(utterance) or has_placeholders(parse):
+    for command, parse in pairs:
+        if has_placeholders(command) or has_placeholders(parse):
             # This case is almost certainly a bug with the annotations
             print("Skipping pair for {} because it still has placeholders after expansion".format(
-                tree_printer(utterance)))
+                tree_printer(command)))
             continue
         # If it's important that we only get pairs that are in the grammar, check to make sure
-        if only_in_grammar and not utterance in all_utterances_in_grammar:
+        if only_in_grammar and not command in all_utterances_in_grammar:
             continue
-        out[tree_printer(utterance)] = tree_printer(parse)
+        out[tree_printer(command)] = tree_printer(parse)
     return out

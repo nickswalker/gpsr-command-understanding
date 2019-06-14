@@ -95,7 +95,7 @@ class ToString(Transformer):
         # Check for any string constant args and make sure they have
         # padding spaces between text and the quote marks
         for i, child in enumerate(children):
-            if  isinstance(child, str) and child[0] == "\"":
+            if isinstance(child, str) and child[0] == "\"" and child[1] != " ":
                 children[i] = "\" " + child[1:-1] + " \""
         return "( {} )".format(" ".join(map(str,children)))
 

@@ -98,5 +98,4 @@ class Seq2SeqDatasetReader(DatasetReader):
             meta_fields["target_tokens"] = [y.text for y in tokenized_target[1:-1]]
         fields_dict["metadata"] = MetadataField(meta_fields)
 
-#TODO: FIX $1 getting tokenized to $ 1, which messes up the output (won't parse)
         return Instance(fields_dict)
