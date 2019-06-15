@@ -110,7 +110,8 @@ class KNearestNeighborParser(object):
     A wrapper class that maps out-of-grammar sentences to their nearest neighbor by edit distance.
     """
 
-    def __init__(self, neighbors, k=3, distance_threshold=None, confidence_threshold=None, metric=editdistance.eval):
+    def __init__(self, neighbors, k=3, distance_threshold=float("inf"), confidence_threshold=None,
+                 metric=editdistance.eval):
         assert (k > 0)
         self.neighbors = neighbors
         self.distance_threshold = distance_threshold

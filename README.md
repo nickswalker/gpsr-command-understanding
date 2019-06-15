@@ -34,7 +34,7 @@ You can run them with
     allennlp train \
     experiments/seq2seq.json \
     -s results/seq2seq \
-    --include-package gpsr_semantic_parser
+    --include-package gpser_command_understanding
 
 You can monitor training with Tensorboard:
 
@@ -49,14 +49,14 @@ so you can configure the experiment
 
 To see a model's output on a data file, use the `predict command`
 
-    allennlp predict --archive-path results/ --include-package gpsr_semantic_parser
+    allennlp predict --archive-path results/ --include-package gpser_command_understanding
 
 You can poke at a trained model through the browser using AllenNLP as well
 
     python -m allennlp.service.server_simple \
         --archive-path results/seq2seq/model.tar.gz \
-        --predictor  my_seq2seq\
-        --include-package gpsr_semantic_parser \
+        --predictor  command_parser\
+        --include-package gpser_command_understanding \
         --title "GPSR Semantic Parser" \
         --field-name command \
         --static-dir demo

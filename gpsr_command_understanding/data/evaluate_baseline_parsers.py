@@ -9,7 +9,7 @@ from gpsr_command_understanding.generator import Generator
 from gpsr_command_understanding.loading_helpers import load_all_2018
 from gpsr_command_understanding.models.noop_tokenizer import NoOpTokenizer
 from gpsr_command_understanding.models.seq2seq_data_reader import Seq2SeqDatasetReader
-from gpsr_command_understanding.parser import  AnonymizingParser, KNearestNeighborParser
+from gpsr_command_understanding.parser import AnonymizingParser, KNearestNeighborParser, GrammarBasedParser
 from gpsr_command_understanding.anonymizer import Anonymizer
 from nltk.metrics.distance import edit_distance, jaccard_distance
 
@@ -59,6 +59,7 @@ def main():
     rules, rules_anon, rules_ground, semantics, entities = load_all_2018(generator, GRAMMAR_DIR)
     anonymizer = Anonymizer(*entities)
 
+
     neighbors = []
     for x in itertools.chain(train, val):
         command = str(x["source_tokens"][1:-1][0])
@@ -69,6 +70,13 @@ def main():
     test_pairs = []
     for x in test:
         test_pairs.append((str(x["source_tokens"][1:-1][0]), str(x["target_tokens"][1:-1][0])))
+
+    print("Check grammar membership")
+    naive_parser = GrammarBasedParser(rules_anon)
+    anon_parser = AnonymizingParser(naive_parser, anonymizer)
+
+    correct, parsed = bench_parser(anon_parser, test_pairs)
+    print("Got {} of {} ({:.2f})".format(parsed, len(test_pairs), 100.0 * parsed / len(test_pairs)))
 
     print("Jaccard distance")
     sweep_thresh(neighbors, test_pairs, anonymizer, lambda x, y: jaccard_distance(set(x.split()), set(y.split())),

@@ -4,9 +4,6 @@ import re
 from nltk.metrics.distance import edit_distance, jaccard_distance
 import pandas as pd
 
-from gpsr_command_understanding.data.make_dataset import get_pairs_by_cats
-from gpsr_command_understanding.util import determine_unique_cat_data
-
 rephrasings = []
 new = []
 
@@ -40,10 +37,16 @@ def process_turk_files(paths, filter_rejected=True):
 
 rephrasings, new, other_data = process_turk_files(glob.glob("../data/raw_turk/batch_*.csv"))
 
-rephrasings["EditDistance"] = rephrasings.apply(lambda row: edit_distance(row["Input.command"],row["Answer.utterance"]) / len(row["Input.command"]), axis=1)
-rephrasings["JaccardDistance"] = rephrasings.apply(lambda row: jaccard_distance(set(row["Input.command"].split(" ")),set(row["Answer.utterance"].split(" "))), axis=1)
-rephrasings["BLEU"] = rephrasings.apply(lambda row: jaccard_distance(set(row["Input.command"].split(" ")),set(row["Answer.utterance"].split(" "))), axis=1)
+rephrasings["EditDistanceNormalized"] = rephrasings.apply(
+    lambda row: edit_distance(row["Input.command"], row["Answer.utterance"]) / len(row["Input.command"]), axis=1)
+rephrasings["EditDistance"] = rephrasings.apply(
+    lambda row: edit_distance(row["Input.command"], row["Answer.utterance"]), axis=1)
+rephrasings["JaccardDistance"] = rephrasings.apply(
+    lambda row: jaccard_distance(set(row["Input.command"].split()), set(row["Answer.utterance"].split())), axis=1)
+# rephrasings["BLEU"] = rephrasings.apply(lambda row: jaccard_distance(set(row["Input.command"].split(" ")),set(row["Answer.utterance"].split(" "))), axis=1)
 
+print("{:.2f} {:.2f} {:.2f}".format(rephrasings["EditDistanceNormalized"].mean(), rephrasings["EditDistance"].mean(),
+                                    rephrasings["JaccardDistance"].mean()))
 by_worker = rephrasings.groupby(rephrasings["WorkerId"])
 for name, group in by_worker:
     print(name)
@@ -54,7 +57,7 @@ for name, group in by_worker:
 
 turker_performance = pd.DataFrame()
 turker_performance["HITTime"] = other_data.groupby("WorkerId")["WorkTimeInSeconds"].mean()
-turker_performance["MeanEditDistance"] = rephrasings.groupby("WorkerId")["EditDistance"].mean()
+turker_performance["MeanNormalizedEditDistance"] = rephrasings.groupby("WorkerId")["EditDistanceNormalized"].mean()
 turker_performance["MeanJaccardDistance"] = rephrasings.groupby("WorkerId")["JaccardDistance"].mean()
 turker_performance["Comment"] = other_data.groupby("WorkerId")["Answer.comment"]
 for _, (original, parse, rephrasing, edit, jaccard) in rephrasings[["Input.command","Input.parse","Answer.utterance", "EditDistance","JaccardDistance"]].iterrows():
