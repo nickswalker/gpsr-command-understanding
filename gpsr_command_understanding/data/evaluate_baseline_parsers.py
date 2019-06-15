@@ -71,7 +71,7 @@ def main():
         test_pairs.append((str(x["source_tokens"][1:-1][0]), str(x["target_tokens"][1:-1][0])))
 
     print("Jaccard distance")
-    sweep_thresh(neighbors, test_pairs, anonymizer, lambda x, y: jaccard_distance(set(x.split(" ")), set(y.split(" "))),
+    sweep_thresh(neighbors, test_pairs, anonymizer, lambda x, y: jaccard_distance(set(x.split()), set(y.split())),
                  [0.1 * i for i in range(11)])
     print("Edit distance")
     sweep_thresh(neighbors, test_pairs, anonymizer, editdistance.eval)

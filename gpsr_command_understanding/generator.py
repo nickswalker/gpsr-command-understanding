@@ -209,8 +209,8 @@ def get_grounding_per_each_parse(generator, random_source):
             # Some non-terminals may expand into different parses (like $oprop)! So we'll expand them
             # every which way
             wild_expansions = list(generate_sentence_parse_pairs(generation_path, rules, semantics,
-                                                            yield_requires_semantics=True,
-                                                            generator=random_source))
+                                                                 yield_requires_semantics=True,
+                                                                 random_generator=random_source))
             # We're going to be throwing away expansions that have the same parse, so let's
             # randomize here to make sure we aren't favoring the last expansion.
             # Note that the above generation should also return expansions in a random order anyway
@@ -218,10 +218,10 @@ def get_grounding_per_each_parse(generator, random_source):
 
             for utterance_wild, parse_wild in list(wild_expansions):
                 utterance_anon, parse_anon = next(expand_pair_full(utterance_wild, parse_wild, rules_anon, branch_cap=1,
-                                                              generator=random_source))
+                                                                   random_generator=random_source))
 
                 utterance, parse_ground = next(expand_pair_full(utterance_wild, parse_wild, rules_ground, branch_cap=1,
-                                                                generator=random_source))
+                                                                random_generator=random_source))
                 assert not has_placeholders(utterance)
                 assert not has_placeholders(parse_ground)
                 assert not has_placeholders(parse_ground)
@@ -245,8 +245,8 @@ def get_grounding_per_each_parse_by_cat(generator, random_source):
             # Some non-terminals may expand into different parses (like $oprop)! So we'll expand them
             # every which way
             wild_expansions = list(generate_sentence_parse_pairs(generation_path, rules, semantics,
-                                                            yield_requires_semantics=True,
-                                                            generator=random_source))
+                                                                 yield_requires_semantics=True,
+                                                                 random_generator=random_source))
             # We're going to be throwing away expansions that have the same parse, so let's
             # randomize here to make sure we aren't favoring the last expansion.
             # Note that the above generation should also return expansions in a random order anyway
@@ -254,10 +254,10 @@ def get_grounding_per_each_parse_by_cat(generator, random_source):
 
             for utterance_wild, parse_wild in list(wild_expansions):
                 utterance_anon, parse_anon = next(expand_pair_full(utterance_wild, parse_wild, rules_anon, branch_cap=1,
-                                                              generator=random_source))
+                                                                   random_generator=random_source))
 
                 utterance, parse_ground = next(expand_pair_full(utterance_wild, parse_wild, rules_ground, branch_cap=1,
-                                                                generator=random_source))
+                                                                random_generator=random_source))
                 assert not has_placeholders(utterance)
                 assert not has_placeholders(parse_ground)
                 assert not has_placeholders(parse_ground)

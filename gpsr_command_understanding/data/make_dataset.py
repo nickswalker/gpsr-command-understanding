@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(0, "../gpsr-semantic-parser")
+from os.path import join
+
+from gpsr_command_understanding.anonymizer import Anonymizer
 
 import itertools
 import operator
@@ -15,7 +17,7 @@ import more_itertools
 from gpsr_command_understanding.generation import pairs_without_placeholders
 from gpsr_command_understanding.generator import Generator, get_grounding_per_each_parse_by_cat
 from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat
+from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, load_entities_from_xml
 from gpsr_command_understanding.util import determine_unique_cat_data, save_data, flatten, merge_dicts, \
     get_pairs_by_cats
 
@@ -38,6 +40,10 @@ def validate_args(args):
 
     if not (args.anonymized or args.groundings or args.paraphrasings):
         print("Must use at least one of anonymized or grounded pairs")
+        exit(1)
+
+    if args.run_anonymizer and not args.paraphrasings:
+        print("Can only run anonymizer on paraphrased data")
         exit(1)
 
     if args.match_form_split and not args.use_form_split:
@@ -92,6 +98,7 @@ def main():
     parser.add_argument("-a","--anonymized", required=False, default=True, action="store_true")
     parser.add_argument("-m", "--match-form-split", required=False, default=None, type=str)
     parser.add_argument("-na","--no-anonymized", required=False, dest="anonymized", action="store_false")
+    parser.add_argument("-ra", "--run-anonymizer", required=False, default=False, action="store_true")
     parser.add_argument("-t", "--paraphrasings", required=False, default=None, type=str)
     parser.add_argument("--name", default=None, type=str)
     parser.add_argument("--seed", default=0, required=False, type=int)
@@ -130,10 +137,24 @@ def main():
             groundings = get_grounding_per_each_parse_by_cat(generator,random_source)
             for cat_pairs, groundings in zip(pairs, groundings):
                 for utt, form_anon, _ in groundings:
-                    cat_pairs[tree_printer(utt)] = tree_printer(form_anon)
+                    pairs[0][tree_printer(utt)] = tree_printer(form_anon)
 
     if args.paraphrasings and len(args.train_categories) == 3:
         paraphrasing_pairs = load_data(args.paraphrasings, cmd_gen.lambda_parser)
+        if args.run_anonymizer:
+            paths = tuple(
+                map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
+            entities = load_entities_from_xml(*paths)
+            anonymizer = Anonymizer(*entities)
+            anon_para_pairs = {}
+            anon_trigerred = 0
+            for command, form in paraphrasing_pairs.items():
+                anonymized_command = anonymizer(command)
+                if anonymized_command != command:
+                    anon_trigerred += 1
+                anon_para_pairs[anonymized_command] = form
+            paraphrasing_pairs = anon_para_pairs
+            print(anon_trigerred, len(paraphrasing_pairs))
         pairs[0] = merge_dicts(pairs[0], paraphrasing_pairs)
 
     #pairs_in = [pairs_without_placeholders(rules, semantics, only_in_grammar=True) for _, rules, _, semantics in generator]
@@ -220,9 +241,9 @@ def main():
     command_vocab = Counter()
     parse_vocab = Counter()
     for command, parse in itertools.chain(train, val, test):
-        for token in command.split(" "):
+        for token in command.split():
             command_vocab[token] += 1
-        for token in parse.split(" "):
+        for token in parse.split():
             parse_vocab[token] += 1
 
     info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, train_percentage, val_percentage, test_percentage)

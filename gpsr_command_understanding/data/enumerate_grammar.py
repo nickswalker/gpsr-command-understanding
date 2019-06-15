@@ -2,6 +2,7 @@ import itertools
 import os
 import numpy as np
 from os.path import join
+import re
 
 from gpsr_command_understanding.generator import Generator
 from gpsr_command_understanding.grammar import tree_printer
@@ -43,6 +44,8 @@ def main():
             unique.append(cat_sentences[i].difference(prev_cat_sentences))
         else:
             unique.append(cat_sentences[i])
+    # Sets should be disjoint
+    assert (len(set().union(*unique)) == sum([len(cat) for cat in unique]))
 
     all_sentences = [tree_printer(x) for x in set().union(*cat_sentences)]
     all_pairs = pairs
@@ -77,23 +80,36 @@ def main():
     with open(meta_out_path, "w") as f:
         f.write("Coverage:\n")
         cat_parse_lengths = []
+        cat_filtered_parse_lengths = []
         cat_sen_lengths = []
         for i, (annotated_sen, sen, unique_parses) in enumerate(zip(annotated, cat_sentences, unique_sentence_parses)):
             f.write("cat{0} {1}/{2} {3:.1f}%\n".format(i+1, len(annotated_sen), len(sen), 100.0 * len(annotated_sen) / len(sen)))
             f.write("\t unique parses: {}\n".format(len(unique_parses)))
-            cat_sen_lengths.append([len(tree_printer(sentence).split(" ")) for sentence in sen])
+            cat_sen_lengths.append([len(tree_printer(sentence).split()) for sentence in sen])
             avg_sentence_length = np.mean(cat_sen_lengths[i])
-            cat_parse_lengths.append([len(parse.split(" ")) for parse in unique_parses])
+            parse_lengths = []
+            filtered_parse_lengths = []
+            for parse in unique_parses:
+                parse_lengths.append(len(parse.split()))
+                stop_tokens_removed = re.sub("(\ e\ |\"|\)|\()", "", parse)
+                filtered_parse_lengths.append(len(stop_tokens_removed.split()))
+            cat_parse_lengths.append(parse_lengths)
+            cat_filtered_parse_lengths.append(filtered_parse_lengths)
             avg_parse_length = np.mean(cat_parse_lengths[i])
-            f.write("\t avg sentence length (tokens): {:.2f} avg parse length (tokens): {:.2f}\n".format(avg_sentence_length, avg_parse_length))
-
+            avg_filtered_parse_length = np.mean(cat_filtered_parse_lengths[i])
+            f.write(
+                "\t avg sentence length (tokens): {:.1f} avg parse length (tokens): {:.1f} avg filtered parse length (tokens): {:.1f}\n".format(
+                    avg_sentence_length, avg_parse_length, avg_filtered_parse_length))
 
         f.write("combined {0}/{1} {2:.1f}%\n".format(len(combined_annotations), len(all_sentences), 100.0 * len(combined_annotations) / len(all_sentences)))
         f.write("combined unique parses: {}\n".format(len(set().union(*unique_sentence_parses))))
 
         all_sen_lengths = [length for cat in cat_sen_lengths for length in cat]
         all_parse_lengths = [length for cat in cat_parse_lengths for length in cat]
-        f.write("combined avg sentence length (tokens): {:.2f} avg parse length (tokens): {:.2f}\n".format(np.mean(all_sen_lengths), np.mean(all_parse_lengths)))
+        all_filtered_parse_lengths = [length for cat in cat_filtered_parse_lengths for length in cat]
+        f.write(
+            "combined avg sentence length (tokens): {:.1f} avg parse length (tokens): {:.1f} avg filtered parse length (tokens): {:.1f}\n".format(
+                np.mean(all_sen_lengths), np.mean(all_parse_lengths), np.mean(all_filtered_parse_lengths)))
     print("No parses for:")
     for cat in parseless:
         for sentence in sorted(map(tree_printer, cat)):
