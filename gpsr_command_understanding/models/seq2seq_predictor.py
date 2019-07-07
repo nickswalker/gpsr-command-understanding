@@ -26,5 +26,4 @@ class CommandParser(Predictor):
 
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:
         command = json_dict['command']
-        return  self._dataset_reader.text_to_instance(source_string=command)
-
+        return self._dataset_reader.text_to_instance(source_string=command)

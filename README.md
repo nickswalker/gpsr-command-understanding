@@ -1,11 +1,13 @@
 # GPSR Command Understanding [![Build Status](https://travis-ci.org/nickswalker/gpsr-command-understanding.svg?branch=master)](https://travis-ci.org/nickswalker/gpsr-command-understanding)
 
-A semantic parser for the [RoboCup@Home](http://www.robocupathome.org/) _General Purpose Service Robot_ task.
+A semantic parser for commands from the [RoboCup@Home](http://www.robocupathome.org/) _General Purpose Service Robot_ task. 
 
 * [X] Utterance to λ-calculus representation parser
-* [ ] Utterance intention recognition model
 * [X] Lexer/parser for loading the released command generation CFG
 * [X] Tools for generating commands along with a λ-calculus representation
+* [X] Crowd-sourcing interface for collecting paraphrases
+
+If you use this code or data, consider citing our paper [Neural Semantic Parsing for Command Understanding in General-Purpose Service Robots](https://arxiv.org/abs/1907.01115). The data collected for this paper is [available separately](https://github.com/nickswalker/gpsr-commands-dataset).
 
 ## Usage
 
@@ -16,7 +18,7 @@ Set up a virtual environment using at least Python 3.6:
     pip install -r requirements.txt
     
 Baseline models (fuzzy parsers constructed directly from the generator grammar) will work under Python 2.7 so you can
-easily use this with ROS.
+easily use them with ROS.
 
 ### Generation
 
@@ -34,11 +36,9 @@ You can run them with
     allennlp train \
     experiments/seq2seq.json \
     -s results/seq2seq \
-    --include-package gpser_command_understanding
+    --include-package gpsr_command_understanding
 
-You can monitor training with Tensorboard:
-
-    #TODO
+You can monitor training with Tensorboard, just point it at the log directory.
     
 The `train_all_models` script will train every config back to back. It will pass through arguments that come after the `--`,
 so you can configure the experiment
@@ -49,14 +49,14 @@ so you can configure the experiment
 
 To see a model's output on a data file, use the `predict command`
 
-    allennlp predict --archive-path results/ --include-package gpser_command_understanding
+    allennlp predict --archive-path results/ --include-package gpsr_command_understanding
 
 You can poke at a trained model through the browser using AllenNLP as well
 
     python -m allennlp.service.server_simple \
         --archive-path results/seq2seq/model.tar.gz \
         --predictor  command_parser\
-        --include-package gpser_command_understanding \
+        --include-package gpsr_command_understanding \
         --title "GPSR Semantic Parser" \
         --field-name command \
         --static-dir demo
