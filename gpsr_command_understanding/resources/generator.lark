@@ -1,0 +1,60 @@
+?rule_start:       rule |
+?expression_start: top_expression |
+rule:         non_terminal "=" top_expression
+top_expression: expression+ | bare_choice
+?expression: (non_terminal|wildcard |COMMA|PERIOD|choice|WORD)+ | "(" (non_terminal|wildcard|COMMA|PERIOD|choice|WORD)+ ")"
+choice:       "(" expression+ ("|" expression+ )+  ")"
+bare_choice:  expression+ ("|" expression+ )+
+
+non_terminal: "$"CNAME
+wildcard: _simple_wildcard | _rich_wildcard
+_simple_wildcard: "{" _pronoun_wildcard "}"
+_rich_wildcard:     "{" _card_type INT? condition? meta? "}"
+condition: "where" (simple_constraint ( "and"? simple_constraint)*)
+simple_constraint: WORD ("=" | "!=") (QUOTE WORD QUOTE | ("true" | "false"))
+meta: "meta:" (WORD | wildcard | non_terminal | choice | COMMA | LPAREN | RPAREN | COLON | DASH | PERIOD | QUOTE | INT)+
+
+_card_type: (location_wildcard_super | name_wildcard | object_wildcard_super | void_wildcard | question_wildcard | gesture_wildcard | category_wildcard | whattosay_wildcard)
+
+?location_wildcard_super: loc_beacon_wildcard | loc_placement_wildcard | loc_room_wildcard | location_wildcard
+location_wildcard:  "location"QUESTION_MARK?
+loc_placement_wildcard: "location"? "placement"QUESTION_MARK?
+loc_beacon_wildcard:    "location"? "beacon"QUESTION_MARK?
+loc_room_wildcard:      "location"? "room"QUESTION_MARK?
+
+?object_wildcard_super: object_alike_wildcard | object_known_wildcard | object_special_wildcard | object_wildcard
+object_wildcard:            "object"QUESTION_MARK?
+object_alike_wildcard:      ("object alike" | "aobject")QUESTION_MARK?
+object_known_wildcard:      ("object known" | "kobject")QUESTION_MARK?
+object_special_wildcard:    ("object special" | "sobject")QUESTION_MARK?
+
+name_wildcard:      "name" ( "female" | "male")?
+question_wildcard:  "question"
+_pronoun_wildcard:   pronoun_objective | pronoun_subjective | pronoun_possessive_absolute | pronoun_possessive_adjective
+pronoun_objective: "pron" "obj"?
+pronoun_subjective: "pron" "sub"
+pronoun_possessive_absolute: "pron" ("pab" | "posabs")
+pronoun_possessive_adjective: "pron" ("pos" | "paj" | "posadj")
+void_wildcard:      "void"
+gesture_wildcard:   "gesture"
+category_wildcard:  "category"QUESTION_MARK?
+whattosay_wildcard: "whattosay"
+
+COMMA: ","
+COLON: ":"
+LPAREN: "("
+RPAREN: ")"
+PERIOD: "."
+DASH: "-"
+QUOTE: "\""
+QUESTION_MARK:    "?"
+WORD: (LETTER | "'" | "-")+
+COMMENT: ("#"|";"|"//") /[^\n]/*
+
+%ignore COMMENT
+%import common.ESCAPED_STRING
+%import common.INT
+%import common.LETTER
+%import common.WS
+%import common.CNAME
+%ignore WS

@@ -159,3 +159,10 @@ def get_pairs_by_cats(data, train_categories, test_categories):
             test_pairs.append(pair)
 
     return train_pairs, test_pairs
+
+
+def to_num(s):
+    try:
+        return int(s)
+    except ValueError:
+        return None

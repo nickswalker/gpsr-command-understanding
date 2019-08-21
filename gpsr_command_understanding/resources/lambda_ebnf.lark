@@ -1,0 +1,39 @@
+?start:         expression |
+
+expression:    lambda_abs
+                     | predicate
+                     | UNKNOWN
+lambda_abs:     "(" ("lambda" | "λ") ARG ":"? TYPE "."? expression+ ")"
+predicate:        "(" name [predicate_arg+]  ")"
+!name:          CNAME
+                   | placeholder
+
+?predicate_arg: expression
+                | placeholder
+                | INT
+                | ESCAPED_STRING
+                | ARG
+                | ANON
+
+?placeholder:   non_terminal
+                         | wildcard
+
+non_terminal: "$"CNAME
+
+UNKNOWN:      "UNKNOWN"
+ANON:         "<"WORD">"
+ARG:          "$"INT
+TYPE:         "e"
+COMMA: ","
+PERIOD: "."
+COMMENT: ("#"|";"|"//") /[^\n]/*
+
+%ignore COMMENT
+%import common.WORD
+%import common.ESCAPED_STRING
+%import common.INT
+%import common.LETTER
+%import common.WS
+%import common.CNAME
+%import .generator.wildcard
+%ignore WS

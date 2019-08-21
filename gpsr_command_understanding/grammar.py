@@ -1,6 +1,7 @@
+import re
 from copy import deepcopy
 
-from gpsr_command_understanding.util import replace_child
+from gpsr_command_understanding.util import replace_child, to_num
 
 from gpsr_command_understanding.tokens import *
 
@@ -24,15 +25,33 @@ class TypeConverter(Transformer):
         return NonTerminal(children[0])
 
     def wildcard(self, children):
+        # We bundle expected args into the first child via the typed wildcard branches of the grammar
         typed = children[0]
+        meta = None
+        wildcard_id = None
+        conditions = None
+        obfuscated = False
+        for child in children[1:]:
+            if isinstance(child, str) and to_num(child):
+                wildcard_id = to_num(children[1])
+            elif isinstance(child, Tree):
+                if child.data == "condition":
+                    conditions = child.children
+                elif child.data == "meta":
+                    meta = child.children
+                elif child == "?":
+                    obfuscated = True
+
+        # only a few kinds of wildcards can be obfuscated
+        obfuscated = True if len(typed.children) > 0 and typed.children[0] == "?" else False
         type = typed.children[0] if len(typed.children) > 0 else None
-        extra = typed.children[1] if len(typed.children) > 1 else None
-        if "obj" in typed.data:
+        if "object_" in typed.data:
             if "alike" in typed.data:
                 type = "alike"
             elif "known" in typed.data:
                 type = "known"
-            return WildCard("object", type, extra)
+            return ComplexWildCard("object", type, obfuscated=obfuscated, wildcard_id=wildcard_id, meta=meta,
+                                   conditions=conditions)
         elif "loc" in typed.data:
             # the type token (e.g. placement) is elided from the tree, so the extra
             # will be the only element in this list
@@ -43,21 +62,33 @@ class TypeConverter(Transformer):
                 type ="placement"
             elif "room" in typed.data:
                 type = "room"
-            return WildCard("location", type, extra)
+            return ComplexWildCard("location", type, obfuscated=obfuscated, wildcard_id=wildcard_id, meta=meta,
+                                   conditions=conditions)
         elif "category" in typed.data:
-            return WildCard("category", type)
+            return ComplexWildCard("category", type, obfuscated=obfuscated, wildcard_id=wildcard_id, meta=meta,
+                                   conditions=conditions)
         elif "gesture" in typed.data:
-            return WildCard("gesture", type)
+            return ComplexWildCard("gesture", type, wildcard_id=wildcard_id, meta=meta, conditions=conditions)
         elif "name" in typed.data:
-            return WildCard("name", type)
+            return ComplexWildCard("name", type, wildcard_id=wildcard_id, meta=meta, conditions=conditions)
         elif "pron" in typed.data:
-            return WildCard("pron", type)
+            if "pronoun_objective" == typed.data:
+                return WildCard("pron")
+            elif "pronoun_subjective" == typed.data:
+                return WildCard("pron sub")
+            elif "pronoun_possessive_adjective" == typed.data:
+                return WildCard("pron paj")
+            elif "pronoun_possessive_absolute" == typed.data:
+                return WildCard("pron pabs")
+            else:
+                assert False
         elif "question" in typed.data:
-            return WildCard("question", type)
+            return ComplexWildCard("question", type, wildcard_id=wildcard_id, meta=meta, conditions=conditions)
         elif "void" in typed.data:
-            return WildCard("void", type)
+
+            return ComplexWildCard("void", type, wildcard_id=wildcard_id, meta=meta, conditions=conditions)
         elif "whattosay" in typed.data:
-            return WildCard("whattosay")
+            return ComplexWildCard("whattosay", wildcard_id=wildcard_id, meta=meta, conditions=conditions)
         assert False
 
 
@@ -67,6 +98,31 @@ class DiscardVoid(Visitor):
     """
     def expression(self, tree):
         tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonymized)) and x.name == "void"), tree.children))
+
+
+class RemovePrefix(Visitor):
+    """
+    Remove an arbitrary string that may appear at the beginning
+    of subtree names
+    """
+
+    def __init__(self, prefix):
+        self.prefix = prefix
+
+    def __default__(self, tree):
+        if tree.data.startswith(self.prefix):
+            tree.data = tree.data[len(self.prefix):]
+
+
+class CompactUnderscorePrefixed(Transformer):
+    """
+    Collapse nodes that start with an underscore
+    """
+
+    def __default__(self, data, children, meta):
+        if data[0] == "_" and len(children) == 1:
+            return children[0]
+        return Tree(data, children, meta)
 
 
 class ToString(Transformer):
