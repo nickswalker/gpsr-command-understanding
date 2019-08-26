@@ -20,8 +20,13 @@ class TestSemanticsGrammar(unittest.TestCase):
             sys.modules['__main__'].__file__ = path
             self.lambda_parser = LambdaParserWrapper()
 
+    def test_parse_wildcard_expression(self):
+        test = self.lambda_parser.parse("(test {object} {kobject?} {pron})")
+        flattened = [x for x in test.iter_subtrees()]
+        self.assertEqual(3, len(flattened))
+        self.assertEqual(4, len(test.children[0].children))
+
     def test_parse_lambda_expression(self):
         test = self.lambda_parser.parse("(test (lambda $1 :e .(yo 1)))")
-        print(test.pretty())
-        test = self.lambda_parser.parse("(test {object} {kobject?} {pron})")
-        print(test.pretty())
+        flattened = [x for x in test.iter_subtrees()]
+        self.assertEqual(len(flattened), 7)

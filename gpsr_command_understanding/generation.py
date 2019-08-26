@@ -13,7 +13,7 @@ except ImportError:
 from yieldfrom import yieldfrom, From, Return
 
 
-def generate_sentences(start_tree, production_rules):
+def generate_sentences(start_tree, generator):
     """
     A generator that produces completely expanded sentences in depth-first order
     :param start_tree: the list of tokens to begin expanding
@@ -29,11 +29,11 @@ def generate_sentences(start_tree, production_rules):
 
     while len(stack) != 0:
         sentence = stack.pop()
-        replace_tokens = list(sentence.scan_values(lambda x: x in production_rules.keys()))
+        replace_tokens = list(sentence.scan_values(lambda x: x in generator.rules.keys()))
         if replace_tokens:
             replace_token = replace_tokens[0]
             # Replace it every way we know how
-            for production in production_rules[replace_token]:
+            for production in generator.rules[replace_token]:
                 modified_sentence = copy.deepcopy(sentence)
                 replace_child_in_tree(modified_sentence, replace_token, production, only_once=True)
                 # Generate the rest of the sentence recursively assuming this replacement
@@ -45,11 +45,14 @@ def generate_sentences(start_tree, production_rules):
             yield sentence
 
 
-def generate_random_pair(start_symbols, production_rules, semantics_rules, yield_requires_semantics=False, random_generator=None):
-    return next(generate_sentence_parse_pairs(start_symbols, production_rules, semantics_rules, yield_requires_semantics=yield_requires_semantics, branch_cap=1, random_generator=random_generator))
+def generate_random_pair(start_symbols, generator, yield_requires_semantics=False, random_generator=None):
+    return next(
+        generate_sentence_parse_pairs(start_symbols, generator, yield_requires_semantics=yield_requires_semantics,
+                                      branch_cap=1, random_generator=random_generator))
 
 
-def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules, start_semantics=None, yield_requires_semantics=True, branch_cap=None, random_generator=None):
+def generate_sentence_parse_pairs(start_tree, generator, start_semantics=None, yield_requires_semantics=True,
+                                  branch_cap=None, random_generator=None):
     """
     Expand the start_symbols in breadth first order. At each expansion, see if we have an associated semantic template.
     If the current expansion has a semantics associated, also apply the expansion to the semantics.
@@ -64,6 +67,8 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
     to_str = ToString()
     result = to_str.transform(parsed)
     print(result)"""
+
+    production_rules, semantics_rules = generator.rules, generator.semantics
 
     # Make sure the start point is a Tree
     if isinstance(start_tree, NonTerminal):
@@ -119,7 +124,8 @@ def generate_sentence_parse_pairs(start_tree, production_rules, semantics_rules,
         """
 
 
-def generate_sentence_slot_pairs(start_tree, production_rules, semantics_rules, start_semantics=None, yield_requires_semantics=True, branch_cap=None, random_generator=None):
+def generate_sentence_slot_pairs(start_tree, generator, start_semantics=None, yield_requires_semantics=True,
+                                 branch_cap=None, random_generator=None):
 
     if isinstance(start_tree, NonTerminal):
         start_tree = Tree("expression", [start_tree])
@@ -141,7 +147,8 @@ def generate_sentence_slot_pairs(start_tree, production_rules, semantics_rules, 
         #        semantics = semantics_rules.get(sentence)
             #print(semantics)
 
-        expansions = list(expand_pair_slot(sentence, semantics, production_rules, semantics_rules, branch_cap=branch_cap, random_generator=random_generator))
+        expansions = list(
+            expand_pair_slot(sentence, semantics, generator, branch_cap=branch_cap, random_generator=random_generator))
         if not expansions:
             #print("Sentence: ", sentence.pretty())
             #print("Semantics: ", semantics.pretty())
@@ -156,8 +163,8 @@ def generate_sentence_slot_pairs(start_tree, production_rules, semantics_rules, 
             frontier.put(pair)
 
 
-def expand_pair_full(sentence, semantics, production_rules, branch_cap=None, random_generator=None):
-    return generate_sentence_parse_pairs(sentence, production_rules, {}, start_semantics=semantics,
+def expand_pair_full(sentence, semantics, generator, branch_cap=None, random_generator=None):
+    return generate_sentence_parse_pairs(sentence, generator, {}, start_semantics=semantics,
                                        branch_cap=branch_cap, random_generator=random_generator)
 
 

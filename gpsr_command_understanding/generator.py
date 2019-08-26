@@ -13,7 +13,6 @@ from gpsr_command_understanding.grammar import TypeConverter, expand_shorthand, 
 from gpsr_command_understanding.util import get_wildcards, has_placeholders, merge_dicts
 from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_wildcard_rules
 
 from io import open
 
@@ -68,14 +67,7 @@ class Generator:
         self.lambda_parser = LambdaParserWrapper()
         self.semantic_form_version = semantic_form_version
         self.rules = []
-
-    def load_set_of_rules(self, grammar_file_paths, semantics_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file):
-        rules_raw = self.load_rules(grammar_file_paths)
-        rules_anon = self.prepare_anonymized_rules(grammar_file_paths)
-        rules_ground = self.prepare_grounded_rules(grammar_file_paths, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file)
-        rules_semantic = self.load_semantics_rules(semantics_file_paths)
-
-        self.rules.append([rules_raw, rules_anon, rules_ground, rules_semantic])
+        self.semantics = None
 
     def parse_production_rule(self, line, expand=True):
         try:
@@ -117,7 +109,10 @@ class Generator:
                     production_rules[lhs] = rhs_productions
                 else:
                     production_rules[lhs].extend(rhs_productions)
-        return production_rules
+        if self.rules:
+            assert False
+        self.rules = production_rules
+        return len(production_rules)
 
     def parse_rule(self, line, rule_dict):
         # Probably a comment line
@@ -172,36 +167,10 @@ class Generator:
                 cleaned = line.strip()
                 self.parse_rule(cleaned, prod_to_semantics)
 
-        return prod_to_semantics
-
-    def prepare_grounded_rules(self, grammar_file_paths, entities):
-
-        if not isinstance(grammar_file_paths, list):
-            grammar_file_paths = [grammar_file_paths]
-        rules = self.load_rules(grammar_file_paths)
-        grounding_rules = load_wildcard_rules(*entities)
-
-        # This part of the grammar won't lend itself to any useful generalization from rephrasings
-        rules[WildCard("question")] = [Tree("expression",["question"])]
-        rules[WildCard("pron")] = [Tree("expression",["them"])]
-        return merge_dicts(rules, grounding_rules)
-
-    def prepare_anonymized_rules(self, grammar_file_paths, show_debug_details=False):
-
-        if not isinstance(grammar_file_paths, list):
-            grammar_file_paths = [grammar_file_paths]
-        rules = self.load_rules(grammar_file_paths)
-
-        all_rule_trees = [tree for _, trees in rules.items() for tree in trees ]
-        groundable_terms = get_wildcards(all_rule_trees)
-        groundable_terms.add(WildCard("object", "1"))
-        groundable_terms.add(WildCard("category", "1"))
-        groundable_terms.add(WildCard("whattosay"))
-        grounding_rules = make_anonymized_grounding_rules(groundable_terms, show_debug_details)
-
-        # We'll use the indeterminate pronoun for convenience
-        grounding_rules[WildCard("pron")] = [Tree("expression", ["them"])]
-        return merge_dicts(rules, grounding_rules)
+        if self.semantics:
+            assert False
+        self.semantics = prod_to_semantics
+        return len(prod_to_semantics)
 
     def get_utterance_semantics_pairs(self, random_source, rule_sets, branch_cap=None):
         all_pairs = {}

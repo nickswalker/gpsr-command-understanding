@@ -8,7 +8,7 @@ from gpsr_command_understanding.generation import generate_sentences, generate_s
 from gpsr_command_understanding.generator import Generator
 from gpsr_command_understanding.grammar import tree_printer
 from gpsr_command_understanding.loading_helpers import load_all, \
-    load_all_2018, load_entities_from_xml
+    load_all_2018
 from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
 from gpsr_command_understanding.tokens import ROOT_SYMBOL
@@ -22,9 +22,9 @@ class TestParsers(unittest.TestCase):
         grammar = generator.load_rules(open(os.path.join(FIXTURE_DIR, "grammar.txt")), expand_shorthand=False)
         parser = GrammarBasedParser(grammar)
         test = parser("say hi to him right now please")
-        print(test.pretty())
+        self.assertEqual(7, len(test.children[0].children))
         test = parser("bring it to {pron} now")
-        print(test.pretty())
+        self.assertEqual(5, len(test.children[0].children))
 
     def test_parse_all_of_2018(self):
         generator = Generator(grammar_format_version=2018)
