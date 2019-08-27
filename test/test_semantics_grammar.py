@@ -15,10 +15,7 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestSemanticsGrammar(unittest.TestCase):
 
     def setUp(self):
-        with importlib_resources.path("gpsr_command_understanding.resources", "generator.lark") as path:
-            old_main = sys.modules['__main__'].__file__
-            sys.modules['__main__'].__file__ = path
-            self.lambda_parser = LambdaParserWrapper()
+        self.lambda_parser = LambdaParserWrapper()
 
     def test_parse_wildcard_expression(self):
         test = self.lambda_parser.parse("(test {object} {kobject?} {pron})")
@@ -28,5 +25,5 @@ class TestSemanticsGrammar(unittest.TestCase):
 
     def test_parse_lambda_expression(self):
         test = self.lambda_parser.parse("(test (lambda $1 :e .(yo 1)))")
-        flattened = [x for x in test.iter_subtrees()]
-        self.assertEqual(len(flattened), 7)
+        flattened = [x.pretty() for x in test.iter_subtrees()]
+        self.assertEqual(len(flattened), 8)

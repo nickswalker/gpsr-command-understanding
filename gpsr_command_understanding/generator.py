@@ -66,8 +66,8 @@ class Generator:
                                     start='expression_start', parser="lalr", transformer=TypeConverter())
         self.lambda_parser = LambdaParserWrapper()
         self.semantic_form_version = semantic_form_version
-        self.rules = []
-        self.semantics = None
+        self.rules = {}
+        self.semantics = {}
 
     def parse_production_rule(self, line, expand=True):
         try:
@@ -91,7 +91,8 @@ class Generator:
         """
         if not isinstance(grammar_files, list):
             grammar_files = [grammar_files]
-        production_rules = {}
+
+        i = 0
         for grammar_file in grammar_files:
             for line in grammar_file:
                 # Scrub out any non-printable characters; some grammar files have annoying byte order
@@ -105,19 +106,18 @@ class Generator:
                 # using set to avoid duplicates
                 if not lhs:
                     continue
-                elif lhs not in production_rules:
-                    production_rules[lhs] = rhs_productions
+                elif lhs not in self.rules:
+                    self.rules[lhs] = rhs_productions
+                    i += 1
                 else:
-                    production_rules[lhs].extend(rhs_productions)
-        if self.rules:
-            assert False
-        self.rules = production_rules
-        return len(production_rules)
+                    self.rules[lhs].extend(rhs_productions)
+                    i += 1
+        return i
 
     def parse_rule(self, line, rule_dict):
         # Probably a comment line
         if "=" not in line:
-            return
+            return 0
         # TODO: Properly compose these grammars so that we don't have to manually interface them
         prod, semantics = line.split("=")
         try:
@@ -129,7 +129,7 @@ class Generator:
 
         # Probably a comment
         if len(prod.children) == 0:
-            return
+            return 0
 
         expanded_prod_heads = expand_shorthand(prod)
         sem = semantics.strip()
@@ -141,6 +141,7 @@ class Generator:
             print(e)
             raise e
 
+        i = 0
         expanded_sem_heads = expand_shorthand(sem)
         for prod, sem in zip_longest(expanded_prod_heads, expanded_sem_heads, fillvalue=expanded_sem_heads[0]):
             # Check for any obvious errors in the annotation
@@ -152,6 +153,8 @@ class Generator:
                     "Semantics rely on non-terminal {} that doesn't occur in rule: {}".format(sem_wildcards, line))
 
             rule_dict[prod] = sem
+            i += 1
+        return i
 
     def load_semantics_rules(self, semantics_files):
         """
@@ -161,16 +164,13 @@ class Generator:
 
         if not isinstance(semantics_files, list):
             semantics_files = [semantics_files]
-        prod_to_semantics = {}
+        i = 0
         for semantics_file in semantics_files:
             for line in semantics_file:
                 cleaned = line.strip()
-                self.parse_rule(cleaned, prod_to_semantics)
+                i += self.parse_rule(cleaned, self.semantics)
 
-        if self.semantics:
-            assert False
-        self.semantics = prod_to_semantics
-        return len(prod_to_semantics)
+        return i
 
     def get_utterance_semantics_pairs(self, random_source, rule_sets, branch_cap=None):
         all_pairs = {}

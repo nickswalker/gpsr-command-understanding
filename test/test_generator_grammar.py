@@ -5,8 +5,8 @@ import unittest
 import lark
 from lark import Lark
 
-from gpsr_command_understanding.generator import Generator, GENERATOR_GRAMMARS, SEMANTIC_FORMS
-from gpsr_command_understanding.grammar import NonTerminal, tree_printer, expand_shorthand, TypeConverter
+from gpsr_command_understanding.generator import GENERATOR_GRAMMARS
+from gpsr_command_understanding.grammar import expand_shorthand, TypeConverter
 
 GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
 GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"
