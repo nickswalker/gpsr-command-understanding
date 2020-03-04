@@ -33,7 +33,7 @@ def load_all_2018(grammar_dir):
 
     generator = Generator(grammar_format_version=2018)
     generator.knowledge_base = KnowledgeBase()
-    generator.knowledge_base.load_from_xml(grammar_dir)
+    generator.knowledge_base.load_from_xml_dir(grammar_dir)
     grammar_files = [common_path, importlib_resources.open_text(grammar_dir, "gpsr_category_1_grammar.txt"),
                      importlib_resources.open_text(grammar_dir, "gpsr_category_2_grammar.txt"),
                      importlib_resources.open_text(grammar_dir, "gpsr_category_3_grammar.txt")]

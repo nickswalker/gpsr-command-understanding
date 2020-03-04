@@ -58,13 +58,19 @@ class TestGenerator(unittest.TestCase):
 
     def test_parse_wildcard_obfuscation(self):
         # Shouldn't be able to obfuscate some types of wildcard
-        self.assertRaises(lark.exceptions.UnexpectedCharacters, self.sequence_parser.parse, "{name?")
-        self.assertRaises(lark.exceptions.UnexpectedCharacters, self.sequence_parser.parse, "{question?}")
+        self.assertRaises(lark.exceptions.UnexpectedToken, self.sequence_parser.parse, "{name?}")
+        self.assertRaises(lark.exceptions.UnexpectedToken, self.sequence_parser.parse, "{question?}")
 
-        self.assertEqual(self.sequence_parser.parse("{object?}").children[0].obfuscated, True)
-        self.assertEqual(self.sequence_parser.parse("{aobject?}").children[0].obfuscated, True)
+        def is_obf(wildcard, type=None, id=None):
+            return wildcard.obfuscated and wildcard.type is type and wildcard.id is id
+
+        object_obf = self.sequence_parser.parse("{object?}").children[0]
+        self.assertEqual(is_obf(object_obf), True)
+        aobject_obf = self.sequence_parser.parse("{aobject?}").children[0]
+        self.assertEqual(is_obf(aobject_obf, "alike"), True)
         self.assertEqual(self.sequence_parser.parse("{aobject? 1 meta: test}").children[0].obfuscated, True)
-        self.assertEqual(self.sequence_parser.parse("{location?}").children[0].obfuscated, True)
+        location_obf = self.sequence_parser.parse("{location?}").children[0]
+        self.assertEqual(is_obf(location_obf), True)
         self.assertEqual(self.sequence_parser.parse("{category?}").children[0].obfuscated, True)
         self.assertEqual(self.sequence_parser.parse("{category}").children[0].obfuscated, False)
 

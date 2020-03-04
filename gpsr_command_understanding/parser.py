@@ -21,7 +21,7 @@ class ToEBNF(Transformer):
         output = ""
         for child in children:
             if isinstance(child, WildCard):
-                output += " " + "wild_" + child.to_snake_case()
+                output += " " + "wild_" + child.to_snake_case().replace("?", "obf")
             elif isinstance(child, NonTerminal):
                 output += " " + child.name.lower()
             elif isinstance(child, tuple):
@@ -64,6 +64,7 @@ class GrammarBasedParser(object):
     """
 
     def __init__(self, grammar_rules):
+        assert isinstance(grammar_rules, dict)
         # We need to destructively modify the rules a bit
         rules = deepcopy(grammar_rules)
         rch_to_ebnf = ToEBNF()
@@ -75,12 +76,22 @@ class GrammarBasedParser(object):
             all_rule_trees = [tree for _, trees in rules.items() for tree in trees]
             wildcards = get_wildcards(all_rule_trees)
             for wildcard in wildcards:
+                # Metadata is used during generation, but won't appear in parsing input
+                wildcard.metadata = None
+            for wildcard in wildcards:
                 rules[wildcard] = [Tree("expression", [wildcard.to_human_readable()])]
         for non_term, productions in rules.items():
+
             # TODO: bake this into WildCard and NonTerminal types
             non_term_name = non_term.name.lower()
             if isinstance(non_term, WildCard):
+                if non_term.name == "void":
+                    # Void rules are for producing metadata during generation, they don't help during parsing
+                    # because we'll never see this metadata as input
+                    continue
                 non_term_name = "wild_"+non_term.to_snake_case()
+                # Question marks aren't allowed in non-term names
+                non_term_name = non_term_name.replace("?", "obf")
             line = "!" + non_term_name + ": ("
             for production in productions:
                 void_remover.visit(production)

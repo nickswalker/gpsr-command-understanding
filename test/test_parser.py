@@ -13,27 +13,25 @@ from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingPar
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
 from gpsr_command_understanding.tokens import ROOT_SYMBOL
 
-GRAMMAR_DIR = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
+GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
+GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestParsers(unittest.TestCase):
 
     def test_parse_utterance(self):
         generator = Generator(grammar_format_version=2019)
-        grammar = generator.load_rules(open(os.path.join(FIXTURE_DIR, "grammar.txt")), expand_shorthand=False)
-        parser = GrammarBasedParser(grammar)
+        generator.load_rules(open(os.path.join(FIXTURE_DIR, "grammar.txt")), expand_shorthand=False)
+        parser = GrammarBasedParser(generator.rules)
         test = parser("say hi to him right now please")
         self.assertEqual(7, len(test.children[0].children))
         test = parser("bring it to {pron} now")
         self.assertEqual(5, len(test.children[0].children))
 
     def test_parse_all_of_2018(self):
-        generator = Generator(grammar_format_version=2018)
+        generator = load_all_2018(GRAMMAR_DIR_2018)
 
-        grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2018")
-        rules, rules_anon, _, _, _ = load_all_2018(generator, grammar_dir)
-
-        sentences = generate_sentences(ROOT_SYMBOL, rules)
-        parser = GrammarBasedParser(rules)
+        sentences = generate_sentences(ROOT_SYMBOL, generator)
+        parser = GrammarBasedParser(generator.rules)
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
@@ -48,11 +46,10 @@ class TestParsers(unittest.TestCase):
     def test_parse_all_of_2019(self):
         generator = Generator(grammar_format_version=2018)
 
-        grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
-        rules, rules_anon, _, _, _ = load_all(generator, grammar_dir)
+        load_all(generator, "gpsr", GRAMMAR_DIR_2019)
 
-        sentences = generate_sentences(ROOT_SYMBOL, rules)
-        parser = GrammarBasedParser(rules)
+        sentences = generate_sentences(ROOT_SYMBOL, generator)
+        parser = GrammarBasedParser(generator.rules)
         sentences = set([tree_printer(x) for x in sentences])
         succeeded = 0
         for sentence in sentences:
@@ -63,11 +60,10 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(len(sentences), succeeded)
 
     def test_nearest_neighbor_parser(self):
-        generator = Generator(grammar_format_version=2018)
-        rules = load_all(generator, "gpsr", GRAMMAR_DIR)
+        generator = load_all_2018(GRAMMAR_DIR_2018)
 
-        sentences = generate_sentences(ROOT_SYMBOL, rules[0])
-        parser = GrammarBasedParser(rules[0])
+        sentences = generate_sentences(ROOT_SYMBOL, generator)
+        parser = GrammarBasedParser(generator.rules)
         sentences = list(set([tree_printer(x) for x in sentences]))
         neighbors = [(sentence, parser(sentence)) for sentence in sentences]
         nearest_neighbor_parser = KNearestNeighborParser(neighbors)
@@ -96,8 +92,7 @@ class TestParsers(unittest.TestCase):
     def test_parse_all_2019_anonymized(self):
         generator = Generator(grammar_format_version=2019)
 
-        grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../resources/generator2019")
-        rules, rules_anon, rules_ground, semantics, entities = load_all(generator, grammar_dir)
+        load_all(generator, "gpsr", GRAMMAR_DIR_2019)
 
         sentences = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, {}, yield_requires_semantics=False,
                                                   random_generator=random.Random(1))

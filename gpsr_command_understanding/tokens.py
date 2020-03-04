@@ -25,7 +25,7 @@ class WildCard(NonTerminal):
         return "{" + self.name + "}"
 
     def to_snake_case(self):
-        return self.name
+        return "_".join(self.name.split(" "))
 
 
 class ComplexWildCard(WildCard):
@@ -69,7 +69,7 @@ class ComplexWildCard(WildCard):
         if self.type: items.append(self.type)
         if self.id: items.append(self.id)
         if self.obfuscated: items.append("?")
-        return "_".join(items)
+        return "_".join(map(str, items))
 
     def __hash__(self):
         return hash(self.__str__())

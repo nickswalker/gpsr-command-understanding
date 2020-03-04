@@ -43,8 +43,8 @@ class TypeConverter(Transformer):
                     obfuscated = True
 
         # only a few kinds of wildcards can be obfuscated
-        obfuscated = True if len(typed.children) > 0 and typed.children[0] == "?" else False
-        type = typed.children[0] if len(typed.children) > 0 else None
+        obfuscated = True if len(typed.children) > 0 and typed.children[-1] == "?" else False
+        type = None
         if "object_" in typed.data:
             if "alike" in typed.data:
                 type = "alike"
