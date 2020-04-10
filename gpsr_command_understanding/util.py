@@ -46,18 +46,6 @@ def replace_words_in_tree(tree, replacement):
                 tree.children[i] = replacement
 
 
-def replace_slots_in_tree(tree, slot):
-    first = True
-    for tree in tree.iter_subtrees():
-        for i, child in enumerate(tree.children):
-            if (isinstance(child, Token) and child.type == 'WORD') or (type(child) is str):
-                if first:
-                    tree.children[i] = "B-" + slot
-                    first = False
-                else:
-                    tree.children[i] = "I-" + slot
-
-
 def get_wildcards(trees):
     """
     Get all wildcards that occur in a grammar
@@ -121,20 +109,6 @@ def save_data(data, out_path):
     with open(out_path, "w") as f:
         for sentence, parse in data:
             f.write(sentence + '\n' + str(parse) + '\n')
-
-
-def save_slot_data(data, out_path):
-    data = sorted(data, key=lambda x: len(x[0]))
-    with open(out_path, "w") as f:
-        for sentence, parse in data:
-            sentence_tokens = sentence.split(" ")
-            parse_tokens = parse.split(" ")
-            width = max(len(x) for x in itertools.chain(sentence_tokens, parse_tokens))
-            sentence_str = " ".ljust(width+1) + " ".join(token.ljust(width) for token in sentence_tokens)
-            f.write(sentence_str + "\n")
-            f.write(" ".join(token.ljust(width) for token in parse_tokens) + "\n")
-            #print(sentence_str)
-            #print(" ".join(token.ljust(width) for token in parse_tokens))
 
 
 def flatten(original):

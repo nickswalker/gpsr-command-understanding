@@ -6,7 +6,7 @@ from string import printable
 import importlib_resources
 from lark import Lark, Tree, exceptions
 
-from gpsr_command_understanding.generation import generate_sentence_parse_pairs, generate_sentence_slot_pairs, \
+from gpsr_command_understanding.generation import generate_sentence_parse_pairs, \
     expand_pair_full
 from gpsr_command_understanding.grammar import TypeConverter, expand_shorthand, CombineExpressions, \
     make_anonymized_grounding_rules, RemovePrefix, CompactUnderscorePrefixed
@@ -24,8 +24,7 @@ except ImportError:
 GENERATOR_GRAMMARS = {2018: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark"),
                       2019: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark")}
 
-SEMANTIC_FORMS = {"lambda": importlib_resources.read_text("gpsr_command_understanding.resources", "lambda_ebnf.lark"),
-                  "slot": importlib_resources.read_text("gpsr_command_understanding.resources", "slot_ebnf.txt")}
+SEMANTIC_FORMS = {"lambda": importlib_resources.read_text("gpsr_command_understanding.resources", "lambda_ebnf.lark")}
 
 
 class LambdaParserWrapper:
@@ -177,16 +176,7 @@ class Generator:
         rules = [self.rules[index - 1] for index in rule_sets]
 
         for rules, rules_anon, rules_ground, semantics in rules:
-            cat_groundings = {}
-
-            pairs = []
-            if self.semantic_form_version == "slot":
-                pairs = generate_sentence_slot_pairs(ROOT_SYMBOL, rules_ground, semantics,
-                                                yield_requires_semantics=True,
-                                                branch_cap=branch_cap,
-                                                random_generator=random_source)
-            else:
-                pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, semantics,
+            pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, semantics,
                                                 yield_requires_semantics=True,
                                                 branch_cap=branch_cap,
                                                 random_generator=random_source)
