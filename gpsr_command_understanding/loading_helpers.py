@@ -48,10 +48,12 @@ def load_all_2018(grammar_dir):
 
 
 def load_all(generator, task, grammar_dir, expand_shorthand=True):
-    common_path = importlib_resources.open_text(grammar_dir, "common_rules.txt")
+
     generator.knowledge_base = KnowledgeBase()
     generator.knowledge_base.load_from_xml_dir(grammar_dir)
-    generator.load_rules([common_path, importlib_resources.open_text(grammar_dir, task + ".txt")],
+    with importlib_resources.open_text(grammar_dir, "common_rules.txt") as common_rules_file, importlib_resources.open_text(grammar_dir, task + ".txt") as task_rules:
+        generator.load_rules([common_rules_file, task_rules],
                          expand_shorthand=expand_shorthand)
 
-    generator.load_semantics_rules(importlib_resources.open_text(grammar_dir, "gpsr_semantics.txt"))
+    with importlib_resources.open_text(grammar_dir, "gpsr_semantics.txt") as semantics:
+        generator.load_semantics_rules(semantics)

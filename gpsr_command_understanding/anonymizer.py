@@ -47,6 +47,9 @@ class Anonymizer(object):
     def __call__(self, utterance):
         return self.pattern.sub(lambda m: "<" + self.rep[m.group(0)] + ">", utterance)
 
+    @staticmethod
+    def from_knowledge_base(kb):
+        return Anonymizer(kb.objects, kb.categories, kb.names, kb.locations, kb.beacons, kb.placements, kb.rooms, kb.gestures)
 
 class NumberingAnonymizer(Anonymizer):
     def __call__(self, utterance):

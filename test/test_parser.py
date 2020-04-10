@@ -94,9 +94,9 @@ class TestParsers(unittest.TestCase):
 
         load_all(generator, "gpsr", GRAMMAR_DIR_2019)
 
-        sentences = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, {}, yield_requires_semantics=False,
+        sentences = generate_sentence_parse_pairs(ROOT_SYMBOL, generator, {}, yield_requires_semantics=False,
                                                   random_generator=random.Random(1))
-        parser = GrammarBasedParser(rules_anon)
+        parser = GrammarBasedParser(generator.rules)
 
         # Bring me the apple from the fridge to the kitchen
         # ---straight anon to clusters--->
@@ -110,12 +110,12 @@ class TestParsers(unittest.TestCase):
         # ---Grammar based parser--->
         # (Failure; wrong numbers, or maybe)
 
-        anonymizer = Anonymizer(*entities)
+        anonymizer = Anonymizer.from_knowledge_base(generator.knowledge_base)
         parser = AnonymizingParser(parser, anonymizer)
         num_tested = 1000
         succeeded = 0
-        for sentence, parse in itertools.islice(sentences, num_tested):
-            sentence = tree_printer(sentence)
+        for tree, parse in itertools.islice(sentences, num_tested):
+            sentence = tree_printer(tree)
             parsed = parser(sentence)
             if parsed:
                 succeeded += 1

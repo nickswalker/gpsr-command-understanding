@@ -12,6 +12,9 @@ class KnowledgeBase:
         raw_ontology_xml = tuple(map(lambda x: importlib_resources.open_text(xml_path, x),
                                      ["objects.xml", "locations.xml", "names.xml", "gestures.xml", "questions.xml"]))
         self.load_from_xml(*raw_ontology_xml)
+        # Clean up IO to avoid warnings
+        for stream in raw_ontology_xml:
+            stream.close()
 
     def load_from_xml(self, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file,
                       questions_xml_file):
