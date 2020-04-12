@@ -54,7 +54,8 @@ class LambdaParserWrapper:
         compacted_and_typed = self.compact.transform(de_namespaced)
         return compacted_and_typed
 
-
+# TODO(nickswalker): Document these methods
+# TODO(nickswalker): Add grounding methods
 class Generator:
     def __init__(self, grammar_format_version=2018, semantic_form_version="lambda"):
         grammar_spec = GENERATOR_GRAMMARS[grammar_format_version]
@@ -113,7 +114,7 @@ class Generator:
                     i += 1
         return i
 
-    def parse_rule(self, line, rule_dict):
+    def __parse_rule(self, line, rule_dict):
         # Probably a comment line
         if "=" not in line:
             return 0
@@ -167,26 +168,19 @@ class Generator:
         for semantics_file in semantics_files:
             for line in semantics_file:
                 cleaned = line.strip()
-                i += self.parse_rule(cleaned, self.semantics)
+                i += self.__parse_rule(cleaned, self.semantics)
 
         return i
 
-    def get_utterance_semantics_pairs(self, random_source, rule_sets, branch_cap=None):
-        all_pairs = {}
-        rules = [self.rules[index - 1] for index in rule_sets]
+    def ground(self, tree, random_source=None):
+        # TODO(nickswalker): Replace wildcards in all acceptable ways, yield one at a time in order governed by random_source
+        assert False
 
-        for rules, rules_anon, rules_ground, semantics in rules:
-            pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, rules_ground, semantics,
-                                                yield_requires_semantics=True,
-                                                branch_cap=branch_cap,
-                                                random_generator=random_source)
-
-            for utterance, parse in pairs:
-                all_pairs[tree_printer(utterance)] = tree_printer(parse)
-            #for sentence, semantics in pairs:
-            #    print(tree_printer(sentence))
-            #    print(tree_printer(semantics))
-        return all_pairs
+    def _print_semantics_rules(self):
+        for key, expansion in self.semantics.items():
+            print(tree_printer(key))
+            print(tree_printer(expansion))
+            print("----------------")
 
 
 def get_grounding_per_each_parse(generator, random_source):

@@ -6,16 +6,17 @@ import unittest
 
 from gpsr_command_understanding.generation import generate_sentences, generate_sentence_parse_pairs
 from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.grammar import tree_printer
+from gpsr_command_understanding.grammar import tree_printer, DiscardMeta
 from gpsr_command_understanding.loading_helpers import load_all, \
-    load_all_2018
+    load_all_2018, GRAMMAR_DIR_2018, GRAMMAR_DIR_2019
 from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
 from gpsr_command_understanding.tokens import ROOT_SYMBOL
 
-GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
-GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"
+
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+
+
 class TestParsers(unittest.TestCase):
 
     def test_parse_utterance(self):
@@ -89,13 +90,15 @@ class TestParsers(unittest.TestCase):
             numbering_anonymizer(duplicates),
             "Bring the <object 1> from the <room 1> and put it next to the other <object 2> in the <room 2>")
 
-    def test_parse_all_2019_anonymized(self):
+    def test_parse_all_2019_ungrounded(self):
         generator = Generator(grammar_format_version=2019)
 
         load_all(generator, "gpsr", GRAMMAR_DIR_2019)
 
-        sentences = generate_sentence_parse_pairs(ROOT_SYMBOL, generator, {}, yield_requires_semantics=False,
+        pairs = generate_sentence_parse_pairs(ROOT_SYMBOL, generator, {}, yield_requires_semantics=False,
                                                   random_generator=random.Random(1))
+        stripper = DiscardMeta()
+        pairs = [(stripper.visit(sentence), semantics) for sentence, semantics in pairs]
         parser = GrammarBasedParser(generator.rules)
 
         # Bring me the apple from the fridge to the kitchen
@@ -114,7 +117,7 @@ class TestParsers(unittest.TestCase):
         parser = AnonymizingParser(parser, anonymizer)
         num_tested = 1000
         succeeded = 0
-        for tree, parse in itertools.islice(sentences, num_tested):
+        for tree, parse in itertools.islice(pairs, num_tested):
             sentence = tree_printer(tree)
             parsed = parser(sentence)
             if parsed:

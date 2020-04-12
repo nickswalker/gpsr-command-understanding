@@ -100,6 +100,16 @@ class DiscardVoid(Visitor):
         tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonymized)) and x.name == "void"), tree.children))
 
 
+class DiscardMeta(Visitor):
+    """
+    Throw away generator annotations meant for the referee
+    """
+    def expression(self, tree):
+        for child in tree.children:
+            if isinstance(child, ComplexWildCard):
+                child.metadata = None
+
+
 class RemovePrefix(Visitor):
     """
     Remove an arbitrary string that may appear at the beginning
@@ -125,11 +135,14 @@ class CompactUnderscorePrefixed(Transformer):
         return Tree(data, children, meta)
 
 
+# TODO(nickswalker): Test this
 class ToString(Transformer):
     def __default__(self, data, children, meta):
         as_str = ""
         for child in children:
             if isinstance(child, WildCard):
+                as_str += " " + child.to_human_readable()
+            elif isinstance(child, NonTerminal):
                 as_str += " " + child.to_human_readable()
             else:
                 as_str += " " + str(child)
@@ -153,10 +166,10 @@ class ToString(Transformer):
         for i, child in enumerate(children):
             if isinstance(child, str) and child[0] == "\"" and child[1] != " ":
                 children[i] = "\" " + child[1:-1] + " \""
-        return "( {} )".format(" ".join(map(str,children)))
+        return "( {} )".format(self.__default__(None, children, None))
 
     def lambda_abs(self, children):
-        return "( lambda {} )".format(" ".join(map(str,children)))
+        return "( lambda {} )".format(" ".join(map(str, children)))
 
     def constant_placeholder(self, children):
         return "\"" + " ".join(children) + "\""

@@ -1,8 +1,6 @@
-import itertools
 from collections import defaultdict
 
 from gpsr_command_understanding.tokens import WildCard, NonTerminal
-from lark import Token
 
 
 def merge_dicts(x, y):
@@ -13,6 +11,10 @@ def merge_dicts(x, y):
 
 def has_placeholders(tree):
     return any(tree.scan_values(lambda x: isinstance(x, WildCard) or isinstance(x, NonTerminal)))
+
+
+def has_nonterminals(tree):
+    return any(tree.scan_values(lambda x: isinstance(x, NonTerminal) and not isinstance(x, WildCard)))
 
 
 def get_placeholders(tree):
@@ -37,13 +39,6 @@ def replace_child_in_tree(tree, child_target, replacement, only_once=False):
         if only_once and did_replace:
             return did_replace
     return did_replace
-
-
-def replace_words_in_tree(tree, replacement):
-    for tree in tree.iter_subtrees():
-        for i, child in enumerate(tree.children):
-            if (isinstance(child, Token) and child.type == 'WORD') or (type(child) is str):
-                tree.children[i] = replacement
 
 
 def get_wildcards(trees):

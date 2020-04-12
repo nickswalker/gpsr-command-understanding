@@ -6,11 +6,10 @@ import unittest
 
 from gpsr_command_understanding.generation import generate_sentence_parse_pairs, generate_sentences
 from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.grammar import NonTerminal
-from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, load_all
+from gpsr_command_understanding.grammar import NonTerminal, ROOT_SYMBOL, tree_printer
+from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, load_all, load_all_2018, GRAMMAR_DIR_2018, \
+    GRAMMAR_DIR_2019
 
-GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
-GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
 
@@ -18,16 +17,17 @@ class TestGenerator(unittest.TestCase):
 
     def setUp(self):
         self.generator = Generator(grammar_format_version=2018)
-        num_rules = self.generator.load_rules(open(os.path.join(FIXTURE_DIR, "grammar.txt")))
-        num_semantic_rules = self.generator.load_semantics_rules(open(os.path.join(FIXTURE_DIR, "semantics.txt")))
+        with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as fixture_grammar_file, open(os.path.join(FIXTURE_DIR, "semantics.txt")) as fixture_semantics_file:
+            num_rules = self.generator.load_rules(fixture_grammar_file)
+            num_semantic_rules = self.generator.load_semantics_rules(fixture_semantics_file)
         self.assertEqual(num_rules, 5)
         self.assertEqual(num_semantic_rules, 3)
 
     def test_load_2018(self):
-        all_2018 = load_all_2018_by_cat(GRAMMAR_DIR_2018)
+        gpsr_2018_by_cat = load_all_2018_by_cat(GRAMMAR_DIR_2018)
         expected_num_rules = [43, 10, 21]
         expected_num_rules_semantics = [32, 107, 42]
-        for i, gen in enumerate(all_2018):
+        for i, gen in enumerate(gpsr_2018_by_cat):
             rules, semantics = gen.rules, gen.semantics
             self.assertEqual(len(rules), expected_num_rules[i])
             self.assertEqual(len(semantics), expected_num_rules_semantics[i])
@@ -39,6 +39,18 @@ class TestGenerator(unittest.TestCase):
                 print(rule.pretty())
             print("---")
         """
+        all_2018 = load_all_2018(GRAMMAR_DIR_2018)
+        """
+        for nonterm, rules in all_2018.rules.items():
+            print(nonterm)
+            print("")
+            for rule in rules:
+                print(rule.pretty())
+            print("---")
+        """
+        self.assertEqual(len(all_2018.rules), 62)
+        self.assertEqual(len(all_2018.semantics), 149)
+
 
     def test_load_2019_gpsr(self):
         gen = Generator(grammar_format_version=2019)
@@ -77,3 +89,23 @@ class TestGenerator(unittest.TestCase):
     def test_generate_sentences(self):
         sentences = list(generate_sentences(NonTerminal("Main"), self.generator))
         self.assertEqual(len(sentences), 6)
+
+    def test_generate_all_2018_sentences(self):
+        generator = load_all_2018(GRAMMAR_DIR_2018)
+
+        sentences = list(generate_sentences(ROOT_SYMBOL, generator))
+        self.assertEqual(len(sentences), 3386)
+        unique = set()
+        for sentence in sentences:
+            count = len(unique)
+            unique.add(tree_printer(sentence))
+            if len(unique) == count:
+                print(tree_printer(sentence))
+
+
+    def test_generate_pairs(self):
+        generator = load_all_2018(GRAMMAR_DIR_2018)
+        # If we don't require semantics, the same rules should generate the same number of expansions
+        pairs = list(generate_sentence_parse_pairs(ROOT_SYMBOL, generator, yield_requires_semantics=False))
+        sentences = list(generate_sentences(ROOT_SYMBOL, generator))
+        self.assertEqual(len(pairs), len(sentences))

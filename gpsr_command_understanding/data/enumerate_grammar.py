@@ -1,39 +1,42 @@
-import itertools
 import os
 import numpy as np
 from os.path import join
 import re
 
-from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat
+from gpsr_command_understanding.grammar import tree_printer, DiscardMeta
+from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, GRAMMAR_DIR_2018
 from gpsr_command_understanding.tokens import ROOT_SYMBOL
-from gpsr_command_understanding.generation import generate_sentences, expand_all_semantics, pairs_without_placeholders
-from gpsr_command_understanding.util import has_placeholders, determine_unique_cat_data
+from gpsr_command_understanding.generation import generate_sentences, pairs_without_placeholders
+from gpsr_command_understanding.util import determine_unique_cat_data
 
 
 def get_annotated_sentences(sentences_and_pairs):
     sentences, pairs = sentences_and_pairs
-    expanded_sentences = set([tree_printer(x) for x in sentences])
-    annotated_sentences = set(pairs.keys())
+    expanded_pairs = {tree_printer(key): tree_printer(value) for key, value in pairs.items()}
+    # These came straight from the grammar
+    grammar_sentences = set([tree_printer(x) for x in sentences])
+    # These came from expanding the semantics, so they may not be in the grammar
+    annotated_sentences = set(expanded_pairs.keys())
     # Only keep annotations that cover sentences actually in the grammar
-    useless_annotations = annotated_sentences.difference(expanded_sentences)
-    annotated_sentences.intersection_update(expanded_sentences)
-    return annotated_sentences
+    out_of_grammar = annotated_sentences.difference(grammar_sentences)
+    annotated_sentences.intersection_update(grammar_sentences)
+    unannotated_sentences = grammar_sentences.difference(annotated_sentences)
+    return annotated_sentences, unannotated_sentences, out_of_grammar
 
 
 def main():
     out_root = os.path.abspath(os.path.dirname(__file__) + "/../../data")
-    grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
-    cmd_gen = Generator(grammar_format_version=2018)
-    generator = load_all_2018_by_cat(cmd_gen, grammar_dir)
+    generators = load_all_2018_by_cat(GRAMMAR_DIR_2018)
 
-    cat_sentences = [set(generate_sentences(ROOT_SYMBOL, rules)) for _,rules, _, _ in generator]
-    pairs = [{utterance: parse for utterance, parse in expand_all_semantics(rules, semantics)} for _, rules, _, semantics in generator]
+    cat_sentences = [set(generate_sentences(ROOT_SYMBOL, generator)) for generator in generators]
+    stripper = DiscardMeta()
+    cat_sentences = [set([stripper.visit(sentence) for sentence in cat]) for cat in cat_sentences]
+    all_sentences = [tree_printer(x) for x in set().union(*cat_sentences)]
+    all_pairs = [pairs_without_placeholders(generator) for generator in generators]
+    baked_pairs = [{tree_printer(key): tree_printer(value) for key, value in pairs.items()} for pairs in all_pairs]
 
-    pairs = [pairs_without_placeholders(rules, semantics) for _, rules, _, semantics in generator]
-    by_utterance, by_parse = determine_unique_cat_data(pairs, keep_new_utterance_repeat_parse_for_lower_cat=False)
+    by_utterance, by_parse = determine_unique_cat_data(all_pairs, keep_new_utterance_repeat_parse_for_lower_cat=False)
     unique = []
     for i, _ in enumerate(cat_sentences):
         prev_cats = cat_sentences[:i]
@@ -47,34 +50,32 @@ def main():
     # Sets should be disjoint
     assert (len(set().union(*unique)) == sum([len(cat) for cat in unique]))
 
-    all_sentences = [tree_printer(x) for x in set().union(*cat_sentences)]
-    all_pairs = pairs
+    stats = [get_annotated_sentences(x) for x in zip(cat_sentences, all_pairs)]
+    annotated, unannotated, out_of_grammar = [c[0] for c in stats], [c[1] for c in stats], [c[2] for c in stats]
 
-    annotated = [get_annotated_sentences(x) for x in zip(cat_sentences, pairs)]
-
-    unique_annotated = [get_annotated_sentences((unique_sen, cat_pairs)) for unique_sen, cat_pairs in zip(unique, pairs)]
-    unique_sentence_parses = [[pairs[ann_sen] for ann_sen in annotated] for annotated, pairs in zip(unique_annotated, pairs)]
+    unique_annotated = [get_annotated_sentences((unique_sen, cat_pairs))[0] for unique_sen, cat_pairs in zip(unique, all_pairs)]
+    unique_sentence_parses = [[pairs[ann_sen] for ann_sen in annotated] for annotated, pairs in zip(unique_annotated, baked_pairs)]
     unique_sentence_parses = [set(x) for x in unique_sentence_parses]
 
     combined_annotations = set().union(*annotated)
     combined_annotations.intersection_update(all_sentences)
-
-    parseless = [sen.difference(annotated_sentences) for sen, annotated_sentences in zip(cat_sentences, annotated)]
+    # Note that this won't actually catch the correct unannotated; the expansion order of the sentence may
+    # fail to hit the exact match for the semantics annotation that is required
+    #parseless_another_way = [list(filter(lambda pair: pair[1] is None, generate_sentence_parse_pairs(NonTerminal("deliver"), gen, yield_requires_semantics=False))) for gen in generators]
 
     out_paths = [join(out_root, str(i)+"_sentences.txt") for i in range(1, 4)]
 
     for cat_out_path, sentences in zip(out_paths,cat_sentences):
         with open(cat_out_path, "w") as f:
             for sentence in sentences:
-                assert not has_placeholders(sentence)
                 f.write(tree_printer(sentence) + '\n')
 
     out_paths = [join(out_root, str(i)+"_pairs.txt") for i in range(1, 4)]
 
-    for cat_out_path, pairs in zip(out_paths,all_pairs):
+    for cat_out_path, pairs in zip(out_paths,baked_pairs):
         with open(cat_out_path, "w") as f:
             for sentence, parse in pairs.items():
-                f.write(sentence+ '\n' + parse+ '\n')
+                f.write(sentence + '\n' + parse + '\n')
 
     meta_out_path = join(out_root, "annotations_meta.txt")
     with open(meta_out_path, "w") as f:
@@ -111,8 +112,8 @@ def main():
             "combined avg sentence length (tokens): {:.1f} avg parse length (tokens): {:.1f} avg filtered parse length (tokens): {:.1f}\n".format(
                 np.mean(all_sen_lengths), np.mean(all_parse_lengths), np.mean(all_filtered_parse_lengths)))
     print("No parses for:")
-    for cat in parseless:
-        for sentence in sorted(map(tree_printer, cat)):
+    for cat in unannotated:
+        for sentence in sorted(cat):
             print(sentence)
         print("-----------------")
 
