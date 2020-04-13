@@ -1,6 +1,3 @@
-import sys
-from os.path import join
-
 from gpsr_command_understanding.anonymizer import Anonymizer
 
 import itertools
@@ -15,28 +12,18 @@ import lark
 import more_itertools
 
 from gpsr_command_understanding.generation import pairs_without_placeholders
-from gpsr_command_understanding.generator import Generator, get_grounding_per_each_parse_by_cat
+from gpsr_command_understanding.generator import get_grounding_per_each_parse_by_cat
 from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, load_entities_from_xml
-from gpsr_command_understanding.util import determine_unique_cat_data, save_data, flatten, merge_dicts, \
-    get_pairs_by_cats
+from gpsr_command_understanding.loading_helpers import GRAMMAR_DIR_2018, load_all_2018
+from gpsr_command_understanding.util import save_data, flatten, merge_dicts, determine_unique_data
 
 EPS = 0.00001
 
+
 def validate_args(args):
-    if args.test_categories != args.train_categories:
-        if len(set(args.test_categories).intersection(set(args.train_categories))) > 0:
-            print("Can't have partial overlap of train and test categories")
-            exit(1)
-        if abs(1.0 - (args.split[0] + args.split[1])) > EPS:
-            print("Please ensure train and val percentage sum to 1.0 when using different train and test distributions")
-            exit(1)
-        print("Because train and test distributions are different, using as much of test (100%) as possible")
-        args.split[2] = 1
-    else:
-        if abs(1.0 - sum(args.split)) > 0.00001:
-            print("Please ensure split percentages sum to 1")
-            exit(1)
+    if abs(1.0 - sum(args.split)) > 0.00001:
+        print("Please ensure split percentages sum to 1")
+        exit(1)
 
     if not (args.anonymized or args.groundings or args.paraphrasings):
         print("Must use at least one of anonymized or grounded pairs")
@@ -51,11 +38,9 @@ def validate_args(args):
         exit(1)
 
     if not args.name:
-        train_cats = "".join([str(x) for x in args.train_categories])
-        test_cats = "".join([str(x) for x in args.test_categories])
-        args.name = "{}_{}".format(train_cats, test_cats)
-        if args.use_form_split:
-            args.name += "_form"
+        args.name = "all"
+        if args.use_logical_split:
+            args.name += "_logical"
         if args.anonymized:
             args.name += "_a"
         if args.groundings:
@@ -91,9 +76,7 @@ def load_data(path, lambda_parser):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-s","--split", default=[.7,.1,.2], nargs='+', type=float)
-    parser.add_argument("-trc","--train-categories", default=[1, 2, 3], nargs='+', type=int)
-    parser.add_argument("-tc","--test-categories", default=[1, 2, 3], nargs='+', type=int)
-    parser.add_argument("-p", "--use-form-split", action='store_true', default=False)
+    parser.add_argument("-p", "--use-logical-split", action='store_true', default=False)
     parser.add_argument("-g","--groundings", required=False, type=int, default=None)
     parser.add_argument("-a","--anonymized", required=False, default=True, action="store_true")
     parser.add_argument("-m", "--match-form-split", required=False, default=None, type=str)
@@ -108,44 +91,39 @@ def main():
 
     validate_args(args)
 
-    cmd_gen = Generator(grammar_format_version=2018)
     random_source = random.Random(args.seed)
 
-    different_test_dist = (args.test_categories != args.train_categories)
 
     pairs_out_path = os.path.join(os.path.abspath(os.path.dirname(__file__) + "/../.."), "data", args.name)
-    train_out_path = os.path.join(pairs_out_path, "train.txt")
-    val_out_path = os.path.join(pairs_out_path, "val.txt")
-    test_out_path = os.path.join(pairs_out_path, "test.txt")
-    meta_out_path = os.path.join(pairs_out_path, "meta.txt")
+    train_out_path, val_out_path, test_out_path, meta_out_path = \
+    map(lambda name: os.path.join(pairs_out_path, name + ".txt"), ["train", "val", "test", "meta"])
 
     if args.force_overwrite and os.path.isdir(pairs_out_path):
         shutil.rmtree(pairs_out_path)
-    os.mkdir(pairs_out_path)
-    
-    grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
-    generator = load_all_2018_by_cat(cmd_gen, grammar_dir)
-
-    pairs = [{}, {}, {}]
+    try:
+        os.mkdir(pairs_out_path)
+    except FileExistsError as e:
+        print("Output path {} already exists. Remove manually if you want to regenerate.".format(pairs_out_path))
+        exit(1)
+    generator = load_all_2018(GRAMMAR_DIR_2018)
+    lambda_parser = generator.lambda_parser
+    pairs = {}
     if args.anonymized:
-        pairs = [pairs_without_placeholders(rules, semantics) for _, rules, _, semantics in generator]
+        pairs = pairs_without_placeholders(generator)
 
-    # For now this only works with all data
-    if args.groundings and len(args.train_categories) == 3:
+    # FIXME: Remove category split
+    if args.groundings:
         for i in range(args.groundings):
-            groundings = get_grounding_per_each_parse_by_cat(generator,random_source)
+            groundings = get_grounding_per_each_parse_by_cat(generator, random_source)
             for cat_pairs, groundings in zip(pairs, groundings):
                 for utt, form_anon, _ in groundings:
                     pairs[0][tree_printer(utt)] = tree_printer(form_anon)
 
-    if args.paraphrasings and len(args.train_categories) == 3:
-        paraphrasing_pairs = load_data(args.paraphrasings, cmd_gen.lambda_parser)
+    if args.paraphrasings:
+        paraphrasing_pairs = load_data(args.paraphrasings, lambda_parser)
         if args.run_anonymizer:
-            paths = tuple(
-                map(lambda x: join(grammar_dir, x), ["objects.xml", "locations.xml", "names.xml", "gestures.xml"]))
-            entities = load_entities_from_xml(*paths)
-            anonymizer = Anonymizer(*entities)
+            anonymizer = Anonymizer.from_knowledge_base(generator.knowledge_base)
             anon_para_pairs = {}
             anon_trigerred = 0
             for command, form in paraphrasing_pairs.items():
@@ -157,28 +135,27 @@ def main():
             print(anon_trigerred, len(paraphrasing_pairs))
         pairs[0] = merge_dicts(pairs[0], paraphrasing_pairs)
 
-    #pairs_in = [pairs_without_placeholders(rules, semantics, only_in_grammar=True) for _, rules, _, semantics in generator]
-    by_command, by_form = determine_unique_cat_data(pairs)
+    baked_pairs = [(tree_printer(utt), tree_printer(logical)) for utt, logical in pairs.items()]
 
-    if args.use_form_split:
+    by_command, by_form = determine_unique_data(baked_pairs)
+    by_command = list(by_command.items())
+    by_form = list(by_form.items())
+    if args.use_logical_split:
         data_to_split = by_form
     else:
         data_to_split = by_command
-    train_pairs, test_pairs = get_pairs_by_cats(data_to_split, args.train_categories, args.test_categories)
 
-    # Randomize for the split, but then sort by command length before we save out so that things are easier to read.
-    # If these lists are the same, they need to be shuffled the same way...
-    random.Random(args.seed).shuffle(train_pairs)
-    random.Random(args.seed).shuffle(test_pairs)
+    random.Random(args.seed).shuffle(data_to_split)
+
 
     # Peg this split to match the split in another dataset. Helpful for making them mergeable while still preserving
     # the no-form-seen-before property of the form split
     if args.match_form_split:
-        train_match = load_data(args.match_form_split + "/train.txt", cmd_gen.lambda_parser)
+        train_match = load_data(args.match_form_split + "/train.txt", lambda_parser)
         train_match = set(train_match.values())
-        val_match = load_data(args.match_form_split + "/val.txt", cmd_gen.lambda_parser)
+        val_match = load_data(args.match_form_split + "/val.txt", lambda_parser)
         val_match = set(val_match.values())
-        test_match = load_data(args.match_form_split + "/test.txt", cmd_gen.lambda_parser)
+        test_match = load_data(args.match_form_split + "/test.txt", lambda_parser)
         test_match = set(test_match.values())
         train_percentage = len(train_match) / (len(train_match) + len(val_match) + len(test_match))
         val_percentage = len(val_match) / (len(train_match) + len(val_match) + len(test_match))
@@ -186,8 +163,7 @@ def main():
         train = []
         val = []
         test = []
-        # TODO: Square this away with test dist param. Probably drop the cat params
-        for form, commands in itertools.chain(train_pairs):
+        for form, commands in itertools.chain(pairs):
             target = None
             if form in train_match:
                 target = train
@@ -202,20 +178,13 @@ def main():
             target.append((form, commands))
     else:
         train_percentage, val_percentage, test_percentage = args.split
-        if different_test_dist:
-            # Just one split for the first dist, then use all of test
-            split1 = int(train_percentage * len(train_pairs))
-            train, val, test = train_pairs[:split1], train_pairs[split1:], test_pairs
-        else:
-            # If we're training and testing on the same distributions, these should match exactly
-            assert train_pairs == test_pairs
-            split1 = int(train_percentage * len(train_pairs))
-            split2 = int((train_percentage + val_percentage) * len(train_pairs))
-            train, val, test = train_pairs[:split1], train_pairs[split1:split2], train_pairs[split2:]
+        split1 = int(train_percentage * len(data_to_split))
+        split2 = int((train_percentage + val_percentage) * len(data_to_split))
+        train, val, test = data_to_split[:split1], data_to_split[split1:split2], data_to_split[split2:]
 
     # Parse splits would have stored parse-(command list) pairs, so lets
     # flatten out those lists if we need to.
-    if args.use_form_split:
+    if args.use_logical_split:
         train = flatten(train)
         val = flatten(val)
         test = flatten(test)
@@ -247,13 +216,8 @@ def main():
             parse_vocab[token] += 1
 
     info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, train_percentage, val_percentage, test_percentage)
-    total_train_set = len(train) + len(val)
-    if different_test_dist:
-        total_test_set = len(test)
-    else:
-        total_train_set += len(test)
-        total_test_set = total_train_set
-    info += "Exact split percentage: {:.2f}/{:.2f}/{:.2f} split\n".format(len(train)/total_train_set, len(val)/total_train_set, len(test)/total_test_set)
+    total_data = len(train) + len(val) + len(test)
+    info += "Exact split percentage: {:.2f}/{:.2f}/{:.2f} split\n".format(len(train)/total_data, len(val)/total_data, len(test)/total_data)
 
     info += "train={} val={} test={}".format(len(train), len(val), len(test))
     print(info)

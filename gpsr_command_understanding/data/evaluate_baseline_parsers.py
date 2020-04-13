@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 import itertools
-import os
 import sys
 import editdistance
 
-from gpsr_command_understanding.generator import Generator
-
-from gpsr_command_understanding.loading_helpers import load_all_2018
+from gpsr_command_understanding.grammar import tree_printer
+from gpsr_command_understanding.loading_helpers import load_all_2018, GRAMMAR_DIR_2018
 from gpsr_command_understanding.models.noop_tokenizer import NoOpTokenizer
 from gpsr_command_understanding.models.seq2seq_data_reader import Seq2SeqDatasetReader
 from gpsr_command_understanding.parser import AnonymizingParser, KNearestNeighborParser, GrammarBasedParser
 from gpsr_command_understanding.anonymizer import Anonymizer
 from nltk.metrics.distance import edit_distance, jaccard_distance
-
-GRAMMAR_DIR = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
 
 
 def bench_parser(parser, pairs):
@@ -23,6 +19,10 @@ def bench_parser(parser, pairs):
         pred = parser(utterance)
         if pred == gold:
             correct += 1
+        elif pred:
+            pass
+            #print(tree_printer(pred))
+            #print(tree_printer(gold))
         if pred:
             parsed += 1
     return correct, parsed
@@ -49,30 +49,31 @@ def sweep_thresh(neighbors, test_pairs, anonymizer, metric, thresh_vals=range(0,
 
 
 def main():
-    assert len(sys.argv) == 4
+    if not len(sys.argv) == 4:
+        print("Pass train, validation and test file paths")
+        exit(1)
     reader = Seq2SeqDatasetReader(source_tokenizer=NoOpTokenizer(), target_tokenizer=NoOpTokenizer())
     train = reader.read(sys.argv[1])
     val = reader.read(sys.argv[2])
     test = reader.read(sys.argv[3])
 
-    generator = Generator()
-    rules, rules_anon, rules_ground, semantics, entities = load_all_2018(generator, GRAMMAR_DIR)
-    anonymizer = Anonymizer(*entities)
-
+    generator = load_all_2018(GRAMMAR_DIR_2018)
+    anonymizer = Anonymizer.from_knowledge_base(generator.knowledge_base)
 
     neighbors = []
     for x in itertools.chain(train, val):
         command = str(x["source_tokens"][1:-1][0])
-        form = str(x["target_tokens"][1:-1][0])
+        form = generator.lambda_parser.parse(str(x["target_tokens"][1:-1][0]))
         anon_command = anonymizer(command)
         neighbors.append((anon_command, form))
 
     test_pairs = []
     for x in test:
-        test_pairs.append((str(x["source_tokens"][1:-1][0]), str(x["target_tokens"][1:-1][0])))
+        form = generator.lambda_parser.parse(str(x["target_tokens"][1:-1][0]))
+        test_pairs.append((str(x["source_tokens"][1:-1][0]), form))
 
     print("Check grammar membership")
-    naive_parser = GrammarBasedParser(rules_anon)
+    naive_parser = GrammarBasedParser(generator.rules)
     anon_parser = AnonymizingParser(naive_parser, anonymizer)
 
     correct, parsed = bench_parser(anon_parser, test_pairs)

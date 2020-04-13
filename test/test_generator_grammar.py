@@ -143,3 +143,12 @@ class TestGenerator(unittest.TestCase):
         test = self.sequence_parser.parse(test_rule)
         self.assertEqual(len(test.children), 1)
         self.assertEqual(len(test.children[0].metadata), 36)
+
+    def test_parse_where(self):
+        # FIXME(nickswalker): Implement grounder constraints. Used in EGPSR
+        test_rule = '{object where Category="food" canPour=true}'
+        test = self.sequence_parser.parse(test_rule)
+        self.assertEqual(len(test.children), 1)
+        self.assertEqual(len(test.children[0].constraints), 2)
+        test_rule = '{object where Category="snacks"}'
+        test_rule = '{object where fruit=true}'
