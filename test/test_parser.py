@@ -4,14 +4,14 @@ import os
 import random
 import unittest
 
-from gpsr_command_understanding.generation import generate_sentences, generate_sentence_parse_pairs
-from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.grammar import tree_printer, DiscardMeta
-from gpsr_command_understanding.loading_helpers import load_all, \
+from gpsr_command_understanding.generator.generation import generate_sentences, generate_sentence_parse_pairs
+from gpsr_command_understanding.generator.generator import Generator
+from gpsr_command_understanding.generator.grammar import tree_printer, DiscardMeta
+from gpsr_command_understanding.generator.loading_helpers import load_all, \
     load_all_2018, GRAMMAR_DIR_2018, GRAMMAR_DIR_2019
 from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
-from gpsr_command_understanding.tokens import ROOT_SYMBOL
+from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
 
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")

@@ -1,7 +1,7 @@
 import importlib_resources
 
-from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.knowledge import KnowledgeBase
+from gpsr_command_understanding.generator.generator import Generator
+from gpsr_command_understanding.generator.knowledge import KnowledgeBase
 
 GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
 GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"

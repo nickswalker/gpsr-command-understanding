@@ -1,9 +1,8 @@
-import re
 from copy import deepcopy
 
 from gpsr_command_understanding.util import replace_child, to_num
 
-from gpsr_command_understanding.tokens import *
+from gpsr_command_understanding.generator.tokens import *
 
 from lark import Tree, Transformer, Visitor
 

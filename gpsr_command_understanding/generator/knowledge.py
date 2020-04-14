@@ -1,6 +1,6 @@
 import importlib_resources
 
-from gpsr_command_understanding.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser, \
+from gpsr_command_understanding.generator.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser, \
     QuestionParser
 
 

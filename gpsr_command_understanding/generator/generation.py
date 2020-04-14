@@ -1,17 +1,17 @@
 import copy
 
-from lark import Tree, Token
+from lark import Tree
 
-from gpsr_command_understanding.grammar import CombineExpressions, tree_printer, DiscardVoid
+from gpsr_command_understanding.generator.grammar import CombineExpressions, tree_printer, DiscardVoid
 from gpsr_command_understanding.util import get_placeholders, replace_child_in_tree, \
-    has_placeholders, has_nonterminals
-from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
+    has_nonterminals
+from gpsr_command_understanding.generator.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 
 try:
     from queue import Queue as queue
 except ImportError:
     from Queue import queue
-from yieldfrom import yieldfrom, From, Return
+from yieldfrom import yieldfrom, From
 
 
 def generate_sentences(start_tree, generator):

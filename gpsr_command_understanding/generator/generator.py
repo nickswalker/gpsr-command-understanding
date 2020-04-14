@@ -1,5 +1,4 @@
 import copy
-import os
 import re
 import sys
 from collections import defaultdict
@@ -8,16 +7,12 @@ from string import printable
 import importlib_resources
 from lark import Lark, Tree, exceptions
 
-from gpsr_command_understanding.generation import generate_sentence_parse_pairs, \
+from gpsr_command_understanding.generator.generation import generate_sentence_parse_pairs, \
     expand_pair_full
-from gpsr_command_understanding.grammar import TypeConverter, expand_shorthand, CombineExpressions, \
-    make_anonymized_grounding_rules, RemovePrefix, CompactUnderscorePrefixed
-from gpsr_command_understanding.util import get_wildcards_forest, has_placeholders, merge_dicts, replace_child_in_tree, \
+from gpsr_command_understanding.generator.grammar import TypeConverter, expand_shorthand, RemovePrefix, CompactUnderscorePrefixed
+from gpsr_command_understanding.util import get_wildcards_forest, has_placeholders, replace_child_in_tree, \
     get_wildcards
-from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
-from gpsr_command_understanding.grammar import tree_printer
-
-from io import open
+from gpsr_command_understanding.generator.grammar import tree_printer
 
 try:
     from itertools import izip_longest as zip_longest
@@ -56,6 +51,7 @@ class LambdaParserWrapper:
         de_namespaced = self.post_process.visit(parsed)
         compacted_and_typed = self.compact.transform(de_namespaced)
         return compacted_and_typed
+
 
 # TODO(nickswalker): Document these methods
 # TODO(nickswalker): Add grounding methods

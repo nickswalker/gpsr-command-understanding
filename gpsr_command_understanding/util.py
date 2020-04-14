@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from more_itertools import peekable
 
-from gpsr_command_understanding.tokens import WildCard, NonTerminal
+from gpsr_command_understanding.generator.tokens import WildCard, NonTerminal
 
 
 def merge_dicts(x, y):

@@ -1,7 +1,7 @@
-from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, GRAMMAR_DIR_2018
-from gpsr_command_understanding.tokens import ROOT_SYMBOL
-from gpsr_command_understanding.generation import generate_random_pair
+from gpsr_command_understanding.generator.grammar import tree_printer
+from gpsr_command_understanding.generator.loading_helpers import load_all_2018_by_cat, GRAMMAR_DIR_2018
+from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
+from gpsr_command_understanding.generator.generation import generate_random_pair
 
 import random
 

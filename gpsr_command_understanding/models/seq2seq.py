@@ -20,7 +20,7 @@ from allennlp.nn import util
 from allennlp.nn.beam_search import BeamSearch
 from allennlp.training.metrics import BLEU
 
-from gpsr_command_understanding.generator import Generator
+from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.models.metrics import TokenSequenceAccuracy, ParseValidity
 
 

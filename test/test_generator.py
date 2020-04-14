@@ -5,10 +5,10 @@ import unittest
 
 from lark import Tree
 
-from gpsr_command_understanding.generation import generate_sentence_parse_pairs, generate_sentences
-from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.grammar import NonTerminal, ROOT_SYMBOL, tree_printer, ComplexWildCard
-from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, load_all, load_all_2018, GRAMMAR_DIR_2018, \
+from gpsr_command_understanding.generator.generation import generate_sentence_parse_pairs, generate_sentences
+from gpsr_command_understanding.generator.generator import Generator
+from gpsr_command_understanding.generator.grammar import NonTerminal, ROOT_SYMBOL, tree_printer, ComplexWildCard
+from gpsr_command_understanding.generator.loading_helpers import load_all_2018_by_cat, load_all, load_all_2018, GRAMMAR_DIR_2018, \
     GRAMMAR_DIR_2019
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")

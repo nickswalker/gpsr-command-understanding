@@ -1,11 +1,8 @@
 # coding: utf-8
 import os
-import sys
 import unittest
 
-import importlib_resources
-
-from gpsr_command_understanding.generator import LambdaParserWrapper
+from gpsr_command_understanding.generator.generator import LambdaParserWrapper
 
 GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
 GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"

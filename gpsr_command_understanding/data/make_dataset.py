@@ -11,10 +11,10 @@ from collections import Counter
 import lark
 import more_itertools
 
-from gpsr_command_understanding.generation import pairs_without_placeholders
-from gpsr_command_understanding.generator import get_grounding_per_each_parse_by_cat
-from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import GRAMMAR_DIR_2018, load_all_2018
+from gpsr_command_understanding.generator.generation import pairs_without_placeholders
+from gpsr_command_understanding.generator.generator import get_grounding_per_each_parse_by_cat
+from gpsr_command_understanding.generator.grammar import tree_printer
+from gpsr_command_understanding.generator.loading_helpers import GRAMMAR_DIR_2018, load_all_2018
 from gpsr_command_understanding.util import save_data, flatten, merge_dicts, determine_unique_data
 
 EPS = 0.00001
