@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+from more_itertools import peekable
+
 from gpsr_command_understanding.tokens import WildCard, NonTerminal
 
 
@@ -40,8 +42,10 @@ def replace_child_in_tree(tree, child_target, replacement, only_once=False):
             return did_replace
     return did_replace
 
+def get_wildcards(tree):
+    return peekable(tree.scan_values(lambda x: isinstance(x, WildCard)))
 
-def get_wildcards(trees):
+def get_wildcards_forest(trees):
     """
     Get all wildcards that occur in a grammar
     :param production_rules:

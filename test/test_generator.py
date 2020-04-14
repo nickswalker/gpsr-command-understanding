@@ -3,10 +3,11 @@ import os
 
 import unittest
 
+from lark import Tree
 
 from gpsr_command_understanding.generation import generate_sentence_parse_pairs, generate_sentences
 from gpsr_command_understanding.generator import Generator
-from gpsr_command_understanding.grammar import NonTerminal, ROOT_SYMBOL, tree_printer
+from gpsr_command_understanding.grammar import NonTerminal, ROOT_SYMBOL, tree_printer, ComplexWildCard
 from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat, load_all, load_all_2018, GRAMMAR_DIR_2018, \
     GRAMMAR_DIR_2019
 
@@ -102,10 +103,30 @@ class TestGenerator(unittest.TestCase):
             if len(unique) == count:
                 print(tree_printer(sentence))
 
-
-    def test_generate_pairs(self):
+    def test_generate_pairs_2018(self):
         generator = load_all_2018(GRAMMAR_DIR_2018)
         # If we don't require semantics, the same rules should generate the same number of expansions
         pairs = list(generate_sentence_parse_pairs(ROOT_SYMBOL, generator, yield_requires_semantics=False))
         sentences = list(generate_sentences(ROOT_SYMBOL, generator))
         self.assertEqual(len(pairs), len(sentences))
+
+    def test_ground(self):
+        def expr_builder(string):
+            return Tree("expression", string.split(" "))
+        generator = load_all_2018(GRAMMAR_DIR_2018)
+
+        test_tree = Tree("expression", ["Say", "hi", "to", ComplexWildCard("name", wildcard_id=1), "and", ComplexWildCard("name", wildcard_id=2)])
+        expected = expr_builder("Say hi to x and y")
+        # FIXME: Setup a mocked knowledgebase
+        #self.assertEqual(expected, generator.ground(test_tree))
+
+        # Never repeat
+        test_tree = Tree("expression", [ComplexWildCard("name", wildcard_id=1), ComplexWildCard("name", wildcard_id=2)])
+        groundings = generator.generate_groundings(test_tree)
+        for grounding in groundings:
+            first, second = grounding.children
+            self.assertNotEqual(first, second)
+
+        test_tree = Tree("expression", [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2)])
+        expected = expr_builder("Say hi to x and y")
+

@@ -1,6 +1,8 @@
+import copy
 import os
 import re
 import sys
+from collections import defaultdict
 from string import printable
 
 import importlib_resources
@@ -10,7 +12,8 @@ from gpsr_command_understanding.generation import generate_sentence_parse_pairs,
     expand_pair_full
 from gpsr_command_understanding.grammar import TypeConverter, expand_shorthand, CombineExpressions, \
     make_anonymized_grounding_rules, RemovePrefix, CompactUnderscorePrefixed
-from gpsr_command_understanding.util import get_wildcards, has_placeholders, merge_dicts
+from gpsr_command_understanding.util import get_wildcards_forest, has_placeholders, merge_dicts, replace_child_in_tree, \
+    get_wildcards
 from gpsr_command_understanding.tokens import NonTerminal, WildCard, Anonymized, ROOT_SYMBOL
 from gpsr_command_understanding.grammar import tree_printer
 
@@ -145,8 +148,8 @@ class Generator:
         expanded_sem_heads = expand_shorthand(sem)
         for prod, sem in zip_longest(expanded_prod_heads, expanded_sem_heads, fillvalue=expanded_sem_heads[0]):
             # Check for any obvious errors in the annotation
-            prod_wildcards = get_wildcards([prod])
-            sem_wildcards = get_wildcards([sem]) if isinstance(sem, Tree) else set()
+            prod_wildcards = get_wildcards_forest([prod])
+            sem_wildcards = get_wildcards_forest([sem]) if isinstance(sem, Tree) else set()
 
             if sem_wildcards.difference(prod_wildcards):
                 raise RuntimeError(
@@ -173,8 +176,54 @@ class Generator:
         return i
 
     def ground(self, tree, random_source=None):
-        # TODO(nickswalker): Replace wildcards in all acceptable ways, yield one at a time in order governed by random_source
-        assert False
+        return next(self.generate_groundings(tree, random_source=random_source))
+
+    def generate_groundings(self, tree, random_source=None):
+        wildcards = get_wildcards(tree)
+        assignment = {}
+
+        constraints = defaultdict(set)
+        for wildcard in wildcards:
+            # Could be another instance of the same wildcard
+            if wildcard.id:
+                constraints[wildcard] = set()
+                if wildcard in assignment:
+                    continue
+                for other_wildcard, item_constraints in constraints.items():
+                    # Any wildcard of the same name with a different ID needs to be different
+                    if other_wildcard.name == wildcard.name and other_wildcard.id != wildcard.id:
+                        constraints[wildcard].add(other_wildcard)
+
+        yield from self.__populate_with_constraints(tree, constraints)
+
+    def __populate_with_constraints(self, tree, constraints):
+        wildcards = get_wildcards(tree)
+        if not wildcards:
+            yield tree
+            return
+        wildcard = next(wildcards)
+        item_constraints = constraints[wildcard]
+        candidates = self.knowledge_base.by_name[wildcard.name]
+
+        for candidate in candidates:
+            if isinstance(item_constraints, set):
+                valid = True
+                for constraint in item_constraints:
+                    # Constraints only point backwards, so this constraint is saying that current wildcard
+                    # must be different from a previously fixed value
+                    if candidate == constraints[constraint]:
+                        valid = False
+                if not valid:
+                    continue
+            else:
+                # We should have already replaced this wildcard if it has a fixed constraint
+                assert False
+            fixed = copy.deepcopy(constraints)
+            fresh_tree = copy.deepcopy(tree)
+            fixed[wildcard].clear()
+            fixed[wildcard] = candidate
+            replace_child_in_tree(fresh_tree, wildcard, candidate)
+            yield from self.__populate_with_constraints(fresh_tree, fixed)
 
     def _print_semantics_rules(self):
         for key, expansion in self.semantics.items():
@@ -216,39 +265,3 @@ def get_grounding_per_each_parse(generator, random_source):
                 grounded_examples[parse_anon] = (utterance, parse_anon, parse_ground)
 
     return list(grounded_examples.values())
-
-
-def get_grounding_per_each_parse_by_cat(generator, random_source):
-    grounded_examples = []
-
-    for rules, rules_anon, rules_ground, semantics in generator:
-        cat_groundings = {}
-        # Start with each rule, since this is guaranteed to get at least all possible parses
-        # Note, this may include parses that don't fall in the grammar...
-        for generation_path, semantic_production in semantics.items():
-            # Some non-terminals may expand into different parses (like $oprop)! So we'll expand them
-            # every which way
-            wild_expansions = list(generate_sentence_parse_pairs(generation_path, rules, semantics,
-                                                                 yield_requires_semantics=True,
-                                                                 random_generator=random_source))
-            # We're going to be throwing away expansions that have the same parse, so let's
-            # randomize here to make sure we aren't favoring the last expansion.
-            # Note that the above generation should also return expansions in a random order anyway
-            random_source.shuffle(wild_expansions)
-
-            for utterance_wild, parse_wild in list(wild_expansions):
-                utterance_anon, parse_anon = next(expand_pair_full(utterance_wild, parse_wild, rules_anon, branch_cap=1,
-                                                                   random_generator=random_source))
-
-                utterance, parse_ground = next(expand_pair_full(utterance_wild, parse_wild, rules_ground, branch_cap=1,
-                                                                random_generator=random_source))
-                assert not has_placeholders(utterance)
-                assert not has_placeholders(parse_ground)
-                assert not has_placeholders(parse_ground)
-                # We expect this to happen sometimes because of the cat1 cat2 object known wildcard situation
-                if has_placeholders(parse_anon):
-                    continue
-
-                cat_groundings[parse_anon] = (utterance, parse_anon, parse_ground)
-        grounded_examples.append(list(cat_groundings.values()))
-    return grounded_examples

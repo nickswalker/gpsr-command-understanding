@@ -34,3 +34,15 @@ class KnowledgeBase:
         self.rooms = locations_parser.get_all_rooms()
         self.gestures = gestures_parser.get_gestures()
         self.questions = question_parser.get_question_answer_dict()
+
+        self.by_name = {
+            "object": self.objects,
+            "category": self.categories,
+            "name": self.names,
+            "location": self.locations,
+            "beacon": self.beacons,
+            "placement": self.placements,
+            "room": self.rooms,
+            "gesture": self.gestures,
+            "question": self.questions,
+        }
