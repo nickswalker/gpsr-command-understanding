@@ -11,10 +11,9 @@ from collections import Counter
 import lark
 import more_itertools
 
-from gpsr_command_understanding.generator.generation import pairs_without_placeholders
-from gpsr_command_understanding.generator.generator import get_grounding_per_each_parse_by_cat
+from gpsr_command_understanding.generator.paired_generator import pairs_without_placeholders
 from gpsr_command_understanding.generator.grammar import tree_printer
-from gpsr_command_understanding.generator.loading_helpers import GRAMMAR_DIR_2018, load_all_2018
+from gpsr_command_understanding.generator.loading_helpers import GRAMMAR_DIR_2018, load_paired_2018
 from gpsr_command_understanding.util import save_data, flatten, merge_dicts, determine_unique_data
 
 EPS = 0.00001
@@ -106,7 +105,7 @@ def main():
     except FileExistsError as e:
         print("Output path {} already exists. Remove manually if you want to regenerate.".format(pairs_out_path))
         exit(1)
-    generator = load_all_2018(GRAMMAR_DIR_2018)
+    generator = load_paired_2018(GRAMMAR_DIR_2018)
     lambda_parser = generator.lambda_parser
     pairs = {}
     if args.anonymized:
@@ -114,11 +113,14 @@ def main():
 
     # FIXME: Remove category split
     if args.groundings:
-        for i in range(args.groundings):
-            groundings = get_grounding_per_each_parse_by_cat(generator, random_source)
-            for cat_pairs, groundings in zip(pairs, groundings):
-                for utt, form_anon, _ in groundings:
-                    pairs[0][tree_printer(utt)] = tree_printer(form_anon)
+        grounded_pairs = {}
+        for utt, logical in pairs.items():
+            groundings = generator.generate_groundings((utt, logical), random_source)
+            groundings = itertools.islice(groundings, args.groundings)
+            for grounded_utt, grounded_logical in groundings:
+                grounded_pairs[tree_printer(grounded_utt)] = tree_printer(grounded_logical)
+
+        pairs = merge_dicts(pairs, grounded_pairs)
 
     if args.paraphrasings:
         paraphrasing_pairs = load_data(args.paraphrasings, lambda_parser)

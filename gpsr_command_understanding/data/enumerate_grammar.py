@@ -4,10 +4,10 @@ from os.path import join
 import re
 
 from gpsr_command_understanding.generator.grammar import tree_printer, DiscardMeta
-from gpsr_command_understanding.generator.loading_helpers import load_all_2018_by_cat, GRAMMAR_DIR_2018
+from gpsr_command_understanding.generator.loading_helpers import load_paired_2018_by_cat, GRAMMAR_DIR_2018, \
+    load_2018_by_cat
 from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
-from gpsr_command_understanding.generator.generation import generate_sentences, pairs_without_placeholders
-from gpsr_command_understanding.util import determine_unique_cat_data
+from gpsr_command_understanding.generator.paired_generator import pairs_without_placeholders
 
 
 def get_annotated_sentences(sentences_and_pairs):
@@ -27,16 +27,17 @@ def get_annotated_sentences(sentences_and_pairs):
 def main():
     out_root = os.path.abspath(os.path.dirname(__file__) + "/../../data")
 
-    generators = load_all_2018_by_cat(GRAMMAR_DIR_2018)
+    generators = load_2018_by_cat(GRAMMAR_DIR_2018)
+    generators_paired = load_paired_2018_by_cat(GRAMMAR_DIR_2018)
 
-    cat_sentences = [set(generate_sentences(ROOT_SYMBOL, generator)) for generator in generators]
+    cat_sentences = [set(generator.generate(ROOT_SYMBOL)) for generator in generators]
     stripper = DiscardMeta()
     cat_sentences = [set([stripper.visit(sentence) for sentence in cat]) for cat in cat_sentences]
     all_sentences = [tree_printer(x) for x in set().union(*cat_sentences)]
-    all_pairs = [pairs_without_placeholders(generator) for generator in generators]
+    all_pairs = [pairs_without_placeholders(generator) for generator in generators_paired]
     baked_pairs = [{tree_printer(key): tree_printer(value) for key, value in pairs.items()} for pairs in all_pairs]
 
-    by_utterance, by_parse = determine_unique_cat_data(all_pairs, keep_new_utterance_repeat_parse_for_lower_cat=False)
+    # by_utterance, by_parse = determine_unique_cat_data(all_pairs, keep_new_utterance_repeat_parse_for_lower_cat=False)
     unique = []
     for i, _ in enumerate(cat_sentences):
         prev_cats = cat_sentences[:i]

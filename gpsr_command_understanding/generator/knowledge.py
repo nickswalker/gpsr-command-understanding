@@ -5,18 +5,21 @@ from gpsr_command_understanding.generator.xml_parsers import ObjectParser, Locat
 
 
 class KnowledgeBase:
-    def __init__(self):
-        pass
+    def __init__(self, items):
+        self.by_name = items
 
-    def load_from_xml_dir(self, xml_path):
+    @staticmethod
+    def from_xml_dir(xml_path):
         raw_ontology_xml = tuple(map(lambda x: importlib_resources.open_text(xml_path, x),
                                      ["objects.xml", "locations.xml", "names.xml", "gestures.xml", "questions.xml"]))
-        self.load_from_xml(*raw_ontology_xml)
+        kb = KnowledgeBase.from_xml(*raw_ontology_xml)
         # Clean up IO to avoid warnings
         for stream in raw_ontology_xml:
             stream.close()
+        return kb
 
-    def load_from_xml(self, objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file,
+    @staticmethod
+    def from_xml(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file,
                       questions_xml_file):
         object_parser = ObjectParser(objects_xml_file)
         locations_parser = LocationParser(locations_xml_file)
@@ -24,25 +27,28 @@ class KnowledgeBase:
         gestures_parser = GesturesParser(gestures_xml_file)
         question_parser = QuestionParser(questions_xml_file)
 
-        self.objects = object_parser.all_objects()
-        self.categories = object_parser.all_categories()
-        self.names = names_parser.all_names()
-        self.locations = locations_parser. \
+        objects = object_parser.all_objects()
+        categories = object_parser.all_categories()
+        names = names_parser.all_names()
+        locations = locations_parser. \
             get_all_locations()
-        self.beacons = locations_parser.get_all_beacons()
-        self.placements = locations_parser.get_all_placements()
-        self.rooms = locations_parser.get_all_rooms()
-        self.gestures = gestures_parser.get_gestures()
-        self.questions = question_parser.get_question_answer_dict()
+        beacons = locations_parser.get_all_beacons()
+        placements = locations_parser.get_all_placements()
+        rooms = locations_parser.get_all_rooms()
+        gestures = gestures_parser.get_gestures()
+        questions = question_parser.get_question_answer_dict()
 
-        self.by_name = {
-            "object": self.objects,
-            "category": self.categories,
-            "name": self.names,
-            "location": self.locations,
-            "beacon": self.beacons,
-            "placement": self.placements,
-            "room": self.rooms,
-            "gesture": self.gestures,
-            "question": self.questions,
+        by_name = {
+            "object": objects,
+            "category": categories,
+            "name": names,
+            "location": locations,
+            "beacon": beacons,
+            "placement": placements,
+            "room": rooms,
+            "gesture": gestures,
+            "question": questions,
+            "whattosay": ["a joke"]
         }
+        return KnowledgeBase(by_name)
+

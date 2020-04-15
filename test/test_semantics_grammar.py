@@ -2,7 +2,7 @@
 import os
 import unittest
 
-from gpsr_command_understanding.generator.generator import LambdaParserWrapper
+from gpsr_command_understanding.generator.paired_generator import LambdaParserWrapper
 
 GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
 GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"
