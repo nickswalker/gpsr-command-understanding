@@ -24,3 +24,8 @@ class TestSemanticsGrammar(unittest.TestCase):
         test = self.lambda_parser.parse("(test (lambda $1 :e .(yo 1)))")
         flattened = [x.pretty() for x in test.iter_subtrees()]
         self.assertEqual(len(flattened), 8)
+
+    def test_parse_escaped_string(self):
+        test = self.lambda_parser.parse("(test \"hello there\" \"second arg with many tokens\")")
+        flattened = [x.pretty() for x in test.iter_subtrees()]
+        self.assertEqual(3, len(flattened))

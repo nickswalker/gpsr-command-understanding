@@ -9,7 +9,7 @@ from lark import Lark, Tree, exceptions
 
 from gpsr_command_understanding.generator.grammar import TypeConverter, expand_shorthand, NonTerminal, \
     CombineExpressions, DiscardVoid
-from gpsr_command_understanding.util import has_placeholders, replace_child_in_tree, \
+from gpsr_command_understanding.util import replace_child_in_tree, \
     get_wildcards, has_nonterminals
 from gpsr_command_understanding.generator.grammar import tree_printer
 
@@ -80,17 +80,17 @@ class Generator:
         return i
 
     def ground(self, tree, random_source=None):
-        return next(self.generate_groundings(tree, random_source=random_source))
+        return next(self.generate_groundings(tree, random_generator=random_source))
 
-    def generate_groundings(self, tree, random_source=None):
-        assignments = self.generate_grounding_assignment(tree, random_source)
+    def generate_groundings(self, tree, random_generator=None):
+        assignments = self.generate_grounding_assignments(tree, random_generator=random_generator)
         for assignment in assignments:
             grounded = copy.deepcopy(tree)
             for token, replacement in assignment.items():
                 replace_child_in_tree(grounded, token, replacement)
             yield grounded
 
-    def generate_grounding_assignment(self, tree, random_source=None):
+    def generate_grounding_assignments(self, tree, random_generator=None):
         wildcards = get_wildcards(tree)
         assignment = {}
 
@@ -109,9 +109,9 @@ class Generator:
                     if other_wildcard.name == wildcard.name and other_wildcard.id != wildcard.id:
                         constraints[wildcard].add(other_wildcard)
 
-        yield from self.__populate_with_constraints(tree, constraints)
+        yield from self.__populate_with_constraints(tree, constraints, random_generator=random_generator)
 
-    def __populate_with_constraints(self, tree, constraints, random_source=None):
+    def __populate_with_constraints(self, tree, constraints, random_generator=None):
         wildcards = get_wildcards(tree)
         if not wildcards:
             yield constraints
@@ -122,8 +122,9 @@ class Generator:
             candidates = ["them"]
         else:
             candidates = self.knowledge_base.by_name[wildcard.name]
-        if random_source:
-            pass
+        if random_generator:
+            if random_generator:
+                random_generator.shuffle(candidates)
         for candidate in candidates:
             if isinstance(item_constraints, set):
                 valid = True
@@ -144,6 +145,11 @@ class Generator:
             replace_child_in_tree(fresh_tree, wildcard, candidate)
             yield from self.__populate_with_constraints(fresh_tree, fixed)
 
+    def generate_random(self, start_symbols, random_generator=None, **kwargs):
+        return next(
+            self.generate(start_symbols,
+                          branch_cap=1, random_generator=random_generator, **kwargs))
+
     def generate(self, start_tree, branch_cap=None, random_generator=None):
         """
         A generator that produces completely expanded sentences in depth-first order
@@ -161,10 +167,23 @@ class Generator:
         while len(stack) != 0:
             sentence = stack.pop()
             replace_tokens = list(sentence.scan_values(lambda x: x in self.rules.keys()))
+
             if replace_tokens:
-                replace_token = replace_tokens[0]
+                if random_generator:
+                    replace_token = random_generator.choice(replace_tokens)
+                    replacement_rules = self.rules[replace_token]
+                    if branch_cap:
+                        productions = random_generator.sample(replacement_rules, k=branch_cap)
+                    else:
+                        # Use all of the branches
+                        productions = self.rules[replace_token]
+                        random_generator.shuffle(productions)
+                else:
+                    replace_token = replace_tokens[0]
+                    productions = self.rules[replace_token]
+
                 # Replace it every way we know how
-                for production in self.rules[replace_token]:
+                for production in productions:
                     modified_sentence = copy.deepcopy(sentence)
                     replace_child_in_tree(modified_sentence, replace_token, production, only_once=True)
                     # Generate the rest of the sentence recursively assuming this replacement

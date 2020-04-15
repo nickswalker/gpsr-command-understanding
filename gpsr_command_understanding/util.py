@@ -24,26 +24,28 @@ def get_placeholders(tree):
 
 
 def replace_child(tree, child_target, replacement, only_once=False):
-    did_replace = False
+    replace_count = 0
     for i, child in enumerate(tree.children):
         if child == child_target:
             tree.children[i] = replacement
-            did_replace = True
-            if only_once and did_replace:
-                return did_replace
-    return did_replace
+            replace_count += 1
+            if only_once and replace_count >= 1:
+                return replace_count
+    return replace_count
 
 
 def replace_child_in_tree(tree, child_target, replacement, only_once=False):
-    did_replace = False
+    replace_count = 0
     for tree in tree.iter_subtrees():
-        did_replace = replace_child(tree, child_target, replacement, only_once=only_once)
-        if only_once and did_replace:
-            return did_replace
-    return did_replace
+        replace_count += replace_child(tree, child_target, replacement, only_once=only_once)
+        if only_once and replace_count >= 1:
+            return replace_count
+    return replace_count
+
 
 def get_wildcards(tree):
     return peekable(tree.scan_values(lambda x: isinstance(x, WildCard)))
+
 
 def get_wildcards_forest(trees):
     """
@@ -75,7 +77,7 @@ def chunker(seq, size):
 
 
 def save_data(data, out_path):
-    if len(data)== 0:
+    if len(data) == 0:
         print("Set is empty, not saving file")
         return
     data = sorted(data, key=lambda x: len(x[0]))

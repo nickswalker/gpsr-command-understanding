@@ -118,7 +118,7 @@ def main():
             groundings = generator.generate_groundings((utt, logical), random_source)
             groundings = itertools.islice(groundings, args.groundings)
             for grounded_utt, grounded_logical in groundings:
-                grounded_pairs[tree_printer(grounded_utt)] = tree_printer(grounded_logical)
+                grounded_pairs[grounded_utt] = grounded_logical
 
         pairs = merge_dicts(pairs, grounded_pairs)
 

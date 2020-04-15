@@ -35,8 +35,8 @@ class KnowledgeBase:
         beacons = locations_parser.get_all_beacons()
         placements = locations_parser.get_all_placements()
         rooms = locations_parser.get_all_rooms()
-        gestures = gestures_parser.get_gestures()
-        questions = question_parser.get_question_answer_dict()
+        gestures = list(gestures_parser.get_gestures())
+        questions = list(question_parser.get_question_answer_dict().keys())
 
         by_name = {
             "object": objects,
@@ -48,6 +48,7 @@ class KnowledgeBase:
             "room": rooms,
             "gesture": gestures,
             "question": questions,
+            # FIXME: Load these from somewhere
             "whattosay": ["a joke"]
         }
         return KnowledgeBase(by_name)

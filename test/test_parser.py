@@ -8,6 +8,7 @@ from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import tree_printer, DiscardMeta
 from gpsr_command_understanding.generator.loading_helpers import load_paired, GRAMMAR_DIR_2018, GRAMMAR_DIR_2019, \
     load_paired_2018, load_2018
+from gpsr_command_understanding.generator.paired_generator import PairedGenerator
 from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
 from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
@@ -19,8 +20,9 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestParsers(unittest.TestCase):
 
     def test_parse_utterance(self):
-        generator = Generator(grammar_format_version=2019)
-        generator.load_rules(open(os.path.join(FIXTURE_DIR, "grammar.txt")), expand_shorthand=False)
+        generator = Generator(None, grammar_format_version=2019)
+        with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as grammar_file:
+            generator.load_rules(grammar_file, expand_shorthand=False)
         parser = GrammarBasedParser(generator.rules)
         test = parser("say hi to him right now please")
         self.assertEqual(7, len(test.children[0].children))
@@ -28,7 +30,7 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(5, len(test.children[0].children))
 
     def test_parse_all_of_2018(self):
-        generator = load_paired_2018(GRAMMAR_DIR_2018)
+        generator = load_2018(GRAMMAR_DIR_2018)
 
         sentences = generator.generate(ROOT_SYMBOL)
         parser = GrammarBasedParser(generator.rules)
@@ -70,8 +72,8 @@ class TestParsers(unittest.TestCase):
         some_sentence = sentences[0]
         tweaked = some_sentence[:-1]
         expected_parse = parser(some_sentence)
-        self.assertEqual(nearest_neighbor_parser(some_sentence), expected_parse)
-        self.assertEqual(nearest_neighbor_parser(tweaked), expected_parse)
+        self.assertEqual(expected_parse, nearest_neighbor_parser(some_sentence))
+        self.assertEqual(expected_parse, nearest_neighbor_parser(tweaked))
 
     def test_anonymizer(self):
         entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["corridor"],["counter"],["bedroom", "kitchen", "living room"], ["waving"])
@@ -90,10 +92,10 @@ class TestParsers(unittest.TestCase):
             "Bring the <object 1> from the <room 1> and put it next to the other <object 2> in the <room 2>")
 
     def test_parse_all_2019_ungrounded(self):
-        generator = Generator(None, grammar_format_version=2019)
+        generator = PairedGenerator(None, grammar_format_version=2019)
         load_paired(generator, "gpsr", GRAMMAR_DIR_2019)
 
-        pairs = generator.generate(ROOT_SYMBOL, {}, yield_requires_semantics=False,
+        pairs = generator.generate((ROOT_SYMBOL, {}), yield_requires_semantics=False,
                                                   random_generator=random.Random(1))
         stripper = DiscardMeta()
         pairs = [(stripper.visit(sentence), semantics) for sentence, semantics in pairs]

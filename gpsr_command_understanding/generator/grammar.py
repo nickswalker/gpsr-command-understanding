@@ -4,7 +4,7 @@ from gpsr_command_understanding.util import replace_child, to_num
 
 from gpsr_command_understanding.generator.tokens import *
 
-from lark import Tree, Transformer, Visitor
+from lark import Tree, Transformer, Visitor, Token
 
 
 class TypeConverter(Transformer):
@@ -14,6 +14,7 @@ class TypeConverter(Transformer):
     """
     def bare_choice(self, children):
         return Tree("choice", children)
+
     def top_expression(self, children):
         # Bake the top expression down
         if len(children) == 1 and isinstance(children[0], Tree) and children[0].data == "expression":
@@ -143,6 +144,9 @@ class ToString(Transformer):
                 as_str += " " + child.to_human_readable()
             elif isinstance(child, NonTerminal):
                 as_str += " " + child.to_human_readable()
+            elif isinstance(child, Token) and child.type == "ESCAPED_STRING":
+                assert child.value[0] == child.value[-1] == "\""
+                as_str += " \" " + child.value[1:-1] + " \""
             else:
                 as_str += " " + str(child)
         return as_str[1:]
@@ -160,11 +164,6 @@ class ToString(Transformer):
         return "{} = {}".format(children[0], children[1])
 
     def predicate(self, children):
-        # Check for any string constant args and make sure they have
-        # padding spaces between text and the quote marks
-        for i, child in enumerate(children):
-            if isinstance(child, str) and child[0] == "\"" and child[1] != " ":
-                children[i] = "\" " + child[1:-1] + " \""
         return "( {} )".format(self.__default__(None, children, None))
 
     def lambda_abs(self, children):

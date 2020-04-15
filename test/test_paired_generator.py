@@ -3,7 +3,7 @@ import os
 
 import unittest
 
-from lark import Tree
+from lark import Tree, Token
 
 from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import NonTerminal, ROOT_SYMBOL, tree_printer, ComplexWildCard
@@ -99,18 +99,19 @@ class TestPairedGenerator(unittest.TestCase):
     def test_ground(self):
         def expr_builder(string):
             return Tree("expression", string.split(" "))
-        generator = load_paired_2018(GRAMMAR_DIR_2018)
 
         test_tree = Tree("expression", ["Say", "hi", "to", ComplexWildCard("name", wildcard_id=1), "and", ComplexWildCard("name", wildcard_id=2)])
-        expected = expr_builder("Say hi to x and y")
+        test_sem = Tree("expression", [Tree("greet", [ComplexWildCard("name", wildcard_id=1), ComplexWildCard("name", wildcard_id=2)])])
+        expected_utt = expr_builder("Say hi to n1 and n2")
+        expected_logical = Tree("expression", [Tree("greet", [Token("ESCAPED_STRING","\"n1\""), Token("ESCAPED_STRING","\"n2\"")])])
         # FIXME: Setup a mocked knowledgebase
-        #self.assertEqual(expected, generator.ground(test_tree))
+        self.assertEqual((expected_utt, expected_logical), self.generator.ground((test_tree, test_sem)))
 
         # Never repeat
         test_tree = Tree("expression", [ComplexWildCard("name", wildcard_id=1), ComplexWildCard("name", wildcard_id=2)])
-        groundings = generator.generate_groundings(test_tree)
-        for grounding in groundings:
-            first, second = grounding.children
+        groundings = self.generator.generate_groundings((test_tree, test_tree))
+        for ground_utt, ground_logical in groundings:
+            first, second = ground_utt.children
             self.assertNotEqual(first, second)
 
         test_tree = Tree("expression", [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2)])

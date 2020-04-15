@@ -3,7 +3,7 @@ import sys
 from itertools import zip_longest
 
 import importlib_resources
-from lark import Lark, exceptions, Tree
+from lark import Lark, exceptions, Tree, Token
 
 from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import RemovePrefix, TypeConverter, CompactUnderscorePrefixed, \
@@ -120,11 +120,6 @@ class PairedGenerator(Generator):
 
         return i
 
-    def generate_random(self, start_symbols, yield_requires_semantics=False, random_generator=None):
-        return next(
-            self.generate(start_symbols, yield_requires_semantics=yield_requires_semantics,
-                                          branch_cap=1, random_generator=random_generator))
-
     def generate(self, start_tree, start_semantics=None, yield_requires_semantics=True,
                                       branch_cap=None, random_generator=None):
         """
@@ -200,13 +195,13 @@ class PairedGenerator(Generator):
                                              branch_cap=branch_cap, random_generator=random_generator)
 
     def expand_pair(self, sentence, semantics, branch_cap=None, random_generator=None):
-        replace_token = list(sentence.scan_values(lambda x: x in self.rules.keys()))
+        replace_tokens = list(sentence.scan_values(lambda x: x in self.rules.keys()))
 
-        if not replace_token:
+        if not replace_tokens:
             return
 
         if random_generator:
-            replace_token = random_generator.choice(replace_token)
+            replace_token = random_generator.choice(replace_tokens)
             replacement_rules = self.rules[replace_token]
             if branch_cap:
                 productions = random_generator.sample(replacement_rules, k=branch_cap)
@@ -216,7 +211,7 @@ class PairedGenerator(Generator):
                 random_generator.shuffle(productions)
         else:
             # We know we have at least one, so we'll just use the first
-            replace_token = replace_token[0]
+            replace_token = replace_tokens[0]
             productions = self.rules[replace_token]
 
         for production in productions:
@@ -232,12 +227,10 @@ class PairedGenerator(Generator):
             modified_semantics = None
             if semantics:
                 modified_semantics = copy.deepcopy(semantics)
-                sem_substitute = production
-                if isinstance(replace_token, WildCard) or (
-                        len(production.children) > 0 and isinstance(production.children[0], Anonymized)):
-                    sem_substitute = production.copy()
-                    sem_substitute.children = ["\""] + sem_substitute.children + ["\""]
-                replace_child_in_tree(modified_semantics, replace_token, sem_substitute)
+                # NOTE: Produce needs to be a properly specified tree for the semantics to come out properly
+                # Especially important if the rule expands to string. This needs to be a single
+                # Token("ESCAPED_STRING",...)
+                replace_child_in_tree(modified_semantics, replace_token, production)
             yield sentence_filled, modified_semantics
 
     def expand_all_semantics(self):
@@ -247,17 +240,16 @@ class PairedGenerator(Generator):
         for utterance, parse in self.semantics.items():
             yield from self.generate(utterance, False)
 
-    def generate_groundings(self, pair, random_source=None):
+    def generate_groundings(self, pair, random_generator=None):
         utt, logical = pair
-        assignments = self.generate_grounding_assignment(utt, random_source=random_source)
+        assignments = self.generate_grounding_assignments(utt, random_generator=random_generator)
         for assignment in assignments:
             grounded_utt = copy.deepcopy(utt)
             grounded_logical = copy.deepcopy(logical)
             for token, replacement in assignment.items():
                 replace_child_in_tree(grounded_utt, token, replacement)
-                replace_child_in_tree(grounded_logical, token, replacement)
+                replace_child_in_tree(grounded_logical, token, Token("ESCAPED_STRING", "\""+replacement+"\""))
             yield grounded_utt, grounded_logical
-
 
     def _print_semantics_rules(self):
         for key, expansion in self.semantics.items():
