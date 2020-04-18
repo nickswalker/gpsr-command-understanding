@@ -10,7 +10,7 @@ from lark import Lark, Tree, exceptions
 from gpsr_command_understanding.generator.grammar import TypeConverter, expand_shorthand, NonTerminal, \
     CombineExpressions, DiscardVoid
 from gpsr_command_understanding.util import replace_child_in_tree, \
-    get_wildcards, has_nonterminals
+    get_wildcards, has_nonterminals, ParseForward
 from gpsr_command_understanding.generator.grammar import tree_printer
 
 try:
@@ -27,16 +27,16 @@ class Generator:
     def __init__(self, knowledge_base, grammar_format_version=2018):
         self._grammar_format_version = grammar_format_version
         grammar_spec = GENERATOR_GRAMMARS[grammar_format_version]
-        self.grammar_parser = Lark(grammar_spec,
-                                   start='rule_start', parser="lalr", transformer=TypeConverter())
-        self.sequence_parser = Lark(grammar_spec,
-                                    start='expression_start', parser="lalr", transformer=TypeConverter())
+        self.__grammar_parser = Lark(grammar_spec,
+                                     start=['rule_start', 'expression_start'], parser="lalr", transformer=TypeConverter())
+        self.rule_parser = ParseForward(self.__grammar_parser, "rule_start")
+        self.sequence_parser = ParseForward(self.__grammar_parser, "expression_start")
         self.rules = {}
         self.knowledge_base = knowledge_base
 
     def parse_production_rule(self, line, expand=True):
         try:
-            parsed = self.grammar_parser.parse(line)
+            parsed = self.rule_parser.parse(line)
         except exceptions.LarkError as e:
             raise e
 

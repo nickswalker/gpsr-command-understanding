@@ -11,7 +11,7 @@ wildcard: _simple_wildcard | _rich_wildcard
 _simple_wildcard: "{" _pronoun_wildcard "}"
 _rich_wildcard:     "{" _card_type INT? condition? meta? "}"
 condition: "where" (simple_constraint ( "and"? simple_constraint)*)
-simple_constraint: WORD ("=" | "!=") (QUOTE WORD QUOTE | ("true" | "false"))
+simple_constraint: WORD ("=" | "!=") (ESCAPED_STRING | BOOL)
 meta: "meta:" (WORD | wildcard | non_terminal | choice | COMMA | LPAREN | RPAREN | COLON | DASH | PERIOD | QUOTE | INT)+
 
 _card_type: (location_wildcard_super | name_wildcard | object_wildcard_super | void_wildcard | question_wildcard | gesture_wildcard | category_wildcard | whattosay_wildcard)
@@ -50,6 +50,7 @@ QUOTE: "\""
 QUESTION_MARK:    "?"
 WORD: (LETTER | "'" | "-")+
 COMMENT: ("#"|";"|"//") /[^\n]/*
+BOOL: ("true" | "false")
 
 %ignore COMMENT
 %import common.ESCAPED_STRING

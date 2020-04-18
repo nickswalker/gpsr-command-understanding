@@ -36,7 +36,16 @@ class TypeConverter(Transformer):
                 wildcard_id = to_num(children[1])
             elif isinstance(child, Tree):
                 if child.data == "condition":
-                    conditions = child.children
+                    conditions = {}
+                    for condition in child.children:
+                        key = condition.children[0]
+                        value = condition.children[1]
+                        # Chop the quotes off if necessary
+                        if isinstance(value, Token) and value.type == "ESCAPED_STRING":
+                            value = value[1:-1]
+                        elif isinstance(value, Token) and value.type =="BOOL":
+                            value = bool(value)
+                        conditions[key] = value
                 elif child.data == "meta":
                     meta = child.children
                 elif child == "?":

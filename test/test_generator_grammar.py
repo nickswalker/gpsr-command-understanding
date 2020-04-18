@@ -7,6 +7,7 @@ from lark import Lark
 
 from gpsr_command_understanding.generator.generator import GENERATOR_GRAMMARS
 from gpsr_command_understanding.generator.grammar import expand_shorthand, TypeConverter
+from gpsr_command_understanding.util import ParseForward
 
 GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
 GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"
@@ -16,19 +17,19 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestGenerator(unittest.TestCase):
 
     def setUp(self):
-        self.rule_parser = Lark(GENERATOR_GRAMMARS[2018],
-                                start='rule_start', parser="lalr", transformer=TypeConverter())
-        self.sequence_parser = Lark(GENERATOR_GRAMMARS[2018],
-                                    start='expression_start', parser="lalr", transformer=TypeConverter())
+        self.__grammar_parser = Lark(GENERATOR_GRAMMARS[2018],
+                                start=['rule_start', 'expression_start'], parser="lalr", transformer=TypeConverter())
+        self.rule_parser = ParseForward(self.__grammar_parser, "rule_start")
+        self.sequence_parser = ParseForward(self.__grammar_parser, "expression_start")
 
     def test_ignore_comment(self):
         comments = ["", "# this is a comment", "; this is a comment", "// this is a comment",
                     '; grammar name Category I', "# test"]
         for comment in comments:
             test = self.rule_parser.parse(comment)
-            self.assertEqual(test.children, [])
+            self.assertEqual([], test.children)
         test = self.rule_parser.parse("// Ignore this\n $test = But not this")
-        self.assertNotEqual(test.children, [])
+        self.assertNotEqual([], test.children)
 
     def test_parse_rule(self):
         test = self.rule_parser.parse("$test = {pron} went to the mall and {location} $go $home")
@@ -89,14 +90,18 @@ class TestGenerator(unittest.TestCase):
 
     def test_parse_wildcard_condition(self):
         test = self.sequence_parser.parse("{object where Category=\"test\"}").children[0]
-        self.assertEqual(len(test.conditions), 1)
+        self.assertEqual(1, len(test.conditions))
+        self.assertEqual("test", test.conditions["Category"])
         test = self.sequence_parser.parse("{object where Category=\"test\" and canPour=\"true\"}").children[0]
         self.assertEqual(len(test.conditions), 2)
+        self.assertEqual("test", test.conditions["Category"])
+        self.assertEqual("true", test.conditions["canPour"])
 
         # Check boolean conditions
 
         test = self.sequence_parser.parse("{object where canPourIn=true}").children[0]
         self.assertEqual(1, len(test.conditions))
+        self.assertEqual(True, test.conditions["canPourIn"])
 
     def test_parse_pronouns(self):
         pronoun_types = ["pron", "pron obj", "pron sub", "pron pos", "pron paj", "pron posabs", "pron posadj"]
@@ -143,12 +148,3 @@ class TestGenerator(unittest.TestCase):
         test = self.sequence_parser.parse(test_rule)
         self.assertEqual(len(test.children), 1)
         self.assertEqual(len(test.children[0].metadata), 36)
-
-    def test_parse_where(self):
-        # FIXME(nickswalker): Implement grounder constraints. Used in EGPSR
-        test_rule = '{object where Category="food" canPour=true}'
-        test = self.sequence_parser.parse(test_rule)
-        self.assertEqual(len(test.children), 1)
-        self.assertEqual(len(test.children[0].constraints), 2)
-        test_rule = '{object where Category="snacks"}'
-        test_rule = '{object where fruit=true}'

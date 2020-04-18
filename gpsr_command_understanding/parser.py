@@ -6,9 +6,9 @@ import editdistance
 import lark
 from lark import Transformer, Lark, Tree
 
-from gpsr_command_understanding.grammar import DiscardVoid
-from gpsr_command_understanding.tokens import NonTerminal, WildCard
-from gpsr_command_understanding.util import get_wildcards
+from gpsr_command_understanding.generator.grammar import DiscardVoid, DiscardMeta
+from gpsr_command_understanding.generator.tokens import NonTerminal, WildCard
+from gpsr_command_understanding.util import get_wildcards_forest
 
 from queue import PriorityQueue
 
@@ -70,18 +70,18 @@ class GrammarBasedParser(object):
         rch_to_ebnf = ToEBNF()
         as_ebnf = ""
         void_remover = DiscardVoid()
+        meta_remover = DiscardMeta()
 
         all_wildcard_lhs = [non_term for non_term, _ in rules.items() if isinstance(non_term, WildCard)]
         if len(all_wildcard_lhs) == 0:
-            all_rule_trees = [tree for _, trees in rules.items() for tree in trees]
-            wildcards = get_wildcards(all_rule_trees)
-            for wildcard in wildcards:
-                # Metadata is used during generation, but won't appear in parsing input
-                wildcard.metadata = None
+            all_rule_trees = [tree for _, productions in rules.items() for tree in productions]
+            # Meta info doesn't affect the text of the command
+            for tree in all_rule_trees:
+                meta_remover.visit(tree)
+            wildcards = get_wildcards_forest(all_rule_trees)
             for wildcard in wildcards:
                 rules[wildcard] = [Tree("expression", [wildcard.to_human_readable()])]
         for non_term, productions in rules.items():
-
             # TODO: bake this into WildCard and NonTerminal types
             non_term_name = non_term.name.lower()
             if isinstance(non_term, WildCard):

@@ -99,3 +99,12 @@ def to_num(s):
         return int(s)
     except ValueError:
         return None
+
+
+class ParseForward:
+    def __init__(self, parser, start):
+        self.__parser = parser
+        self.__start = start
+
+    def parse(self, string):
+        return self.__parser.parse(string, self.__start)
