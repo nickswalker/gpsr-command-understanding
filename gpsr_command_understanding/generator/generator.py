@@ -1,14 +1,14 @@
 import copy
 import re
 from collections import defaultdict
+from operator import index
 from string import printable
 
 import importlib_resources
 from lark import Lark, Tree, exceptions
 
-
 from gpsr_command_understanding.generator.grammar import TypeConverter, expand_shorthand, NonTerminal, \
-    CombineExpressions, DiscardVoid
+    CombineExpressions, DiscardVoid, ROOT_SYMBOL, ComplexWildCard
 from gpsr_command_understanding.util import replace_child_in_tree, \
     get_wildcards, has_nonterminals, ParseForward
 from gpsr_command_understanding.generator.grammar import tree_printer
@@ -28,7 +28,8 @@ class Generator:
         self._grammar_format_version = grammar_format_version
         grammar_spec = GENERATOR_GRAMMARS[grammar_format_version]
         self.__grammar_parser = Lark(grammar_spec,
-                                     start=['rule_start', 'expression_start'], parser="lalr", transformer=TypeConverter())
+                                     start=['rule_start', 'expression_start'], parser="lalr",
+                                     transformer=TypeConverter())
         self.rule_parser = ParseForward(self.__grammar_parser, "rule_start")
         self.sequence_parser = ParseForward(self.__grammar_parser, "expression_start")
         self.rules = {}
@@ -46,7 +47,7 @@ class Generator:
         rhs_list_expanded = [parsed.children[1]]
         if expand:
             rhs_list_expanded = expand_shorthand(parsed.children[1])
-        #print(parsed.pretty())
+        # print(parsed.pretty())
         return parsed.children[0], rhs_list_expanded
 
     def load_rules(self, grammar_files, expand_shorthand=True):
@@ -96,18 +97,22 @@ class Generator:
 
         constraints = defaultdict(set)
         for wildcard in wildcards:
-            # Could be another instance of the same wildcard
             if wildcard.name == "pron":
                 # FIXME(nickswalker): Something here about pointing to the nearest name
-                pass
+                continue
+            # IDs impose uniqueness constraints.
             elif wildcard.id:
                 constraints[wildcard] = set()
+                # Could be another instance of the same wildcard. It's constrained already so skip it
                 if wildcard in assignment:
                     continue
                 for other_wildcard, item_constraints in constraints.items():
                     # Any wildcard of the same name with a different ID needs to be different
                     if other_wildcard.name == wildcard.name and other_wildcard.id != wildcard.id:
                         constraints[wildcard].add(other_wildcard)
+            if wildcard.conditions:
+                for key, value in wildcard.conditions.items():
+                    constraints[wildcard].add((key, value))
 
         yield from self.__populate_with_constraints(tree, constraints, random_generator=random_generator)
 
@@ -118,6 +123,7 @@ class Generator:
             return
         wildcard = next(wildcards)
         item_constraints = constraints[wildcard]
+        # What things are possibilities to fill this slot?
         if wildcard.name == "pron":
             candidates = ["them"]
         else:
@@ -126,18 +132,27 @@ class Generator:
             if random_generator:
                 random_generator.shuffle(candidates)
         for candidate in candidates:
-            if isinstance(item_constraints, set):
-                valid = True
-                for constraint in item_constraints:
+            if not isinstance(item_constraints, set):
+                # We should have already replaced this wildcard if it has a fixed constraint
+                assert False
+            valid = True
+            for constraint in item_constraints:
+                if isinstance(constraint, ComplexWildCard):
                     # Constraints only point backwards, so this constraint is saying that current wildcard
                     # must be different from a previously fixed value
                     if candidate == constraints[constraint]:
                         valid = False
-                if not valid:
-                    continue
-            else:
-                # We should have already replaced this wildcard if it has a fixed constraint
-                assert False
+                elif isinstance(constraint, tuple):
+                    # This is some attribute that must have a certain value
+                    attribute_name, value = constraint
+                    attributes_for_type = self.knowledge_base.attributes[wildcard.name]
+                    if attribute_name not in attributes_for_type.keys():
+                        raise RuntimeError(attribute_name + " is not a valid attribute for wildcard type " + wildcard.name)
+                    if attributes_for_type[attribute_name].get(candidate) != value:
+                        valid = False
+            if not valid:
+                continue
+
             fixed = copy.deepcopy(constraints)
             fresh_tree = copy.deepcopy(tree)
             fixed[wildcard].clear()
@@ -171,9 +186,9 @@ class Generator:
             if replace_tokens:
                 if random_generator:
                     replace_token = random_generator.choice(replace_tokens)
-                    replacement_rules = self.rules[replace_token]
+                    productions = self.rules[replace_token]
                     if branch_cap:
-                        productions = random_generator.sample(replacement_rules, k=branch_cap)
+                        productions = random_generator.sample(productions, k=min(branch_cap, len(productions)))
                     else:
                         # Use all of the branches
                         productions = self.rules[replace_token]
@@ -181,6 +196,8 @@ class Generator:
                 else:
                     replace_token = replace_tokens[0]
                     productions = self.rules[replace_token]
+                    if branch_cap:
+                        productions = productions[:min(branch_cap, len(productions))]
 
                 # Replace it every way we know how
                 for production in productions:
@@ -191,7 +208,29 @@ class Generator:
             else:
                 # If we couldn't replace anything else, this sentence is done!
                 sentence = CombineExpressions().visit(sentence)
-                sentence = DiscardVoid().visit(sentence)
                 # If we have unexpanded non-terminals, something is wrong with the rules
                 assert not has_nonterminals(sentence)
                 yield sentence
+
+    def extract_metadata(self, tree):
+        """
+        Remove wildcard metadata from the tree and list it in another object
+        :param tree: The tree to pull metadata from
+        :return: a tuple of the modified tree and a dictionary mapping wildcards or indices in the tree to the metadata
+        """
+        # Process metadata on wildcards
+        sentence_metadata = {}
+        wildcards = list(tree.scan_values(lambda x: isinstance(x, ComplexWildCard)))
+        for wildcard in wildcards:
+            card_meta = wildcard.metadata
+            if wildcard.name == "void":
+                # These are going to get removed, so key by index
+                index = tree.children.index(wildcard)
+
+            else:
+                index = wildcard
+            sentence_metadata[index] = card_meta
+            wildcard.metadata = None
+
+        tree = DiscardVoid().visit(tree)
+        return tree, sentence_metadata

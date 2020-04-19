@@ -68,13 +68,18 @@ def load_paired_2018(grammar_dir):
 
 def load(generator, task, grammar_dir, expand_shorthand=True):
     generator.knowledge_base = KnowledgeBase.from_xml_dir(grammar_dir)
-    with importlib_resources.open_text(grammar_dir, "common_rules.txt") as common_rules_file, importlib_resources.open_text(grammar_dir, task + ".txt") as task_rules:
-        generator.load_rules([common_rules_file, task_rules],
-                             expand_shorthand=expand_shorthand)
+    with importlib_resources.open_text(grammar_dir, task + ".txt") as task_rules_file:
+        task_rules = task_rules_file.readlines()
+    # Only load common rules if they're imported in this task's grammar
+    if any(map(lambda rule: "common.txt" in rule, task_rules)):
+        with importlib_resources.open_text(grammar_dir, "common_rules.txt") as common_rules_file:
+            task_rules += common_rules_file.readlines()
+    generator.load_rules([task_rules],
+                         expand_shorthand=expand_shorthand)
 
 
 def load_paired(generator, task, grammar_dir, expand_shorthand=True):
     load(generator, task, grammar_dir, expand_shorthand=expand_shorthand)
     generator = PairedGenerator.from_generator(generator)
-    with importlib_resources.open_text(grammar_dir, "gpsr_semantics.txt") as semantics:
+    with importlib_resources.open_text(grammar_dir, task + "_semantics.txt") as semantics:
         generator.load_semantics_rules(semantics)

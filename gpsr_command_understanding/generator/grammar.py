@@ -38,13 +38,14 @@ class TypeConverter(Transformer):
                 if child.data == "condition":
                     conditions = {}
                     for condition in child.children:
-                        key = condition.children[0]
+                        # Key names are case insensitive
+                        key = condition.children[0].lower()
                         value = condition.children[1]
                         # Chop the quotes off if necessary
                         if isinstance(value, Token) and value.type == "ESCAPED_STRING":
                             value = value[1:-1]
-                        elif isinstance(value, Token) and value.type =="BOOL":
-                            value = bool(value)
+                        elif isinstance(value, Token) and value.type == "BOOL":
+                            value = value.lower() == "true"
                         conditions[key] = value
                 elif child.data == "meta":
                     meta = child.children
@@ -94,7 +95,6 @@ class TypeConverter(Transformer):
         elif "question" in typed.data:
             return ComplexWildCard("question", type, wildcard_id=wildcard_id, meta=meta, conditions=conditions)
         elif "void" in typed.data:
-
             return ComplexWildCard("void", type, wildcard_id=wildcard_id, meta=meta, conditions=conditions)
         elif "whattosay" in typed.data:
             return ComplexWildCard("whattosay", wildcard_id=wildcard_id, meta=meta, conditions=conditions)

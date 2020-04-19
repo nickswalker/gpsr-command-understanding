@@ -4,12 +4,16 @@
 class NonTerminal(object):
     def __init__(self, name):
         self.name = name
+
     def to_human_readable(self):
         return "$" + self.name
+
     def __str__(self):
         return "NonTerminal({})".format(self.name)
+
     def __hash__(self):
         return hash(self.__str__())
+
     def __eq__(self, other):
         return isinstance(other, NonTerminal) and self.name == other.name
 
@@ -42,49 +46,54 @@ class ComplexWildCard(WildCard):
         super(ComplexWildCard, self).__init__(name)
 
     def __str__(self):
-        obfuscated_str = '?' if self.obfuscated else ""
-        type_str = self.type if self.type else ""
-        extra_str = self.id if self.id else ""
-        if self.metadata:
-            meta_members_as_str = list(map(str, self.metadata))
-            meta_str = "meta: " + " ".join(meta_members_as_str)
-        else:
-            meta_str = ""
-        return "Wildcard(" + '{} {} {} {} {}'.format(self.name, type_str, extra_str, obfuscated_str,
-                                                     meta_str).strip() + ')'
+        return "Wildcard(" + self.to_human_readable()[1:-1] + ')'
 
     def to_human_readable(self):
-        obfuscated_str = '?' if self.obfuscated else ""
-        type_str = self.type if self.type else ""
-        extra_str = self.id if self.id else ""
+        obfuscated_str = '?' if self.obfuscated else None
         if self.metadata:
             meta_members_as_str = list(map(str, self.metadata))
             meta_str = "meta: " + " ".join(meta_members_as_str)
         else:
-            meta_str = ""
-        return '{' + "{} {} {} {} {}".format(self.name, type_str, extra_str, obfuscated_str, meta_str).strip() + '}'
+            meta_str = None
+        if self.conditions:
+            conditions_str = "where "
+            for key, value in self.conditions.items():
+                if isinstance(value, str):
+                    conditions_str += "{}=\"{}\" ".format(key, value)
+                else:
+                    conditions_str += "{}={} ".format(key, value)
+            conditions_str = conditions_str[:-1]
+        else:
+            conditions_str = None
+        # Get the args in the right order as strings
+        args_to_map = filter(lambda x: x is not None, [self.name, self.type, self.id, obfuscated_str, conditions_str, meta_str])
+        args_str = map(str, args_to_map)
+        return '{' + " ".join(args_str) + '}'
 
     def to_snake_case(self):
-        items = [self.name]
-        if self.type: items.append(self.type)
-        if self.id: items.append(self.id)
-        if self.obfuscated: items.append("?")
+        obfuscated_str = '?' if self.obfuscated else None
+        items = [self.name, self.type, self.id, obfuscated_str]
+        items = filter(lambda x: x is not None, items)
         return "_".join(map(str, items))
 
     def __hash__(self):
         return hash(self.__str__())
+
     def __eq__(self, other):
         return isinstance(other,
-                          WildCard) and self.name == other.name and self.type == other.type and self.id == other.id and self.obfuscated == other.obfuscated
+                          WildCard) and self.name == other.name and self.type == other.type and self.id == other.id and self.obfuscated == other.obfuscated and self.conditions == other.conditions
 
 
 class Anonymized(object):
     def __init__(self, name):
         self.name = name
+
     def __str__(self):
         return "<{}>".format(self.name)
+
     def __hash__(self):
         return hash(self.__str__())
+
     def __eq__(self, other):
         return isinstance(other, Anonymized) and self.name == other.name
 

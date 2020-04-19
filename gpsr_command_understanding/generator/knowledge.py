@@ -5,8 +5,9 @@ from gpsr_command_understanding.generator.xml_parsers import ObjectParser, Locat
 
 
 class KnowledgeBase:
-    def __init__(self, items):
+    def __init__(self, items, attributes):
         self.by_name = items
+        self.attributes = attributes
 
     @staticmethod
     def from_xml_dir(xml_path):
@@ -37,6 +38,9 @@ class KnowledgeBase:
         rooms = locations_parser.get_all_rooms()
         gestures = list(gestures_parser.get_gestures())
         questions = list(question_parser.get_question_answer_dict().keys())
+        attributes = {"object": object_parser.get_attributes()}
+
+        attributes["object"]["category"] = object_parser.get_objects_to_categories()
 
         by_name = {
             "object": objects,
@@ -51,5 +55,5 @@ class KnowledgeBase:
             # FIXME: Load these from somewhere
             "whattosay": ["a joke"]
         }
-        return KnowledgeBase(by_name)
+        return KnowledgeBase(by_name, attributes)
 

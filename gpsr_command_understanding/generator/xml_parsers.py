@@ -1,3 +1,4 @@
+from collections import defaultdict
 from xml.etree import ElementTree as ET
 
 
@@ -9,9 +10,8 @@ class ObjectParser:
     def all_objects(self):
         all_objects = []
         root = self.tree.getroot()
-        for cat in root.findall("./category"):
-            for obj in cat:
-                all_objects.append(obj.attrib['name'])
+        for obj in root.findall("./category/object"):
+            all_objects.append(obj.attrib['name'])
         all_objects.sort(key=len)
         all_objects.reverse()
         return all_objects
@@ -24,11 +24,8 @@ class ObjectParser:
         return all_categories
 
     '''return dictionary mapping categories to items'''
-    def get_categories(self):
-        #parse xml
-        tree = ET.parse(self.object_file)
-        #get root (rooms in this case)
-        root = tree.getroot()
+    def get_categories_to_objects(self):
+        root = self.tree.getroot()
 
         categories = {}
         for cat in root.findall("./category"):
@@ -39,15 +36,41 @@ class ObjectParser:
              categories[cat_name] = cat_objs
         return categories
 
-    def get_object_color(self, object_name):
-        tree = ET.parse(self.object_file)
-        root = tree.getroot()
+    def get_objects_to_categories(self):
+        root = self.tree.getroot()
+
+        categories = {}
         for cat in root.findall("./category"):
+            cat_name = cat.attrib['name'].lower()
             for obj in cat:
-                if obj.attrib['name'].lower() == object_name.lower():
-                    return obj.attrib['color']
+                obj_name = obj.attrib['name'].lower()
+                categories[obj_name] = cat_name
+        return categories
+
+    def get_object_color(self, object_name):
+        root = self.tree.getroot()
+        for obj in root.findall("./category/object"):
+            if obj.attrib['name'].lower() == object_name.lower():
+                return obj.attrib['color']
         return None
 
+    def get_attributes(self):
+        root = self.tree.getroot()
+        all_obj = root.findall("./category/object")
+        attributes = defaultdict(lambda : defaultdict(None))
+        for obj in all_obj:
+            obj_name = obj.attrib["name"]
+            obj_attr = obj.attrib
+            for attr_name, value in obj_attr.items():
+                if value.lower() in ["true", "false"]:
+                    value = value.lower() == "true"
+                # Attribute names are caseinsensitive
+                attr_name = attr_name.lower()
+                if attr_name == "name":
+                    continue
+                else:
+                    attributes[attr_name][obj_name] = value
+        return attributes
 
 class LocationParser(object):
 

@@ -120,7 +120,7 @@ class PairedGenerator(Generator):
 
         return i
 
-    def generate(self, start_tree, start_semantics=None, yield_requires_semantics=True,
+    def generate(self, start_pair, yield_requires_semantics=True,
                                       branch_cap=None, random_generator=None):
         """
         Expand the start_symbols in breadth first order. At each expansion, see if we have an associated semantic template.
@@ -134,15 +134,17 @@ class PairedGenerator(Generator):
         """
 
         # Make sure the start point is a Tree
-        if isinstance(start_tree, NonTerminal):
-            start_tree = Tree("expression", [start_tree])
-        elif isinstance(start_tree, list):
-            start_tree = Tree("expression", start_tree)
+        if isinstance(start_pair, NonTerminal):
+            start_pair = (Tree("expression", [start_pair]), None)
+        elif isinstance(start_pair, list):
+            start_pair = (Tree("expression", start_pair), None)
+        elif isinstance(start_pair, Tree):
+            start_pair = (start_pair, None)
         else:
-            assert isinstance(start_tree, Tree)
+            assert isinstance(start_pair, tuple) and isinstance(start_pair[0], Tree)
 
         frontier = queue()
-        frontier.put((start_tree, start_semantics))
+        frontier.put(start_pair)
         while not frontier.empty():
             sentence, semantics = frontier.get()
             if not semantics:
@@ -151,6 +153,7 @@ class PairedGenerator(Generator):
             expansions = list(self.expand_pair(sentence, semantics, branch_cap=branch_cap,
                                           random_generator=random_generator))
             if not expansions:
+                assert not has_nonterminals(sentence)
                 # If we couldn't replace anything else, this sentence is done!
                 if semantics:
                     DiscardVoid().visit(semantics)
@@ -158,7 +161,7 @@ class PairedGenerator(Generator):
                     sem_placeholders_remaining = get_placeholders(semantics)
                     sentence_placeholders_remaining = get_placeholders(sentence)
                     # If we have unexpanded non-terminals, something is wrong with the rules
-                    assert not has_nonterminals(semantics) and not has_nonterminals(sentence)
+                    assert not has_nonterminals(semantics)
                     # Are there placeholders in the semantics that aren't left in the sentence? These will never get expanded,
                     # so it's almost certainly an error
                     probably_should_be_filled = sem_placeholders_remaining.difference(sentence_placeholders_remaining)
@@ -202,9 +205,9 @@ class PairedGenerator(Generator):
 
         if random_generator:
             replace_token = random_generator.choice(replace_tokens)
-            replacement_rules = self.rules[replace_token]
+            productions = self.rules[replace_token]
             if branch_cap:
-                productions = random_generator.sample(replacement_rules, k=branch_cap)
+                productions = random_generator.sample(productions, k=min(branch_cap, len(productions)))
             else:
                 # Use all of the branches
                 productions = self.rules[replace_token]
@@ -213,6 +216,8 @@ class PairedGenerator(Generator):
             # We know we have at least one, so we'll just use the first
             replace_token = replace_tokens[0]
             productions = self.rules[replace_token]
+            if branch_cap:
+                productions = productions[:min(branch_cap, len(productions))]
 
         for production in productions:
             modified_sentence = copy.deepcopy(sentence)

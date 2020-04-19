@@ -18,7 +18,7 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestPairedGenerator(unittest.TestCase):
 
     def setUp(self):
-        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"]})
+        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"]}, {})
         self.generator = PairedGenerator(kb, grammar_format_version=2018)
         with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as fixture_grammar_file, open(os.path.join(FIXTURE_DIR, "semantics.txt")) as fixture_semantics_file:
             num_rules = self.generator.load_rules(fixture_grammar_file)
@@ -74,7 +74,7 @@ class TestPairedGenerator(unittest.TestCase):
         load_paired(gen, "egpsr", GRAMMAR_DIR_2019)
 
         rules, semantics = gen.rules, gen.semantics
-        self.assertEqual(124, len(rules))
+        self.assertEqual(100, len(rules))
         self.assertEqual(0, len(semantics))
         # To manually inspect correctness for now...
         """for nonterm, rules in all_2019[0].items():

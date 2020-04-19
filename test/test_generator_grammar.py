@@ -91,17 +91,17 @@ class TestGenerator(unittest.TestCase):
     def test_parse_wildcard_condition(self):
         test = self.sequence_parser.parse("{object where Category=\"test\"}").children[0]
         self.assertEqual(1, len(test.conditions))
-        self.assertEqual("test", test.conditions["Category"])
-        test = self.sequence_parser.parse("{object where Category=\"test\" and canPour=\"true\"}").children[0]
+        self.assertEqual("test", test.conditions["category"])
+        test = self.sequence_parser.parse("{object where category=\"test\" and canPour=\"true\"}").children[0]
         self.assertEqual(len(test.conditions), 2)
-        self.assertEqual("test", test.conditions["Category"])
-        self.assertEqual("true", test.conditions["canPour"])
+        self.assertEqual("test", test.conditions["category"])
+        self.assertEqual("true", test.conditions["canpour"])
 
         # Check boolean conditions
 
         test = self.sequence_parser.parse("{object where canPourIn=true}").children[0]
         self.assertEqual(1, len(test.conditions))
-        self.assertEqual(True, test.conditions["canPourIn"])
+        self.assertEqual(True, test.conditions["canpourin"])
 
     def test_parse_pronouns(self):
         pronoun_types = ["pron", "pron obj", "pron sub", "pron pos", "pron paj", "pron posabs", "pron posadj"]
