@@ -17,7 +17,7 @@ EOF
 
 
 if [[ $# < 2 ]]; then
-    echo "Pass a path to a directory of experiments"
+    echo "Pass a name and a path to a directory of experiments"
     exit 1
 fi
 
@@ -35,14 +35,17 @@ fi
 
 results_path=${experiment_path}/results_${experiment_name}
 mkdir -p $results_path
-
+args=()
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
         -t|--train-path)
+            shift
             train_path=$1
+
         ;;
         -v|--val-path)
+            shift
             validation_path=$1
         ;;
         -c|--cpu)
@@ -55,7 +58,7 @@ while [[ $# -gt 0 ]]; do
             # Get rid of --
             shift
             # The remainder are grabbag args to pass to the script
-            args="${args}$@"
+            args+=($@)
             break
         ;;
         *)
@@ -72,6 +75,20 @@ if [[ !$use_cpu ]]; then
     #args="${args} -c 0"
 fi
 
+# NOTE: You can't use these args if you're passing a custom override
+if [[ $train_path || $validation_path ]]; then
+  override_string="-o {"
+  if [[ $train_path ]]; then
+    override_string="${override_string}train_data_path: '${train_path}',"
+  fi
+  if [[ $validation_path ]]; then
+    override_string="${override_string}validation_data_path: '${validation_path}',"
+  fi
+  # Drop last extra comma
+  override_string="${override_string::-1}}"
+  args+=("$override_string")
+fi
+
 experiment_files=${experiment_path}/*.json
 summary_path=${results_path}/training_summary.txt
 # Clear the file
@@ -80,7 +97,9 @@ for file in ${experiment_files}; do
     name=$(basename $file)
     # remove .json extension
     name="${name%.*}"
-    allennlp train "$file" -s "${results_path}/${name}" --include-package gpsr_command_understanding "${args}"
+    set -x;
+    allennlp train "$file" -s "${results_path}/${name}" --include-package gpsr_command_understanding "${args[@]}"
+    set +x;
     metrics_path="${results_path}/${name}/metrics.json"
     echo -e "\n ${name}" >> $summary_path
     cat $metrics_path >> $summary_path

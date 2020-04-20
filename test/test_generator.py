@@ -33,7 +33,7 @@ class TestGenerator(unittest.TestCase):
         generator = load_2018(GRAMMAR_DIR_2018)
 
         sentences = list(generator.generate(ROOT_SYMBOL))
-        self.assertEqual(3398, len(sentences))
+        self.assertEqual(3386, len(sentences))
 
         # Pull out all metadata and discard
         [generator.extract_metadata(sen) for sen in sentences]

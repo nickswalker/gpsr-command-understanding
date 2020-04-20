@@ -2,9 +2,8 @@ import os
 import random
 import csv
 
-from gpsr_command_understanding.generator import Generator, get_grounding_per_each_parse
-from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_all_2018_by_cat
+from gpsr_command_understanding.generator.grammar import tree_printer
+from gpsr_command_understanding.generator.loading_helpers import load_paired_2018_by_cat, GRAMMAR_DIR_2018
 from gpsr_command_understanding.util import chunker
 
 seed = 0
@@ -14,15 +13,14 @@ groundings_per_parse = 1
 
 def main():
     random_source = random.Random(seed)
-    grammar_dir = os.path.abspath(os.path.dirname(__file__) + "/../../resources/generator2018")
     out_file_path = os.path.abspath(
         os.path.dirname(__file__) + "/../../data/rephrasings_data_{}_{}.csv".format(seed, groundings_per_parse))
-    cmd_gen = Generator(grammar_format_version=2018)
-    generator = load_all_2018_by_cat(cmd_gen, grammar_dir)
+    generator = load_paired_2018_by_cat(GRAMMAR_DIR_2018)
 
     all_examples = []
     for i in range(groundings_per_parse):
-        grounded_examples = get_grounding_per_each_parse(generator, random_source)
+        # FIXME: Use the new grounding
+        grounded_examples = None
         random_source.shuffle(grounded_examples)
         all_examples += grounded_examples
 

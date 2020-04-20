@@ -21,6 +21,7 @@ from allennlp.nn.beam_search import BeamSearch
 from allennlp.training.metrics import BLEU
 
 from gpsr_command_understanding.generator.generator import Generator
+from gpsr_command_understanding.generator.paired_generator import LambdaParserWrapper
 from gpsr_command_understanding.models.metrics import TokenSequenceAccuracy, ParseValidity
 
 
@@ -100,7 +101,7 @@ class Seq2Seq(Model):
         else:
             self._bleu = None
 
-        self._token_based_metrics = [TokenSequenceAccuracy(), ParseValidity(Generator().lambda_parser)]
+        self._token_based_metrics = [TokenSequenceAccuracy(), ParseValidity(LambdaParserWrapper())]
 
         # At prediction time, we use a beam search to find the most likely sequence of target tokens.
         beam_size = beam_size or 1
