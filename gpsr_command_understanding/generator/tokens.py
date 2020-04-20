@@ -84,19 +84,5 @@ class ComplexWildCard(WildCard):
                           WildCard) and self.name == other.name and self.type == other.type and self.id == other.id and self.obfuscated == other.obfuscated and self.conditions == other.conditions
 
 
-class Anonymized(object):
-    def __init__(self, name):
-        self.name = name
-
-    def __str__(self):
-        return "<{}>".format(self.name)
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-    def __eq__(self, other):
-        return isinstance(other, Anonymized) and self.name == other.name
-
-
 # The GPSR grammars all have this as their root
 ROOT_SYMBOL = NonTerminal("Main")

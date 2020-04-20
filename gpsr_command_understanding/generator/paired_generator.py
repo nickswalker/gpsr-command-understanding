@@ -7,7 +7,7 @@ from lark import Lark, exceptions, Tree, Token
 
 from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import RemovePrefix, TypeConverter, CompactUnderscorePrefixed, \
-    tree_printer, expand_shorthand, DiscardVoid, CombineExpressions, WildCard, Anonymized, NonTerminal
+    tree_printer, expand_shorthand, DiscardVoid, CombineExpressions, NonTerminal
 from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
 from gpsr_command_understanding.util import get_wildcards_forest, get_placeholders, has_nonterminals, \
     replace_child_in_tree
@@ -245,9 +245,9 @@ class PairedGenerator(Generator):
         for utterance, parse in self.semantics.items():
             yield from self.generate(utterance, False)
 
-    def generate_groundings(self, pair, random_generator=None):
+    def generate_groundings(self, pair, random_generator=None, ignore_types=False):
         utt, logical = pair
-        assignments = self.generate_grounding_assignments(utt, random_generator=random_generator)
+        assignments = self.generate_grounding_assignments(utt, random_generator=random_generator, ignore_types=ignore_types)
         for assignment in assignments:
             grounded_utt = copy.deepcopy(utt)
             grounded_logical = copy.deepcopy(logical)

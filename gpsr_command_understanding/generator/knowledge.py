@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import importlib_resources
 
 from gpsr_command_understanding.generator.xml_parsers import ObjectParser, LocationParser, NameParser, GesturesParser, \
@@ -31,14 +33,10 @@ class KnowledgeBase:
         objects = object_parser.all_objects()
         categories = object_parser.all_categories()
         names = names_parser.all_names()
-        locations = locations_parser. \
-            get_all_locations()
-        beacons = locations_parser.get_all_beacons()
-        placements = locations_parser.get_all_placements()
-        rooms = locations_parser.get_all_rooms()
+        locations = locations_parser.get_all_locations()
         gestures = list(gestures_parser.get_gestures())
         questions = list(question_parser.get_question_answer_dict().keys())
-        attributes = {"object": object_parser.get_attributes()}
+        attributes = {"object": object_parser.get_attributes(), "location": locations_parser.get_attributes()}
 
         attributes["object"]["category"] = object_parser.get_objects_to_categories()
 
@@ -47,9 +45,6 @@ class KnowledgeBase:
             "category": categories,
             "name": names,
             "location": locations,
-            "beacon": beacons,
-            "placement": placements,
-            "room": rooms,
             "gesture": gestures,
             "question": questions,
             # FIXME: Load these from somewhere
@@ -57,3 +52,23 @@ class KnowledgeBase:
         }
         return KnowledgeBase(by_name, attributes)
 
+
+class AnonymizedKnowledgebase:
+    def __init__(self):
+        names = [
+            "object",
+            "category",
+            "name",
+            "location",
+            "gesture",
+            "question",
+            "whattosay"
+        ]
+        rooms = ["room" + str(i) for i in range(3)]
+        self.by_name = {name: [name + str(i) for i in range(3)] for name in names}
+        self.by_name["location"] += rooms
+        self.attributes = {"object":
+        {"type": defaultdict(lambda x:True)},
+        "location": {"isplacement":defaultdict(lambda x:True), "isbeacon":defaultdict(lambda x:True), "isroom":defaultdict(lambda x:False)}}
+        for room in rooms:
+            self.attributes["location"]["isroom"][room] = True

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from xml.etree import ElementTree as ET
+from lxml import etree as ET
 
 
 class ObjectParser:
@@ -31,18 +31,16 @@ class ObjectParser:
         for cat in root.findall("./category"):
              cat_name = cat.attrib['name'].lower()
              cat_objs = []
-             for obj in cat:
+             for obj in cat.findall("object"):
                  cat_objs.append(obj.attrib['name'].lower()) 
              categories[cat_name] = cat_objs
         return categories
 
     def get_objects_to_categories(self):
-        root = self.tree.getroot()
-
         categories = {}
-        for cat in root.findall("./category"):
+        for cat in self.tree.findall("//category"):
             cat_name = cat.attrib['name'].lower()
-            for obj in cat:
+            for obj in cat.findall("object"):
                 obj_name = obj.attrib['name'].lower()
                 categories[obj_name] = cat_name
         return categories
@@ -55,8 +53,7 @@ class ObjectParser:
         return None
 
     def get_attributes(self):
-        root = self.tree.getroot()
-        all_obj = root.findall("./category/object")
+        all_obj = self.tree.findall("//object")
         attributes = defaultdict(lambda : defaultdict(None))
         for obj in all_obj:
             obj_name = obj.attrib["name"]
@@ -72,8 +69,8 @@ class ObjectParser:
                     attributes[attr_name][obj_name] = value
         return attributes
 
-class LocationParser(object):
 
+class LocationParser(object):
     def __init__(self, location_xml_file):
         self.location_file = location_xml_file
         self.tree = ET.parse(self.location_file)
@@ -81,9 +78,7 @@ class LocationParser(object):
     '''return dictionary of room:location_list'''
     def get_room_locations(self):
         room_locations = {}
-        #get root (rooms in this case)
         root = self.tree.getroot()
-        #for each room in rooms check if it has child with name equal to location_obj
         for room in root.findall("./room"):
             location_list = []
             room_name = room.attrib['name'].lower()
@@ -94,20 +89,18 @@ class LocationParser(object):
 
     def get_all_locations(self):
         locations = []
-
-        root = self.tree.getroot()
-        for location in root.findall("./room/location"):
+        # For our purposes, rooms and locations are all locations
+        for location in self.tree.findall("//location") + self.tree.findall("//room"):
             locations.append(location.attrib['name'])
         return locations
 
     def get_all_placements(self):
         all_placements = []
         root = self.tree.getroot()
-        for room in root.findall("./room"):
-            for location in room:
-                if 'isPlacement' in location.attrib:
-                    if location.attrib['isPlacement'] == "true":
-                        all_placements.append(location.attrib['name'])
+        for location in root.findall("./room/location"):
+            if 'isPlacement' in location.attrib:
+                if location.attrib['isPlacement'] == "true":
+                    all_placements.append(location.attrib['name'])
         return all_placements
 
     def get_all_beacons(self):
@@ -122,10 +115,29 @@ class LocationParser(object):
 
     def get_all_rooms(self):
         all_rooms = []
-        root = self.tree.getroot()
-        for room in root.findall("./room"):
+        for room in self.tree.findall("//room"):
             all_rooms.append(room.attrib['name'])
         return all_rooms
+
+    def get_attributes(self):
+        all_loc = self.tree.findall("//location") + self.tree.findall("//room")
+        attributes = defaultdict(lambda: defaultdict(None))
+        for loc in all_loc:
+            loc_name = loc.attrib["name"]
+            loc_attr = loc.attrib
+            for attr_name, value in loc_attr.items():
+                if value.lower() in ["true", "false"]:
+                    value = value.lower() == "true"
+                # Attribute names are caseinsensitive
+                attr_name = attr_name.lower()
+                if attr_name == "name":
+                    continue
+                else:
+                    attributes[attr_name][loc_name] = value
+            # Is there a room with this name?
+            if loc.tag == "room":
+                attributes["isroom"][loc_name] = True
+        return attributes
 
 
 class QuestionParser:

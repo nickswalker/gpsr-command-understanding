@@ -106,7 +106,7 @@ class DiscardVoid(Visitor):
     Throw away generator annotations meant for the referee
     """
     def expression(self, tree):
-        tree.children = list(filter(lambda x: not ((isinstance(x, WildCard) or isinstance(x, Anonymized)) and x.name == "void"), tree.children))
+        tree.children = list(filter(lambda x: not (isinstance(x, WildCard) and x.name == "void"), tree.children))
 
 
 class DiscardMeta(Visitor):
@@ -271,26 +271,6 @@ def expand_shorthand(tree):
                 in_progress.append(choice_made_tree)
 
     return output
-
-
-def make_anonymized_grounding_rules(wildcards, show_details=False):
-    """
-    Generates a single special-token substitution for each wildcard.
-    :param wildcards:
-    :return:
-    """
-    grounding_rules = {}
-    for wildcard in wildcards:
-        if show_details:
-            prod = Anonymized(wildcard.to_human_readable())
-        else:
-            # Room is an exception; it's disjoint with location
-            if wildcard.type and wildcard.type == "room":
-                prod = Anonymized("room")
-            else:
-                prod = Anonymized(wildcard.name)
-        grounding_rules[wildcard] = [Tree("expression", [prod])]
-    return grounding_rules
 
 
 def rule_dict_to_str(rules):

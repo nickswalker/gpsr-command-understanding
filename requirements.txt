@@ -1,8 +1,9 @@
-importlib_resources
 allennlp>=0.8.2;python_version  > '3.0'
 editdistance
 future;python_version < '3.0'
+importlib_resources
 lark-parser
+lxml
 nltk
 pandas
 xmltodict

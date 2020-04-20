@@ -11,6 +11,7 @@ from collections import Counter
 import lark
 import more_itertools
 
+from gpsr_command_understanding.generator.knowledge import AnonymizedKnowledgebase
 from gpsr_command_understanding.generator.paired_generator import pairs_without_placeholders
 from gpsr_command_understanding.generator.grammar import tree_printer
 from gpsr_command_understanding.generator.loading_helpers import GRAMMAR_DIR_2018, load_paired_2018
@@ -92,7 +93,6 @@ def main():
 
     random_source = random.Random(args.seed)
 
-
     pairs_out_path = os.path.join(os.path.abspath(os.path.dirname(__file__) + "/../.."), "data", args.name)
     train_out_path, val_out_path, test_out_path, meta_out_path = \
     map(lambda name: os.path.join(pairs_out_path, name + ".txt"), ["train", "val", "test", "meta"])
@@ -108,19 +108,6 @@ def main():
     generator = load_paired_2018(GRAMMAR_DIR_2018)
     lambda_parser = generator.lambda_parser
     pairs = {}
-    if args.anonymized:
-        pairs = pairs_without_placeholders(generator)
-
-    # FIXME: Remove category split
-    if args.groundings:
-        grounded_pairs = {}
-        for utt, logical in pairs.items():
-            groundings = generator.generate_groundings((utt, logical), random_source)
-            groundings = itertools.islice(groundings, args.groundings)
-            for grounded_utt, grounded_logical in groundings:
-                grounded_pairs[grounded_utt] = grounded_logical
-
-        pairs = merge_dicts(pairs, grounded_pairs)
 
     if args.paraphrasings:
         paraphrasing_pairs = load_data(args.paraphrasings, lambda_parser)
@@ -136,6 +123,34 @@ def main():
             paraphrasing_pairs = anon_para_pairs
             print(anon_trigerred, len(paraphrasing_pairs))
         pairs[0] = merge_dicts(pairs[0], paraphrasing_pairs)
+    else:
+        pairs = pairs_without_placeholders(generator)
+        if args.anonymized:
+            old_kb = generator.knowledge_base
+            generator.knowledge_base = AnonymizedKnowledgebase()
+            grounded_pairs = {}
+            for utt, logical in pairs.items():
+                anon_utt, anon_logical = generator.ground((utt, logical), ignore_types=True)
+                if args.groundings:
+                    # We'll let the next pass of grounding proceed for the utterance
+                    # It wouldn't make sense to have a grounded logical form and and ungrounded utterance.
+                    grounded_pairs[utt] = anon_logical
+                else:
+                    grounded_pairs[anon_utt] = anon_logical
+            pairs = grounded_pairs
+            generator.knowledge_base = old_kb
+
+        if args.groundings:
+            grounded_pairs = {}
+            for utt, logical in pairs.items():
+                groundings = generator.generate_groundings((utt, logical), random_source)
+                groundings = itertools.islice(groundings, args.groundings)
+                for grounded_utt, grounded_logical in groundings:
+                    grounded_pairs[grounded_utt] = grounded_logical
+
+            #pairs = merge_dicts(pairs, grounded_pairs)
+            pairs = grounded_pairs
+
 
     baked_pairs = [(tree_printer(utt), tree_printer(logical)) for utt, logical in pairs.items()]
 

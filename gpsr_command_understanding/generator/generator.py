@@ -80,18 +80,18 @@ class Generator:
                     i += 1
         return i
 
-    def ground(self, tree, random_source=None):
-        return next(self.generate_groundings(tree, random_generator=random_source))
+    def ground(self, tree, **kwargs):
+        return next(self.generate_groundings(tree, **kwargs))
 
-    def generate_groundings(self, tree, random_generator=None):
-        assignments = self.generate_grounding_assignments(tree, random_generator=random_generator)
+    def generate_groundings(self, tree, random_generator=None, ignore_types=False):
+        assignments = self.generate_grounding_assignments(tree, random_generator=random_generator, ignore_types=ignore_types)
         for assignment in assignments:
             grounded = copy.deepcopy(tree)
             for token, replacement in assignment.items():
                 replace_child_in_tree(grounded, token, replacement)
             yield grounded
 
-    def generate_grounding_assignments(self, tree, random_generator=None):
+    def generate_grounding_assignments(self, tree, random_generator=None, ignore_types=False):
         wildcards = get_wildcards(tree)
         assignment = {}
 
@@ -101,18 +101,28 @@ class Generator:
                 # FIXME(nickswalker): Something here about pointing to the nearest name
                 continue
             # IDs impose uniqueness constraints.
-            elif wildcard.id:
-                constraints[wildcard] = set()
-                # Could be another instance of the same wildcard. It's constrained already so skip it
-                if wildcard in assignment:
+            else:
+                if wildcard.id:
+                    constraints[wildcard] = set()
+                    # Could be another instance of the same wildcard. It's constrained already so skip it
+                    if wildcard in assignment:
+                        continue
+                    for other_wildcard, item_constraints in constraints.items():
+                        # Any wildcard of the same name with a different ID needs to be different
+                        if other_wildcard.name == wildcard.name and other_wildcard.id != wildcard.id:
+                            constraints[wildcard].add(other_wildcard)
+                if ignore_types:
                     continue
-                for other_wildcard, item_constraints in constraints.items():
-                    # Any wildcard of the same name with a different ID needs to be different
-                    if other_wildcard.name == wildcard.name and other_wildcard.id != wildcard.id:
-                        constraints[wildcard].add(other_wildcard)
-            if wildcard.conditions:
-                for key, value in wildcard.conditions.items():
-                    constraints[wildcard].add((key, value))
+                if wildcard.name == "object" and wildcard.type:
+                    constraints[wildcard].add(("type", wildcard.type))
+                elif wildcard.name == "location" and wildcard.type:
+                    # Location types are a shorthand for an attribute: ex isplacment
+                    constraints[wildcard].add(("is"+wildcard.type, True))
+                # TODO(nickswalker): Respect obfuscation
+                # TODO(nickswalker): Object category constraints (EGPSR)
+                if wildcard.conditions:
+                    for key, value in wildcard.conditions.items():
+                        constraints[wildcard].add((key, value))
 
         yield from self.__populate_with_constraints(tree, constraints, random_generator=random_generator)
 
