@@ -1,3 +1,8 @@
+import copy
+import re
+
+from lark import Token
+
 from gpsr_command_understanding.anonymizer import Anonymizer
 
 import itertools
@@ -15,7 +20,8 @@ from gpsr_command_understanding.generator.knowledge import AnonymizedKnowledgeba
 from gpsr_command_understanding.generator.paired_generator import pairs_without_placeholders
 from gpsr_command_understanding.generator.grammar import tree_printer
 from gpsr_command_understanding.generator.loading_helpers import GRAMMAR_DIR_2018, load_paired_2018
-from gpsr_command_understanding.util import save_data, flatten, merge_dicts, determine_unique_data
+from gpsr_command_understanding.util import save_data, flatten, merge_dicts, determine_unique_data, \
+    replace_child_in_tree
 
 EPS = 0.00001
 
@@ -33,20 +39,20 @@ def validate_args(args):
         print("Can only run anonymizer on paraphrased data")
         exit(1)
 
-    if args.match_form_split and not args.use_form_split:
+    if args.match_logical_split and not args.use_logical_split:
         print("Cannot match form split if not configured to produce form split")
         exit(1)
 
     if not args.name:
-        args.name = "all"
+        args.name = ""
+        if args.anonymized:
+            args.name += "a"
+        if args.groundings:
+            args.name += "g" + str(args.groundings)
+        if args.paraphrasings:
+            args.name += "p"
         if args.use_logical_split:
             args.name += "_logical"
-        if args.anonymized:
-            args.name += "_a"
-        if args.groundings:
-            args.name += "_g" + str(args.groundings)
-        if args.paraphrasings:
-            args.name += "_p"
 
 
 def load_data(path, lambda_parser):
@@ -75,17 +81,16 @@ def load_data(path, lambda_parser):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s","--split", default=[.7,.1,.2], nargs='+', type=float)
-    parser.add_argument("-p", "--use-logical-split", action='store_true', default=False)
-    parser.add_argument("-g","--groundings", required=False, type=int, default=None)
-    parser.add_argument("-a","--anonymized", required=False, default=True, action="store_true")
-    parser.add_argument("-m", "--match-form-split", required=False, default=None, type=str)
-    parser.add_argument("-na","--no-anonymized", required=False, dest="anonymized", action="store_false")
+    parser.add_argument("-s", "--split", default=[.7, .1, .2], nargs='+', type=float)
+    parser.add_argument("-l", "--use-logical-split", action='store_true', default=False)
+    parser.add_argument("-g", "--groundings", required=False, type=int, default=None)
+    parser.add_argument("-a", "--anonymized", required=False, default=False, action="store_true")
+    parser.add_argument("-m", "--match-logical-split", required=False, default=None, type=str)
     parser.add_argument("-ra", "--run-anonymizer", required=False, default=False, action="store_true")
-    parser.add_argument("-t", "--paraphrasings", required=False, default=None, type=str)
+    parser.add_argument("-p", "--paraphrasings", required=False, default=None, type=str)
     parser.add_argument("--name", default=None, type=str)
     parser.add_argument("--seed", default=0, required=False, type=int)
-    parser.add_argument("-i","--incremental-datasets", action='store_true', required=False)
+    parser.add_argument("-i", "--incremental-datasets", action='store_true', required=False)
     parser.add_argument("-f", "--force-overwrite", action="store_true", required=False, default=False)
     args = parser.parse_args()
 
@@ -95,7 +100,7 @@ def main():
 
     pairs_out_path = os.path.join(os.path.abspath(os.path.dirname(__file__) + "/../.."), "data", args.name)
     train_out_path, val_out_path, test_out_path, meta_out_path = \
-    map(lambda name: os.path.join(pairs_out_path, name + ".txt"), ["train", "val", "test", "meta"])
+        map(lambda name: os.path.join(pairs_out_path, name + ".txt"), ["train", "val", "test", "meta"])
 
     if args.force_overwrite and os.path.isdir(pairs_out_path):
         shutil.rmtree(pairs_out_path)
@@ -122,37 +127,53 @@ def main():
                 anon_para_pairs[anonymized_command] = form
             paraphrasing_pairs = anon_para_pairs
             print(anon_trigerred, len(paraphrasing_pairs))
-        pairs[0] = merge_dicts(pairs[0], paraphrasing_pairs)
-    else:
-        pairs = pairs_without_placeholders(generator)
-        if args.anonymized:
-            old_kb = generator.knowledge_base
-            generator.knowledge_base = AnonymizedKnowledgebase()
-            grounded_pairs = {}
-            for utt, logical in pairs.items():
-                anon_utt, anon_logical = generator.ground((utt, logical), ignore_types=True)
-                if args.groundings:
-                    # We'll let the next pass of grounding proceed for the utterance
-                    # It wouldn't make sense to have a grounded logical form and and ungrounded utterance.
-                    grounded_pairs[utt] = anon_logical
-                else:
-                    grounded_pairs[anon_utt] = anon_logical
-            pairs = grounded_pairs
-            generator.knowledge_base = old_kb
+        pairs = merge_dicts(pairs, paraphrasing_pairs)
 
-        if args.groundings:
-            grounded_pairs = {}
-            for utt, logical in pairs.items():
-                groundings = generator.generate_groundings((utt, logical), random_source)
-                groundings = itertools.islice(groundings, args.groundings)
-                for grounded_utt, grounded_logical in groundings:
-                    grounded_pairs[grounded_utt] = grounded_logical
+    if args.anonymized or args.groundings:
+        gen_pairs = pairs_without_placeholders(generator)
+    if args.anonymized:
+        old_kb = generator.knowledge_base
+        generator.knowledge_base = AnonymizedKnowledgebase()
+        anon_pairs = {}
+        for utt, logical in gen_pairs.items():
+            # The logical form anonymized tokens may not start from zero if the utterance had multiple tokens of the
+            # same type. Renumber them.
+            utt_grounding_assignment = next(generator.generate_grounding_assignments(utt, ignore_types=True))
+            logical_grounding_assignment = next(generator.generate_grounding_assignments(logical, ignore_types=True))
+            anon_utt = copy.deepcopy(utt)
+            anon_logical = copy.deepcopy(logical)
+            for token, replacement in utt_grounding_assignment.items():
+                count = replace_child_in_tree(anon_utt, token, replacement)
+                assert count > 0
+            for token, replacement in logical_grounding_assignment.items():
+                count = replace_child_in_tree(anon_logical, token, Token("ESCAPED_STRING", "\"" +replacement + "\""))
+                assert count > 0
 
-            #pairs = merge_dicts(pairs, grounded_pairs)
-            pairs = grounded_pairs
+            if args.groundings:
+                # We'll let the next pass of grounding proceed for the utterance
+                # It wouldn't make sense to have a grounded logical form and and ungrounded utterance.
+                anon_pairs[utt] = anon_logical
+            else:
+                anon_pairs[anon_utt] = anon_logical
+        generator.knowledge_base = old_kb
+        pairs = merge_dicts(pairs, anon_pairs)
 
+    if args.groundings:
+        grounded_pairs = {}
+        for utt, logical in gen_pairs.items():
+            groundings = generator.generate_groundings((utt, logical), random_source)
+            groundings = itertools.islice(groundings, args.groundings)
+            for grounded_utt, grounded_logical in groundings:
+                grounded_pairs[grounded_utt] = grounded_logical
 
-    baked_pairs = [(tree_printer(utt), tree_printer(logical)) for utt, logical in pairs.items()]
+        pairs = merge_dicts(pairs, grounded_pairs)
+
+    baked_pairs = {}
+    for utt, logical in pairs.items():
+        if not isinstance(utt, str):
+            baked_pairs[tree_printer(utt)] = tree_printer(logical)
+        else:
+            baked_pairs[utt] = logical
 
     by_command, by_form = determine_unique_data(baked_pairs)
     by_command = list(by_command.items())
@@ -164,15 +185,14 @@ def main():
 
     random.Random(args.seed).shuffle(data_to_split)
 
-
     # Peg this split to match the split in another dataset. Helpful for making them mergeable while still preserving
     # the no-form-seen-before property of the form split
-    if args.match_form_split:
-        train_match = load_data(args.match_form_split + "/train.txt", lambda_parser)
+    if args.match_logical_split:
+        train_match = load_data(args.match_logical_split + "/train.txt", lambda_parser)
         train_match = set(train_match.values())
-        val_match = load_data(args.match_form_split + "/val.txt", lambda_parser)
+        val_match = load_data(args.match_logical_split + "/val.txt", lambda_parser)
         val_match = set(val_match.values())
-        test_match = load_data(args.match_form_split + "/test.txt", lambda_parser)
+        test_match = load_data(args.match_logical_split + "/test.txt", lambda_parser)
         test_match = set(test_match.values())
         train_percentage = len(train_match) / (len(train_match) + len(val_match) + len(test_match))
         val_percentage = len(val_match) / (len(train_match) + len(val_match) + len(test_match))
@@ -180,7 +200,7 @@ def main():
         train = []
         val = []
         test = []
-        for form, commands in itertools.chain(pairs):
+        for form, commands in by_form:
             target = None
             if form in train_match:
                 target = train
@@ -189,7 +209,12 @@ def main():
             elif form in test_match:
                 target = test
             else:
+                print(
+                    "This logical form doesn't appear in any of the existing data, so we don't know which split to put it in.")
+                print(commands[0])
                 print(form)
+                print("\n")
+                #exit(1)
                 continue
                 # assert False
             target.append((form, commands))
@@ -232,9 +257,11 @@ def main():
         for token in parse.split():
             parse_vocab[token] += 1
 
-    info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, train_percentage, val_percentage, test_percentage)
+    info = "Generated {} dataset with {:.2f}/{:.2f}/{:.2f} split\n".format(args.name, train_percentage, val_percentage,
+                                                                           test_percentage)
     total_data = len(train) + len(val) + len(test)
-    info += "Exact split percentage: {:.2f}/{:.2f}/{:.2f} split\n".format(len(train)/total_data, len(val)/total_data, len(test)/total_data)
+    info += "Exact split percentage: {:.2f}/{:.2f}/{:.2f} split\n".format(len(train) / total_data,
+                                                                          len(val) / total_data, len(test) / total_data)
 
     info += "train={} val={} test={}".format(len(train), len(val), len(test))
     print(info)
