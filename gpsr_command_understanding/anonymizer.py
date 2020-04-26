@@ -3,12 +3,10 @@ from collections import defaultdict
 
 
 class Anonymizer(object):
-    def __init__(self, objects, categories, names, locations, beacons, placements, rooms, gestures):
+    def __init__(self, objects, categories, names, locations, rooms, gestures):
         self.names = names
         self.categories = categories
         self.locations = locations
-        self.beacons = beacons
-        self.placements = placements
         self.rooms = rooms
         self.objects = objects
         self.gestures = gestures
@@ -49,7 +47,14 @@ class Anonymizer(object):
 
     @staticmethod
     def from_knowledge_base(kb):
-        return Anonymizer(kb.objects, kb.categories, kb.names, kb.locations, kb.beacons, kb.placements, kb.rooms, kb.gestures)
+        # Room is a subtype of location, but we make an exception and anonymize it as "roomN"
+        isroom = kb.attributes["location"]["isroom"]
+        rooms = []
+        for key, isroom in isroom.items():
+            if isroom:
+                rooms.append(key)
+        return Anonymizer(kb.by_name["object"], kb.by_name["category"], kb.by_name["name"], kb.by_name["location"], rooms, kb.by_name["gesture"])
+
 
 class NumberingAnonymizer(Anonymizer):
     def __call__(self, utterance):

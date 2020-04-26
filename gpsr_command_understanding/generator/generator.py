@@ -97,7 +97,7 @@ class Generator:
 
         constraints = defaultdict(set)
         for wildcard in wildcards:
-            if wildcard.name == "pron":
+            if "pron" in wildcard.name:
                 # FIXME(nickswalker): Something here about pointing to the nearest name
                 continue
             # IDs impose uniqueness constraints.
@@ -111,7 +111,14 @@ class Generator:
                         # Any wildcard of the same name with a different ID needs to be different
                         if other_wildcard.name == wildcard.name and other_wildcard.id != wildcard.id:
                             constraints[wildcard].add(other_wildcard)
-                if ignore_types:
+                else:
+                    constraints[wildcard] = set()
+                    # No id, so implicitly unique wrt to all wildcards with the same name
+                    for other_wildcard, item_constraints in constraints.items():
+                        # Any wildcard of the same name with a different ID needs to be different
+                        if other_wildcard != wildcard and other_wildcard.name == wildcard.name:
+                            constraints[wildcard].add(other_wildcard)
+                if ignore_types and wildcard.type != "room":
                     continue
                 if wildcard.name == "object" and wildcard.type:
                     constraints[wildcard].add(("type", wildcard.type))
@@ -129,6 +136,7 @@ class Generator:
     def __populate_with_constraints(self, tree, constraints, random_generator=None):
         wildcards = get_wildcards(tree)
         if not wildcards:
+            assert len(constraints.values()) == len(constraints)
             yield constraints
             return
         wildcard = next(wildcards)
@@ -136,6 +144,8 @@ class Generator:
         # What things are possibilities to fill this slot?
         if wildcard.name == "pron":
             candidates = ["them"]
+        elif wildcard.name == "pron paj":
+            candidates = ["their"]
         else:
             candidates = self.knowledge_base.by_name[wildcard.name]
         if random_generator:

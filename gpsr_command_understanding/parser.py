@@ -6,7 +6,9 @@ import editdistance
 import lark
 from lark import Transformer, Lark, Tree
 
+from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import DiscardVoid, DiscardMeta
+from gpsr_command_understanding.generator.knowledge import AnonymizedKnowledgebase
 from gpsr_command_understanding.generator.tokens import NonTerminal, WildCard
 from gpsr_command_understanding.util import get_wildcards_forest
 
@@ -56,6 +58,8 @@ class ToEBNF(Transformer):
     def __call__(self,  production):
         return self.transform(production)
 
+def expr_builder(item):
+    return Tree("expression", [item])
 
 class GrammarBasedParser(object):
     """
@@ -78,9 +82,19 @@ class GrammarBasedParser(object):
             # Meta info doesn't affect the text of the command
             for tree in all_rule_trees:
                 meta_remover.visit(tree)
+                void_remover.visit(tree)
             wildcards = get_wildcards_forest(all_rule_trees)
+            # We're gonna hallucinate some rules for the wildcards
+            # * They can appear just as their string representation (should be what comes out of the generator)
+            # * They can appear anonymized, like location0 or name0, but we can't know how they'd be numbered
+            #   - If placement and beacon both appeared in a sentence, they'd be mapped to location0 and 1
+            #   - We'll overaccept to counter this
+            anon_kb = AnonymizedKnowledgebase()
+            gen = Generator(anon_kb)
             for wildcard in wildcards:
-                rules[wildcard] = [Tree("expression", [wildcard.to_human_readable()])]
+                anon_replacements = list(gen.generate_groundings(expr_builder(wildcard), ignore_types=True))
+                rules[wildcard] = [expr_builder(wildcard.to_human_readable())] + anon_replacements
+
         for non_term, productions in rules.items():
             # TODO: bake this into WildCard and NonTerminal types
             non_term_name = non_term.name.lower()

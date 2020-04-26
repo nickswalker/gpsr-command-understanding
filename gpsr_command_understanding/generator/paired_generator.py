@@ -8,7 +8,7 @@ from lark import Lark, exceptions, Tree, Token
 from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import RemovePrefix, TypeConverter, CompactUnderscorePrefixed, \
     tree_printer, expand_shorthand, DiscardVoid, CombineExpressions, NonTerminal
-from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
+from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL, WildCard
 from gpsr_command_understanding.util import get_wildcards_forest, get_placeholders, has_nonterminals, \
     replace_child_in_tree
 
@@ -173,13 +173,21 @@ class PairedGenerator(Generator):
                         print("")
                         continue
                     elif len(sem_placeholders_remaining) != len(sentence_placeholders_remaining):
+                        quiet = False
+                        # If the semantics are unknown, we probably meant to discard those wildcards
+                        if semantics.children[0] == "UNKNOWN":
+                            quiet = True
                         not_in_annotation = sentence_placeholders_remaining.difference(sem_placeholders_remaining)
-                        print(
-                            "Annotation is missing wildcards that are present in the original sentence. Were they left out accidentally?")
-                        print(" ".join(map(str, not_in_annotation)))
-                        print(tree_printer.transform(sentence))
-                        print(tree_printer.transform(semantics))
-                        print("")
+                        # Pronouns don't appear in annotations, so we meant to throw that away
+                        if len(not_in_annotation) == 1 and WildCard("pron") in not_in_annotation:
+                            quiet = True
+                        if not quiet:
+                            print(
+                                "Annotation is missing wildcards that are present in the original sentence. Were they left out accidentally?")
+                            print(" ".join(map(str, not_in_annotation)))
+                            print(tree_printer.transform(sentence))
+                            print(tree_printer.transform(semantics))
+                            print("")
                 elif yield_requires_semantics:
                     # This won't be a pair without semantics, so we'll just skip it
                     continue

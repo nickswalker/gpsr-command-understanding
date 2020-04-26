@@ -51,10 +51,11 @@ class TestParsers(unittest.TestCase):
 
         load_paired(generator, "gpsr", GRAMMAR_DIR_2019)
 
-        sentences = generator.generate(ROOT_SYMBOL)
+        sentences = list(itertools.islice(generator.generate(ROOT_SYMBOL, random_generator=random.Random(0)), 1000))
         [generator.extract_metadata(sen) for sen in sentences]
         parser = GrammarBasedParser(generator.rules)
         sentences = set([tree_printer(x) for x in sentences])
+        self.assertEqual(1000, len(sentences))
         succeeded = 0
         for sentence in sentences:
             parsed = parser(sentence)
@@ -78,7 +79,7 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(expected_parse, nearest_neighbor_parser(tweaked))
 
     def test_anonymizer(self):
-        entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["corridor"],["counter"],["bedroom", "kitchen", "living room"], ["waving"])
+        entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["bedroom", "kitchen", "living room"], ["waving"])
         numbering_anonymizer = NumberingAnonymizer(*entities)
         anonymizer = Anonymizer(*entities)
         no_duplicates = "Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"

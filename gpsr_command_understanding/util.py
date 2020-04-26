@@ -62,14 +62,14 @@ def get_wildcards_forest(trees):
 
 
 def determine_unique_data(pairs):
-    cat_unique_utterance_pair = {}
-    cat_unique_parse_pair = defaultdict(list)
+    unique_utterance_pair = {}
+    unique_parse_pair = defaultdict(list)
 
-    for utterance, parse in pairs:
-        cat_unique_utterance_pair[utterance] = parse
-        cat_unique_parse_pair[parse].append(utterance)
+    for utterance, parse in pairs.items():
+        unique_utterance_pair[utterance] = parse
+        unique_parse_pair[parse].append(utterance)
 
-    return cat_unique_utterance_pair, cat_unique_parse_pair
+    return unique_utterance_pair, unique_parse_pair
 
 
 def chunker(seq, size):

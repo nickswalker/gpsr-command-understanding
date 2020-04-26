@@ -155,7 +155,8 @@ class ToString(Transformer):
                 as_str += " " + child.to_human_readable()
             elif isinstance(child, Token) and child.type == "ESCAPED_STRING":
                 assert child.value[0] == child.value[-1] == "\""
-                as_str += " \" " + child.value[1:-1] + " \""
+                # If we read in from a tokenized string, there'll be spaces between the quotes and the text. Strip them
+                as_str += " \" " + child.value[1:-1].strip() + " \""
             else:
                 as_str += " " + str(child)
         return as_str[1:]
