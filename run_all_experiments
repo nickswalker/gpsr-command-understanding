@@ -1,70 +1,59 @@
 #!/usr/bin/env bash
 
-# TODO: Multiseed testing
-function vary_seed (){
-    return
-}
+# Catch misspecified out directory early
+if [[ -z "${OUT_DIR}" && -d "${OUT_DIR}" ]]; then
+  echo "${OUT_DIR} is not a directory"
+  exit 1
+fi
+seed=0
+
+gen_cmd="python -m gpsr_command_understanding.data.make_dataset -f"
 
 # Just gen (Column 1)
-python -m gpsr_command_understanding.data.make_dataset -f --name gen0 --seed 0
-python -m gpsr_command_understanding.data.make_dataset -f --name gen_form0 -s .68 .12 .20 -p --seed 0
+${gen_cmd} --name gen -a --seed $seed
+${gen_cmd} --name gen_logical -a -s .68 .12 .20 --use-logical-split --seed $seed
 
-#Just paraphrase (Column 3)
-python -m gpsr_command_understanding.data.make_dataset -f --name para0 --seed 0 -t data/paraphrasings.txt -na
-python -m gpsr_command_understanding.data.make_dataset -f --name para_form0 --seed 0 -t data/paraphrasings.txt -na -p --match-form-split data/gen_form0
+# Just paraphrase (Column 3)
+${gen_cmd} --name para --paraphrasings data/paraphrasings.txt --seed $seed
+${gen_cmd} --name para_logical --paraphrasings data/paraphrasings.txt --use-logical-split --match-logical-split data/gen_logical --seed $seed
 
-# Column 2 is just testing the above models on column 3's test set
-cp -r data/gen0 data/gen0_paratest
-rm data/gen0_paratest/test.txt; cp data/para0/test.txt data/gen0_paratest/
-cp -r data/gen_form0 data/gen_form0_paratest
-rm data/gen_form0_paratest/test.txt; cp data/para_form0/test.txt data/gen_form0_paratest/
-
-# Gen + para (Colmun 4)
-python -m gpsr_command_understanding.data.make_dataset -f --name all0 --seed 0 -t data/paraphrasings.txt
-python -m gpsr_command_understanding.data.make_dataset -f --name all_form0 --seed 0 -t data/paraphrasings.txt -p --match-form-split data/gen_form0
-
-
-function train_with_data {
-    local data=$1
-    local overrides=$2
-    ./scripts/train_all_models ${data} experiments -- -o "{train_data_path: 'data/${data}/train.txt', validation_data_path: 'data/${data}/val.txt', trainer: {cuda_device: 0} ${overrides} }"
-}
+# Gen + para (Column 4)
+${gen_cmd} --name all --paraphrasings data/paraphrasings.txt -a --seed $seed
+${gen_cmd} --name all_logical --paraphrasings data/paraphrasings.txt -a --use-logical-split --match-logical-split data/gen_logical --seed $seed
 
 function run_with_data {
-    local data=$1
-    local overrides=$2
-    local test_data=$3
-    if [[ -n ${data} ]]; then
+    local data="$1"
+    local test_data="$2"
+    if [[ -n "${data}" ]]; then
         # Default to the folder's test data
-        test_data=data/${data}/test.txt
+        test_data="data/${data}/test.txt"
     fi
-    ./scripts/train_all_models ${data} experiments -- -o "{train_data_path: 'data/${data}/train.txt', validation_data_path: 'data/${data}/val.txt', trainer: {cuda_device: 0} ${overrides} }"
-    ./scripts/test_all_models experiments/results_${data} ${test_data}
-    #mv experiments/results_${data} /media/nswalker/DUBEData
+    local results_dir="experiments/results_${data}"
+    bash -c "sleep 10; tensorboard serve --logdir ${results_dir} --bind_all --port 6008" &
+    TENSORBOARD_PID=$!
+    ./scripts/train_all_models "${data}" experiments -t "data/${data}/train.txt" -v "data/${data}/val.txt"
+    ./scripts/test_all_models "${results_dir}" "${test_data}"
+    kill -9 $TENSORBOARD_PID
+    # Model archives can take up a lot of space. Use OUT_DIR to move them elsewhere
+    if [[ -d "${OUT_DIR}" ]]; then
+      mv "${results_dir}" "${OUT_DIR}"
+    fi
 }
 
-function run_with_data_named {
-    local name=$1
-    local data=$2
-    local overrides=$3
-    ./scripts/train_all_models ${name} experiments -- -o "{train_data_path: 'data/${data}/train.txt', validation_data_path: 'data/${data}/val.txt', trainer: {cuda_device: 0} ${overrides} }"
-    ./scripts/test_all_models experiments/results_${data} data/${data}/test.txt
-    #mv experiments/results_${name} /media/nswalker/DUBEData
-}
-
+export SEED=$seed
 # Column 1
-run_with_data gen0
-run_with_data gen_form0
+run_with_data gen
+run_with_data gen_logical
 
-# Column 2
-# We don't really need to train for this, but we'll do it to look at variance a little
-run_with_data gen0_paratest
-run_with_data gen_form0_paratest
+# Column 2 (train on gen data, test on the standard paraphrase test set)
+./scripts/test_all_models "experiments/results_gen" "data/para/test.txt"
+./scripts/test_all_models "experiments/results_gen_logical" "data/para_logical/test.txt"
 
 # Column 3
-#run_with_data para0
-#run_with_data para_form0
+run_with_data para
+run_with_data para_logical
 
-# Column 4 (test on para only!)
-run_with_data all0 "" "data/para0/test.txt"
-run_with_data all_form0 "" "data/para_form0/test.txt"
+# Column 4 (both gen and real data, but test on para only!)
+run_with_data all "data/para/test.txt"
+run_with_data all_logical "data/para_logical/test.txt"
+

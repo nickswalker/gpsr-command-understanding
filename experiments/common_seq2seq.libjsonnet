@@ -54,7 +54,7 @@ std.mergePatch(common_parameters,
     patience: 30,
     validation_metric: '+seq_acc',
     tensorboard_writer: {
-      should_log_learning_rate: true,
+      //should_log_learning_rate: true,
     },
     checkpointer: {
         num_serialized_models_to_keep: 0

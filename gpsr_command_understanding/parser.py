@@ -1,6 +1,7 @@
 import operator
 
 from copy import deepcopy
+from itertools import count
 
 import editdistance
 import lark
@@ -145,9 +146,12 @@ class KNearestNeighborParser(object):
 
     def __call__(self, utterance):
         q = PriorityQueue()
+        index = count(0)
         for neighbor, parse in self.neighbors:
             d = self.metric(neighbor, utterance)
-            q.put_nowait((d, (neighbor, parse)))
+            # index is just to break ties in the case that multiple neighbors have the same distance
+            # Note that this makes us prefer neighbors that are compared earlier
+            q.put_nowait((d, next(index), (neighbor, parse)))
             if d == 0:
                 # Exact match returns the known parse
                 return parse
@@ -155,7 +159,7 @@ class KNearestNeighborParser(object):
         # Get the top k (lowest distance/priority) and see how they vote
         answer_votes = {}
         for i in range(self.k):
-            d, (neighbor, parse) = q.get()
+            d, _, (neighbor, parse) = q.get()
             if d > self.distance_threshold:
                 continue
             answer_votes[parse] = answer_votes.get(parse, 0) + 1

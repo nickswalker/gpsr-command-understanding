@@ -28,9 +28,6 @@ std.mergePatch(common_parameters, {
     encoder: {
       type: 'lstm',
       input_size: 100 + 1024,
-      hidden_size: 200,
-      num_layers: 1,
-      bidirectional: true,
     },
   },
   trainer: {

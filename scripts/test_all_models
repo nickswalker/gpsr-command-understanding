@@ -4,7 +4,7 @@ function usage {
     cat <<- EOF
     usage: test_all_models.sh results_path test_file
 
-    Runs allennlp evaluate on all results directories in a path.
+    Runs allennlp evaluate and predict on all results directories in a path.
 
     Options:
         -h --help                      Print this message
@@ -50,30 +50,38 @@ while [[ $# -gt 0 ]]; do
     shift # move past argument
 done
 
+# This is a list of results directories (one per config)
 results_dirs=${results_path}/*
-test_name=$(basename $test_path)
-data_root_path=$(dirname "${test_path}")
-dataset_name=$(basename $(dirname "${test_path}"))
-summary_path="${results_path}"/${dataset_name}_${test_name}_results_summary.txt
+# We assume the test data file lives in a directory that is named to describe what the dataset is
+dataset_dir_path=$(dirname "${test_path}")
+dataset_name=$(basename "${dataset_dir_path}")
+summary_path="${results_path}/${dataset_name}_results_summary.txt"
 
 # Clear this file
-echo "" > $summary_path
+echo "" > "$summary_path"
 
 gpu_arg="--cuda-device 0"
 if [[ ${use_cpu} = "true" ]]; then
     gpu_arg=""
 fi
 
-python -m gpsr_command_understanding.data.evaluate_baseline_parsers ${data_root_path}/train.txt ${data_root_path}/val.txt ${data_root_path}/test.txt > ${results_path}/baselines.txt
+python -m gpsr_command_understanding.data.evaluate_baseline_parsers "${dataset_dir_path}/train.txt" "${dataset_dir_path}/val.txt" "${dataset_dir_path}/test.txt > ${results_path}/${dataset_name}_baselines.txt"
 for dir in $results_dirs; do
-    if [[ ! -d $dir ]]; then
+    # Filter out non-directory files
+    if [[ ! -d "$dir" ]]; then
         continue
     fi
-    model_name=$(basename $dir)
+    # Folder should be named for the config it was produced by
+    model_name=$(basename "$dir")
     model_path="${dir}/model.tar.gz"
-    output_path="${dir}/evaluation_${test_name}"
-    allennlp evaluate ${model_path} ${test_path} --output-file "${output_path}" --include-package gpsr_command_understanding $gpu_arg
-    allennlp predict ${model_path} ${test_path}   --output-file "${dir}/predictions_${test_name}" --use-dataset-reader --predictor command_parser --include-package gpsr_command_understanding --batch-size 64 $gpu_arg
-    echo -e "\n ${model_name}" >> ${summary_path}
-    cat "${dir}/evaluation_${test_name}" >> ${summary_path}
+    if [[ ! -f "${model_path}" ]]; then
+      echo "No model to test for ${dir}"
+      continue
+    fi
+    set -x
+    allennlp evaluate "${model_path}" "${test_path}" --output-file "${dir}/evaluation_${dataset_name}.txt" --include-package gpsr_command_understanding $gpu_arg
+    allennlp predict "${model_path}" "${test_path}"   --output-file "${dir}/predictions_${dataset_name}.txt" --use-dataset-reader --predictor command_parser --include-package gpsr_command_understanding --batch-size 64 $gpu_arg
+    set +x
+    echo -e "\n ${model_name}" >> "${summary_path}"
+    cat "${dir}/evaluation_${dataset_name}.txt" >> "${summary_path}"
 done
