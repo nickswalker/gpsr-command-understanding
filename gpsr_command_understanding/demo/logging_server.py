@@ -29,7 +29,7 @@ from gevent.pywsgi import WSGIServer
 
 from allennlp.common import JsonDict
 from allennlp.common.checks import check_for_gpu
-from allennlp.common.util import import_submodules
+from allennlp.common.util import import_module_and_submodules
 from allennlp.models.archival import load_archive
 from allennlp.predictors import Predictor
 
@@ -191,7 +191,7 @@ def main(args):
 
     # Load modules
     for package_name in args.include_package:
-        import_submodules(package_name)
+        import_module_and_submodules(package_name)
 
     predictor = _get_predictor(args)
 

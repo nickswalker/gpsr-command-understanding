@@ -1,0 +1,47 @@
+local SEED = std.parseInt(std.extVar('SEED'));
+local TRAIN_PATH = std.extVar('TRAIN_PATH');
+local VALIDATION_PATH = std.extVar('VALIDATION_PATH');
+local TEST_PATH = std.extVar('TEST_PATH');
+local EVALUATE_ON_TEST = std.parseInt(std.extVar('EVALUATE_ON_TEST')) == 1;
+// GPU to use. Setting this to -1 will mean that we'll use the CPU.
+local CUDA_DEVICE = std.parseInt(std.extVar('CUDA_DEVICE'));
+local HIDDEN_SIZE = 200;
+
+{
+  numpy_seed: SEED,
+  pytorch_seed: SEED,
+  random_seed: SEED,
+  train_data_path: TRAIN_PATH,
+  validation_data_path: VALIDATION_PATH,
+  test_data_path: if EVALUATE_ON_TEST then TEST_PATH else null,
+  evaluate_on_test: EVALUATE_ON_TEST,
+  data_loader: {
+    batch_sampler: {
+      type: 'bucket',
+      padding_noise: 0.2,
+      batch_size: 32,
+    },
+  },
+  trainer: {
+    optimizer: {
+      type: 'adamw',
+      lr: 0.01,
+    },
+    learning_rate_scheduler: {
+      type: 'noam',
+      warmup_steps: 1000,
+      model_size: HIDDEN_SIZE,
+    },
+    num_epochs: 150,
+    patience: 30,
+    cuda_device: CUDA_DEVICE,
+    tensorboard_writer: {
+      should_log_learning_rate: true,
+    },
+    checkpointer: {
+        num_serialized_models_to_keep: 0
+    }
+  },
+
+
+}

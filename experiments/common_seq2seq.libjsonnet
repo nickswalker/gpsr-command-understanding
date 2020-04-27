@@ -1,0 +1,63 @@
+local common_parameters = import 'common.libjsonnet';
+local HIDDEN_SIZE = 200;
+std.mergePatch(common_parameters,
+{
+  dataset_reader: {
+    type: 'my_seq2seq',
+    target_tokenizer: {
+      type: 'just_spaces',
+    },
+    target_token_indexers: {
+      tokens: {
+        type: 'single_id',
+        namespace: 'tokens',
+      },
+    },
+  },
+  model: {
+    type: 'seq2seq',
+    encoder: {
+      type: 'lstm',
+      input_size: 100,
+      hidden_size: HIDDEN_SIZE,
+      num_layers: 1,
+      bidirectional: true,
+    },
+    attention: {
+      type: 'bilinear',
+      vector_dim: 400,
+      matrix_dim: 400,
+    },
+    target_embedding_dim: 100,
+    beam_size: 5,
+    max_decoding_steps: 100,
+    use_bleu: false,
+  },
+  data_loader: {
+    batch_sampler: {
+      type: 'bucket',
+      padding_noise: 0.2,
+      batch_size: 32,
+    },
+  },
+  trainer: {
+    optimizer: {
+      type: 'adamw',
+      lr: 0.01,
+    },
+    learning_rate_scheduler: {
+      type: 'noam',
+      warmup_steps: 1000,
+      model_size: HIDDEN_SIZE,
+    },
+    num_epochs: 150,
+    patience: 30,
+    validation_metric: '+seq_acc',
+    tensorboard_writer: {
+      should_log_learning_rate: true,
+    },
+    checkpointer: {
+        num_serialized_models_to_keep: 0
+    }
+  },
+})

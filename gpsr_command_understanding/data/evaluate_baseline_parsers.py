@@ -3,13 +3,13 @@ import itertools
 import sys
 import editdistance
 
-from gpsr_command_understanding.grammar import tree_printer
-from gpsr_command_understanding.loading_helpers import load_all_2018, GRAMMAR_DIR_2018
+from gpsr_command_understanding.generator.grammar import tree_printer
+from gpsr_command_understanding.generator.loading_helpers import load_paired_2018, GRAMMAR_DIR_2018
 from gpsr_command_understanding.models.noop_tokenizer import NoOpTokenizer
 from gpsr_command_understanding.models.seq2seq_data_reader import Seq2SeqDatasetReader
 from gpsr_command_understanding.parser import AnonymizingParser, KNearestNeighborParser, GrammarBasedParser
 from gpsr_command_understanding.anonymizer import Anonymizer
-from nltk.metrics.distance import edit_distance, jaccard_distance
+from nltk.metrics.distance import jaccard_distance
 
 
 def bench_parser(parser, pairs):
@@ -18,13 +18,19 @@ def bench_parser(parser, pairs):
     for utterance, gold in pairs:
         pred = parser(utterance)
         if pred == gold:
+            assert(tree_printer(pred) == tree_printer(gold))
             correct += 1
         elif pred:
             pass
+            #print(utterance)
             #print(tree_printer(pred))
             #print(tree_printer(gold))
+            #print("")
         if pred:
             parsed += 1
+        else:
+            pass
+            # print(utterance)
     return correct, parsed
 
 
@@ -35,19 +41,21 @@ def sweep_thresh(neighbors, test_pairs, anonymizer, metric, thresh_vals=range(0,
         anon_edit_distance_parser = AnonymizingParser(anon_edit_distance_parser, anonymizer)
         correct, parsed = bench_parser(anon_edit_distance_parser, test_pairs)
 
+        # Overall accuracy
         percent_correct = 100.0 * float(correct) / num_paraphrases
+        # Of those that the parser made a guess on, how many were right
         if parsed == 0:
             percent_of_considered = 0.0
         else:
             percent_of_considered = 100.0 * float(correct) / parsed
-        print("thresh={0} {1} out of total {2} correctly ({3:.2f}%). {4} of selected {5} ({6:.2f}%)".format(thresh, correct,
-                                                                                                    num_paraphrases,
+        print("thresh={0:.1f} correct={1}({2:.2f}%) attempted={3}({4:.2f}%) total={5}".format(thresh, correct,
                                                                                                     percent_correct,
-                                                                                                            correct,
                                                                                                     parsed,
-                                                                                                    percent_of_considered))
+                                                                                                    percent_of_considered,
+                                                                                              num_paraphrases,))
 
 
+# FIXME(nickswalker): Why are some of the generated sentences not detected as in-grammar?
 def main():
     if not len(sys.argv) == 4:
         print("Pass train, validation and test file paths")
@@ -57,12 +65,12 @@ def main():
     val = reader.read(sys.argv[2])
     test = reader.read(sys.argv[3])
 
-    generator = load_all_2018(GRAMMAR_DIR_2018)
+    generator = load_paired_2018(GRAMMAR_DIR_2018)
     anonymizer = Anonymizer.from_knowledge_base(generator.knowledge_base)
 
     neighbors = []
     for x in itertools.chain(train, val):
-        command = str(x["source_tokens"][1:-1][0])
+        command = str(x["source_tokens"][0])
         form = generator.lambda_parser.parse(str(x["target_tokens"][1:-1][0]))
         anon_command = anonymizer(command)
         neighbors.append((anon_command, form))
@@ -70,7 +78,7 @@ def main():
     test_pairs = []
     for x in test:
         form = generator.lambda_parser.parse(str(x["target_tokens"][1:-1][0]))
-        test_pairs.append((str(x["source_tokens"][1:-1][0]), form))
+        test_pairs.append((str(x["source_tokens"][0]), form))
 
     print("Check grammar membership")
     naive_parser = GrammarBasedParser(generator.rules)

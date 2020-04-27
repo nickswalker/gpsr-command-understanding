@@ -11,16 +11,13 @@ from torch.nn.modules.rnn import LSTMCell
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import START_SYMBOL, END_SYMBOL
 from allennlp.data.vocabulary import Vocabulary
-from allennlp.modules.attention import LegacyAttention
 from allennlp.modules import Attention, TextFieldEmbedder, Seq2SeqEncoder
-from allennlp.modules.similarity_functions import SimilarityFunction
 from allennlp.models.model import Model
 from allennlp.modules.token_embedders import Embedding
 from allennlp.nn import util
 from allennlp.nn.beam_search import BeamSearch
 from allennlp.training.metrics import BLEU
 
-from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.paired_generator import LambdaParserWrapper
 from gpsr_command_understanding.models.metrics import TokenSequenceAccuracy, ParseValidity
 
@@ -79,7 +76,6 @@ class Seq2Seq(Model):
                  encoder: Seq2SeqEncoder,
                  max_decoding_steps: int,
                  attention: Attention = None,
-                 attention_function: SimilarityFunction = None,
                  beam_size: int = None,
                  target_namespace: str = "tokens",
                  target_embedding_dim: int = None,
@@ -118,19 +114,11 @@ class Seq2Seq(Model):
         num_classes = self.vocab.get_vocab_size(self._target_namespace)
 
         # Attention mechanism applied to the encoder output for each step.
-        if attention:
-            if attention_function:
-                raise ConfigurationError("You can only specify an attention module or an "
-                                         "attention function, but not both.")
-            self._attention = attention
-        elif attention_function:
-            self._attention = LegacyAttention(attention_function)
-        else:
-            self._attention = None
+        self._attention = attention
 
         # Dense embedding of vocab words in the target space.
         target_embedding_dim = target_embedding_dim or source_embedder.get_output_dim()
-        self._target_embedder = Embedding(num_classes, target_embedding_dim)
+        self._target_embedder = Embedding(target_embedding_dim, num_classes)
 
         # Decoder output dim needs to be the same as the encoder output dim since we initialize the
         # hidden state of the decoder with the final hidden state of the encoder.
@@ -232,19 +220,19 @@ class Seq2Seq(Model):
                 top_k_predictions = output_dict["predictions"]
                 # shape: (batch_size, max_predicted_sequence_length)
                 best_predictions = top_k_predictions[:, 0, :]
-                predicted_tokens = self.decode(output_dict)["predicted_tokens"]
+                predicted_tokens = self.make_output_human_readable(output_dict)["predicted_tokens"]
                 for metric in self._token_based_metrics:
                     metric(predicted_tokens, [x["target_tokens"] for x in metadata])
                 if self._bleu:
-                    self._bleu(best_predictions, target_tokens["tokens"])
+                    self._bleu(best_predictions, target_tokens["tokens"]["tokens"])
 
         return output_dict
 
     @overrides
-    def decode(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def make_output_human_readable(self, output_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
         Finalize predictions.
-        This method overrides ``Model.decode``, which gets called after ``Model.forward``, at test
+        This method overrides ``Model.make_output_human_readable``, which gets called after ``Model.forward``, at test
         time, to finalize predictions. The logic for the decoder part of the encoder-decoder lives
         within the ``forward`` method.
         This method trims the output predictions to the first end symbol, replaces indices with
@@ -313,7 +301,7 @@ class Seq2Seq(Model):
 
         if target_tokens:
             # shape: (batch_size, max_target_sequence_length)
-            targets = target_tokens["tokens"]
+            targets = target_tokens["tokens"]["tokens"]
 
             _, target_sequence_length = targets.size()
 
@@ -325,7 +313,7 @@ class Seq2Seq(Model):
 
         # Initialize target predictions with the start index.
         # shape: (batch_size,)
-        last_predictions = source_mask.new_full((batch_size,), fill_value=self._start_index)
+        last_predictions = source_mask.new_full((batch_size,), fill_value=self._start_index, dtype=torch.long)
 
         step_logits: List[torch.Tensor] = []
         step_predictions: List[torch.Tensor] = []
@@ -379,7 +367,7 @@ class Seq2Seq(Model):
     def _forward_beam_search(self, state: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Make forward pass during prediction using a beam search."""
         batch_size = state["source_mask"].size()[0]
-        start_predictions = state["source_mask"].new_full((batch_size,), fill_value=self._start_index)
+        start_predictions = state["source_mask"].new_full((batch_size,), fill_value=self._start_index, dtype=torch.long)
 
         # shape (all_top_k_predictions): (batch_size, beam_size, num_decoding_steps)
         # shape (log_probabilities): (batch_size, beam_size)

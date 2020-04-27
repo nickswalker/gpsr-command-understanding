@@ -1,7 +1,6 @@
 from typing import Dict
 import logging
 
-from allennlp.data.tokenizers.word_splitter import JustSpacesWordSplitter
 from overrides import overrides
 
 from allennlp.common.checks import ConfigurationError
@@ -10,7 +9,7 @@ from allennlp.common.util import START_SYMBOL, END_SYMBOL
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.fields import TextField, MetadataField
 from allennlp.data.instance import Instance
-from allennlp.data.tokenizers import Token, Tokenizer, WordTokenizer
+from allennlp.data.tokenizers import Token, Tokenizer, SpacyTokenizer
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 
 import itertools
@@ -51,14 +50,16 @@ class Seq2SeqDatasetReader(DatasetReader):
                  target_tokenizer: Tokenizer = None,
                  source_token_indexers: Dict[str, TokenIndexer] = None,
                  target_token_indexers: Dict[str, TokenIndexer] = None,
-                 source_add_start_token: bool = True,
                  lazy: bool = False) -> None:
         super().__init__(lazy)
-        self._source_tokenizer = source_tokenizer or WordTokenizer()
-        self._target_tokenizer = target_tokenizer or WordTokenizer(JustSpacesWordSplitter())
+        self._source_tokenizer = source_tokenizer or SpacyTokenizer()
+        from allennlp.data.tokenizers import PretrainedTransformerTokenizer
+        import transformers
+        if isinstance(self._source_tokenizer,PretrainedTransformerTokenizer) and isinstance(self._source_tokenizer.tokenizer, transformers.GPT2Tokenizer):
+            self._source_tokenizer.tokenizer._pad_token = "@"
+        self._target_tokenizer = target_tokenizer or SpacyTokenizer()
         self._source_token_indexers = source_token_indexers or {"tokens": SingleIdTokenIndexer()}
         self._target_token_indexers = target_token_indexers or self._source_token_indexers
-        self._source_add_start_token = source_add_start_token
 
     @overrides
     def _read(self, file_path):
@@ -83,9 +84,6 @@ class Seq2SeqDatasetReader(DatasetReader):
     def text_to_instance(self, source_string: str, target_string: str = None) -> Instance:  # type: ignore
         # pylint: disable=arguments-differ
         tokenized_source = self._source_tokenizer.tokenize(source_string)
-        if self._source_add_start_token:
-            tokenized_source.insert(0, Token(START_SYMBOL))
-        tokenized_source.append(Token(END_SYMBOL))
         source_field = TextField(tokenized_source, self._source_token_indexers)
         meta_fields = {"source_tokens": [x.text for x in tokenized_source[1:-1]]}
         fields_dict = {"source_tokens": source_field}
