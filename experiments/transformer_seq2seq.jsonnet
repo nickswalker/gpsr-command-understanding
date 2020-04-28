@@ -2,14 +2,19 @@ local common_parameters = import 'common_seq2seq.libjsonnet';
 local transformer_model = std.extVar('TRANSFORMER_NAME');
 local glove_embedding = import 'glove_embedding.libjsonnet';
 local transformer_sizes = {
-  'albert-base-v2': 768,
-  'bert-base-uncased': 768,
-  'bert-large-uncased': 1024,
-  'distilroberta-base': 768,
   gpt2: 768,
-  'roberta-base': 768,
-  'xlnet-base-cased': 768,
+  distilgpt2: 768
 };
+local get_transformer_size(name) =
+    if std.length(std.findSubstr("base", name)) == 1 then
+        768
+    else if std.length(std.findSubstr("large", name)) == 1 then
+        1024
+    else if std.objectHas(transformer_sizes, name) then
+        transformer_sizes[name]
+    else
+        error "Unknown size";
+
 std.mergePatch(common_parameters,
 {
  dataset_reader: {
@@ -41,7 +46,7 @@ std.mergePatch(common_parameters,
    },
    encoder: {
      type: 'lstm',
-     input_size: 100 + transformer_sizes[transformer_model],
+     input_size: 100 + get_transformer_size(transformer_model),
      hidden_size: 200,
    },
  },

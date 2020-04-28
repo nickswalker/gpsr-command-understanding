@@ -24,7 +24,7 @@ ${gen_cmd} --name all_logical --paraphrasings data/paraphrasings.txt -a --use-lo
 function run_with_data {
     local data="$1"
     local test_data="$2"
-    if [[ -n "${data}" ]]; then
+    if [[ -z "${test_data}" ]]; then
         # Default to the folder's test data
         test_data="data/${data}/test.txt"
     fi

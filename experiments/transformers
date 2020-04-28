@@ -1,6 +1,8 @@
 albert-base-v2
 bert-base-uncased
 bert-large-uncased
+distilbert-base-uncased
+distilgpt2
 distilroberta-base
 gpt2
 roberta-base

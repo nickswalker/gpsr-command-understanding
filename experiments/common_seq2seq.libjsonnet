@@ -37,13 +37,13 @@ std.mergePatch(common_parameters,
     batch_sampler: {
       type: 'bucket',
       padding_noise: 0.2,
-      batch_size: 32,
+      batch_size: 64,
     },
   },
   trainer: {
     optimizer: {
       type: 'adamw',
-      lr: 0.01,
+      lr: 0.08,
     },
     learning_rate_scheduler: {
       type: 'noam',
