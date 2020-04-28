@@ -85,7 +85,7 @@ class Seq2SeqDatasetReader(DatasetReader):
         # pylint: disable=arguments-differ
         tokenized_source = self._source_tokenizer.tokenize(source_string)
         source_field = TextField(tokenized_source, self._source_token_indexers)
-        meta_fields = {"source_tokens": [x.text for x in tokenized_source[1:-1]]}
+        meta_fields = {"source_tokens": tokenized_source.copy()}
         fields_dict = {"source_tokens": source_field}
         if target_string is not None:
             tokenized_target = self._target_tokenizer.tokenize(target_string)

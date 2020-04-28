@@ -72,7 +72,7 @@ while [[ $# -gt 0 ]]; do
     shift # move past argument
 done
 
-if [[ ! $use_cpu ]]; then
+if [[ $use_cpu == 0 ]]; then
   export CUDA_DEVICE=0
 else
   export CUDA_DEVICE=-1

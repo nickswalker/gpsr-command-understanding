@@ -30,13 +30,14 @@ function run_with_data {
     fi
     local results_dir="experiments/results_${data}"
     bash -c "sleep 10; tensorboard serve --logdir ${results_dir} --bind_all --port 6008" &
-    TENSORBOARD_PID=$!
     ./scripts/train_all_models "${data}" experiments -t "data/${data}/train.txt" -v "data/${data}/val.txt"
     ./scripts/test_all_models "${results_dir}" "${test_data}"
-    kill -9 $TENSORBOARD_PID
+    pkill tensorboard
     # Model archives can take up a lot of space. Use OUT_DIR to move them elsewhere
     if [[ -d "${OUT_DIR}" ]]; then
-      mv "${results_dir}" "${OUT_DIR}"
+      set -x;
+      mv -b --suffix=.bak "${results_dir}" "${OUT_DIR}"
+      set -x;
     fi
 }
 

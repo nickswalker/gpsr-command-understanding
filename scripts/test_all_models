@@ -15,7 +15,7 @@ EOF
 
 
 if [[ $# < 2 ]]; then
-    echo "Pass a path to a directory of experiments"
+    usage
     exit 1
 fi
 
@@ -64,8 +64,9 @@ gpu_arg="--cuda-device 0"
 if [[ ${use_cpu} = "true" ]]; then
     gpu_arg=""
 fi
-
-python -m gpsr_command_understanding.data.evaluate_baseline_parsers "${dataset_dir_path}/train.txt" "${dataset_dir_path}/val.txt" "${dataset_dir_path}/test.txt > ${results_path}/${dataset_name}_baselines.txt"
+set -x;
+python -m gpsr_command_understanding.data.evaluate_baseline_parsers "${dataset_dir_path}/train.txt" "${dataset_dir_path}/val.txt" "${dataset_dir_path}/test.txt" > "${results_path}/${dataset_name}_baselines.txt"
+set +x;
 for dir in $results_dirs; do
     # Filter out non-directory files
     if [[ ! -d "$dir" ]]; then
@@ -79,8 +80,9 @@ for dir in $results_dirs; do
       continue
     fi
     set -x
-    allennlp evaluate "${model_path}" "${test_path}" --output-file "${dir}/evaluation_${dataset_name}.txt" --include-package gpsr_command_understanding $gpu_arg
-    allennlp predict "${model_path}" "${test_path}"   --output-file "${dir}/predictions_${dataset_name}.txt" --use-dataset-reader --predictor command_parser --include-package gpsr_command_understanding --batch-size 64 $gpu_arg
+    allennlp evaluate "${model_path}" "${test_path}" --output-file "${dir}/evaluation_${dataset_name}.txt" --include-package gpsr_command_understanding $gpu_arg > /dev/null 2>&1
+    allennlp predict "${model_path}" "${test_path}"   --output-file "${dir}/predictions_${dataset_name}.txt" --use-dataset-reader --predictor command_parser --include-package gpsr_command_understanding --batch-size 64 $gpu_arg > /dev/null 2>&1
+
     set +x
     echo -e "\n ${model_name}" >> "${summary_path}"
     cat "${dir}/evaluation_${dataset_name}.txt" >> "${summary_path}"
