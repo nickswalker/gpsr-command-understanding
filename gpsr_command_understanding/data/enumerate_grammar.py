@@ -1,13 +1,15 @@
 import os
+import sys
+from random import Random
+
 import numpy as np
 from os.path import join
 import re
 
-from gpsr_command_understanding.generator.grammar import tree_printer, DiscardMeta
-from gpsr_command_understanding.generator.loading_helpers import load_paired_2018_by_cat, GRAMMAR_DIR_2018, \
-    load_2018_by_cat
+from gpsr_command_understanding.generator.grammar import tree_printer
+from gpsr_command_understanding.generator.loading_helpers import load, GRAMMAR_DIR_2019
 from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
-from gpsr_command_understanding.generator.paired_generator import pairs_without_placeholders
+from gpsr_command_understanding.generator.paired_generator import pairs_without_placeholders, PairedGenerator
 
 
 def get_annotated_sentences(sentences_and_pairs):
@@ -25,98 +27,63 @@ def get_annotated_sentences(sentences_and_pairs):
 
 
 def main():
-    out_root = os.path.abspath(os.path.dirname(__file__) + "/../../data")
+    year = int(sys.argv[1])
+    task = sys.argv[2]
+    out_root = os.path.abspath(os.path.dirname(__file__) + "/../../data/")
 
-    generators = load_2018_by_cat(GRAMMAR_DIR_2018)
-    generators_paired = load_paired_2018_by_cat(GRAMMAR_DIR_2018)
+    generator = PairedGenerator(None, grammar_format_version=year)
+    load(generator, task, GRAMMAR_DIR_2019)
 
-    cat_sentences = [set(generator.generate(ROOT_SYMBOL)) for generator in generators]
-    stripper = DiscardMeta()
-    cat_sentences = [set([stripper.visit(sentence) for sentence in cat]) for cat in cat_sentences]
-    all_sentences = [tree_printer(x) for x in set().union(*cat_sentences)]
-    all_pairs = [pairs_without_placeholders(generator) for generator in generators_paired]
-    baked_pairs = [{tree_printer(key): tree_printer(value) for key, value in pairs.items()} for pairs in all_pairs]
+    sentences = [pair[0] for pair in
+                 generator.generate(ROOT_SYMBOL, yield_requires_semantics=False, random_generator=Random(0),
+                                    branch_cap=3)]
+    [generator.extract_metadata(sentence) for sentence in sentences]
+    sentences = set(sentences)
 
-    # by_utterance, by_parse = determine_unique_cat_data(all_pairs, keep_new_utterance_repeat_parse_for_lower_cat=False)
-    unique = []
-    for i, _ in enumerate(cat_sentences):
-        prev_cats = cat_sentences[:i]
-        if prev_cats:
-        # Don't count the sentence as unique unless it hasn't happened in any earlier categories
-            prev_cat_sentences = set().union(*prev_cats)
-            overlapped_with_prev = cat_sentences[i].intersection(prev_cat_sentences)
-            unique.append(cat_sentences[i].difference(prev_cat_sentences))
-        else:
-            unique.append(cat_sentences[i])
-    # Sets should be disjoint
-    assert (len(set().union(*unique)) == sum([len(cat) for cat in unique]))
+    out_path = join(out_root, "{}_{}_sentences.txt".format(year, task))
+    with open(out_path, "w") as f:
+        for sentence in sentences:
+            f.write(tree_printer(sentence) + '\n')
 
-    stats = [get_annotated_sentences(x) for x in zip(cat_sentences, all_pairs)]
-    annotated, unannotated, out_of_grammar = [c[0] for c in stats], [c[1] for c in stats], [c[2] for c in stats]
+    baked_sentences = [tree_printer(x) for x in sentences]
+    all_pairs = pairs_without_placeholders(generator)
+    baked_pairs = {tree_printer(key): tree_printer(value) for key, value in all_pairs.items()}
 
-    unique_annotated = [get_annotated_sentences((unique_sen, cat_pairs))[0] for unique_sen, cat_pairs in zip(unique, all_pairs)]
-    unique_sentence_parses = [[pairs[ann_sen] for ann_sen in annotated] for annotated, pairs in zip(unique_annotated, baked_pairs)]
+    annotated, unannotated, out_of_grammar = get_annotated_sentences((sentences, all_pairs))
+
+    unique_sentence_parses = [all_pairs[ann_sen] for ann_sen in annotated]
     unique_sentence_parses = [set(x) for x in unique_sentence_parses]
 
-    combined_annotations = set().union(*annotated)
-    combined_annotations.intersection_update(all_sentences)
-    # Note that this won't actually catch the correct unannotated; the expansion order of the sentence may
-    # fail to hit the exact match for the semantics annotation that is required
-    #parseless_another_way = [list(filter(lambda pair: pair[1] is None, generate_sentence_parse_pairs(NonTerminal("deliver"), gen, yield_requires_semantics=False))) for gen in generators]
+    out_path = join(out_root, "{}_{}_pairs.txt".format(year, task))
 
-    out_paths = [join(out_root, str(i)+"_sentences.txt") for i in range(1, 4)]
+    with open(out_path, "w") as f:
+        for sentence, parse in baked_pairs.items():
+            f.write(sentence + '\n' + parse + '\n')
 
-    for cat_out_path, sentences in zip(out_paths,cat_sentences):
-        with open(cat_out_path, "w") as f:
-            for sentence in sentences:
-                f.write(tree_printer(sentence) + '\n')
-
-    out_paths = [join(out_root, str(i)+"_pairs.txt") for i in range(1, 4)]
-
-    for cat_out_path, pairs in zip(out_paths,baked_pairs):
-        with open(cat_out_path, "w") as f:
-            for sentence, parse in pairs.items():
-                f.write(sentence + '\n' + parse + '\n')
-
-    meta_out_path = join(out_root, "annotations_meta.txt")
+    meta_out_path = join(out_root, "{}_{}_annotations_meta.txt".format(year, task))
     with open(meta_out_path, "w") as f:
         f.write("Coverage:\n")
-        cat_parse_lengths = []
-        cat_filtered_parse_lengths = []
-        cat_sen_lengths = []
-        for i, (annotated_sen, sen, unique_parses) in enumerate(zip(annotated, cat_sentences, unique_sentence_parses)):
-            f.write("cat{0} {1}/{2} {3:.1f}%\n".format(i+1, len(annotated_sen), len(sen), 100.0 * len(annotated_sen) / len(sen)))
-            f.write("\t unique parses: {}\n".format(len(unique_parses)))
-            cat_sen_lengths.append([len(tree_printer(sentence).split()) for sentence in sen])
-            avg_sentence_length = np.mean(cat_sen_lengths[i])
-            parse_lengths = []
-            filtered_parse_lengths = []
-            for parse in unique_parses:
-                parse_lengths.append(len(parse.split()))
-                stop_tokens_removed = re.sub("(\ e\ |\"|\)|\()", "", parse)
-                filtered_parse_lengths.append(len(stop_tokens_removed.split()))
-            cat_parse_lengths.append(parse_lengths)
-            cat_filtered_parse_lengths.append(filtered_parse_lengths)
-            avg_parse_length = np.mean(cat_parse_lengths[i])
-            avg_filtered_parse_length = np.mean(cat_filtered_parse_lengths[i])
-            f.write(
-                "\t avg sentence length (tokens): {:.1f} avg parse length (tokens): {:.1f} avg filtered parse length (tokens): {:.1f}\n".format(
-                    avg_sentence_length, avg_parse_length, avg_filtered_parse_length))
-
-        f.write("combined {0}/{1} {2:.1f}%\n".format(len(combined_annotations), len(all_sentences), 100.0 * len(combined_annotations) / len(all_sentences)))
-        f.write("combined unique parses: {}\n".format(len(set().union(*unique_sentence_parses))))
-
-        all_sen_lengths = [length for cat in cat_sen_lengths for length in cat]
-        all_parse_lengths = [length for cat in cat_parse_lengths for length in cat]
-        all_filtered_parse_lengths = [length for cat in cat_filtered_parse_lengths for length in cat]
+        f.write("{0}/{1} {2:.1f}%\n".format(len(annotated), len(baked_sentences),
+                                            100.0 * len(annotated) / len(baked_sentences)))
+        f.write("\t unique parses: {}\n".format(len(unique_sentence_parses)))
+        sen_lengths = [len(sentence.split()) for sentence, logical in baked_pairs]
+        avg_sentence_length = np.mean(sen_lengths)
+        parse_lengths = []
+        filtered_parse_lengths = []
+        for parse in unique_sentence_parses:
+            parse_lengths.append(len(parse.split()))
+            stop_tokens_removed = re.sub(r"(\ e\ |\"|\)|\()", "", parse)
+            filtered_parse_lengths.append(len(stop_tokens_removed.split()))
+        avg_parse_length = np.mean(parse_lengths)
+        avg_filtered_parse_length = np.mean(filtered_parse_lengths)
         f.write(
-            "combined avg sentence length (tokens): {:.1f} avg parse length (tokens): {:.1f} avg filtered parse length (tokens): {:.1f}\n".format(
-                np.mean(all_sen_lengths), np.mean(all_parse_lengths), np.mean(all_filtered_parse_lengths)))
-    print("No parses for:")
-    for cat in unannotated:
-        for sentence in sorted(cat):
-            print(sentence)
-        print("-----------------")
+            "\t avg sentence length (tokens): {:.1f} avg parse length (tokens): {:.1f} avg filtered parse length (tokens): {:.1f}\n".format(
+                avg_sentence_length, avg_parse_length, avg_filtered_parse_length))
+
+    """print("No parses for:")
+    for sentence in sorted(unannotated):
+        print(sentence)
+    print("-----------------")"""
 
 
 if __name__ == "__main__":
