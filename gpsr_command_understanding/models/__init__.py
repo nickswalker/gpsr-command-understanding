@@ -2,4 +2,3 @@ import gpsr_command_understanding.models.seq2seq_data_reader
 import gpsr_command_understanding.models.seq2seq
 import gpsr_command_understanding.models.metrics
 import gpsr_command_understanding.models.seq2seq_predictor
-import gpsr_command_understanding.models.noop_tokenizer

@@ -23,7 +23,7 @@ class KnowledgeBase:
 
     @staticmethod
     def from_xml(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file,
-                      questions_xml_file):
+                 questions_xml_file):
         object_parser = ObjectParser(objects_xml_file)
         locations_parser = LocationParser(locations_xml_file)
         names_parser = NameParser(names_xml_file)
@@ -67,8 +67,9 @@ class AnonymizedKnowledgebase:
         rooms = ["room" + str(i) for i in range(3)]
         self.by_name = {name: [name + str(i) for i in range(3)] for name in names}
         self.by_name["location"] += rooms
-        self.attributes = {"object":
-        {"type": defaultdict(lambda x:True)},
-        "location": {"isplacement":defaultdict(lambda x:True), "isbeacon":defaultdict(lambda x:True), "isroom":defaultdict(lambda x:False)}}
+        self.attributes = {"object": {"type": defaultdict(lambda x: True)},
+                           "location": {"isplacement": defaultdict(lambda x: True),
+                                        "isbeacon": defaultdict(lambda x: True),
+                                        "isroom": defaultdict(lambda x: False)}}
         for room in rooms:
             self.attributes["location"]["isroom"][room] = True

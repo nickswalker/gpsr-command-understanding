@@ -53,7 +53,8 @@ class Anonymizer(object):
         for key, isroom in isroom.items():
             if isroom:
                 rooms.append(key)
-        return Anonymizer(kb.by_name["object"], kb.by_name["category"], kb.by_name["name"], kb.by_name["location"], rooms, kb.by_name["gesture"])
+        return Anonymizer(kb.by_name["object"], kb.by_name["category"], kb.by_name["name"], kb.by_name["location"],
+                          rooms, kb.by_name["gesture"])
 
 
 class NumberingAnonymizer(Anonymizer):

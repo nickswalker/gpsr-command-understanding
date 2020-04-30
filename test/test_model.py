@@ -1,7 +1,7 @@
 import os
 
 from allennlp.common.testing import ModelTestCase
-from gpsr_command_understanding.models import seq2seq
+# from gpsr_command_understanding.models import seq2seq
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 

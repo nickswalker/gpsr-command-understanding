@@ -5,8 +5,8 @@ import unittest
 
 from lark import Tree, Token
 
-from gpsr_command_understanding.generator.generator import Generator
-from gpsr_command_understanding.generator.grammar import NonTerminal, ROOT_SYMBOL, tree_printer, ComplexWildCard
+from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
+from gpsr_command_understanding.generator.grammar import NonTerminal, ComplexWildCard
 from gpsr_command_understanding.generator.knowledge import KnowledgeBase
 from gpsr_command_understanding.generator.loading_helpers import load_paired_2018_by_cat, load_paired, GRAMMAR_DIR_2018, \
     GRAMMAR_DIR_2019, load_paired_2018, load_2018
@@ -18,9 +18,10 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestPairedGenerator(unittest.TestCase):
 
     def setUp(self):
-        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"]}, {})
+        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"], "location": ["l1", "l2"]}, {})
         self.generator = PairedGenerator(kb, grammar_format_version=2018)
-        with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as fixture_grammar_file, open(os.path.join(FIXTURE_DIR, "semantics.txt")) as fixture_semantics_file:
+        with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as fixture_grammar_file, open(
+                os.path.join(FIXTURE_DIR, "semantics.txt")) as fixture_semantics_file:
             num_rules = self.generator.load_rules(fixture_grammar_file)
             num_semantic_rules = self.generator.load_semantics_rules(fixture_semantics_file)
         self.assertEqual(num_rules, 5)
@@ -100,10 +101,13 @@ class TestPairedGenerator(unittest.TestCase):
         def expr_builder(string):
             return Tree("expression", string.split(" "))
 
-        test_tree = Tree("expression", ["Say", "hi", "to", ComplexWildCard("name", wildcard_id=1), "and", ComplexWildCard("name", wildcard_id=2)])
-        test_sem = Tree("expression", [Tree("greet", [ComplexWildCard("name", wildcard_id=1), ComplexWildCard("name", wildcard_id=2)])])
+        test_tree = Tree("expression", ["Say", "hi", "to", ComplexWildCard("name", wildcard_id=1), "and",
+                                        ComplexWildCard("name", wildcard_id=2)])
+        test_sem = Tree("expression", [
+            Tree("greet", [ComplexWildCard("name", wildcard_id=1), ComplexWildCard("name", wildcard_id=2)])])
         expected_utt = expr_builder("Say hi to n1 and n2")
-        expected_logical = Tree("expression", [Tree("greet", [Token("ESCAPED_STRING","\"n1\""), Token("ESCAPED_STRING","\"n2\"")])])
+        expected_logical = Tree("expression",
+                                [Tree("greet", [Token("ESCAPED_STRING", "\"n1\""), Token("ESCAPED_STRING", "\"n2\"")])])
         # FIXME: Setup a mocked knowledgebase
         self.assertEqual((expected_utt, expected_logical), self.generator.ground((test_tree, test_sem)))
 
@@ -114,6 +118,7 @@ class TestPairedGenerator(unittest.TestCase):
             first, second = ground_utt.children
             self.assertNotEqual(first, second)
 
-        test_tree = Tree("expression", [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2)])
-        expected = expr_builder("Say hi to x and y")
-
+        test_tree = Tree("expression",
+                         [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2)])
+        expected = expr_builder("l1 and n1")
+        self.assertEqual((expected, Tree(None, [])), self.generator.ground((test_tree, Tree(None, []))))

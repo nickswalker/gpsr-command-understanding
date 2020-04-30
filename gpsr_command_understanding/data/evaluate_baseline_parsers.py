@@ -18,14 +18,14 @@ def bench_parser(parser, pairs):
     for utterance, gold in pairs:
         pred = parser(utterance)
         if pred == gold:
-            assert(tree_printer(pred) == tree_printer(gold))
+            assert (tree_printer(pred) == tree_printer(gold))
             correct += 1
         elif pred:
             pass
-            #print(utterance)
-            #print(tree_printer(pred))
-            #print(tree_printer(gold))
-            #print("")
+            # print(utterance)
+            # print(tree_printer(pred))
+            # print(tree_printer(gold))
+            # print("")
         if pred:
             parsed += 1
         else:
@@ -49,10 +49,10 @@ def sweep_thresh(neighbors, test_pairs, anonymizer, metric, thresh_vals=range(0,
         else:
             percent_of_considered = 100.0 * float(correct) / parsed
         print("thresh={0:.1f} correct={1}({2:.2f}%) attempted={3}({4:.2f}%) total={5}".format(thresh, correct,
-                                                                                                    percent_correct,
-                                                                                                    parsed,
-                                                                                                    percent_of_considered,
-                                                                                              num_paraphrases,))
+                                                                                              percent_correct,
+                                                                                              parsed,
+                                                                                              percent_of_considered,
+                                                                                              num_paraphrases, ))
 
 
 # FIXME(nickswalker): Why are some of the generated sentences not detected as in-grammar?
@@ -60,7 +60,8 @@ def main():
     if not len(sys.argv) == 4:
         print("Pass train, validation and test file paths")
         exit(1)
-    reader = Seq2SeqDatasetReader(source_tokenizer=NoOpTokenizer(), target_tokenizer=NoOpTokenizer(), source_add_start_token=False, source_add_end_token=False)
+    reader = Seq2SeqDatasetReader(source_tokenizer=NoOpTokenizer(), target_tokenizer=NoOpTokenizer(),
+                                  source_add_start_token=False, source_add_end_token=False)
     train = reader.read(sys.argv[1])
     val = reader.read(sys.argv[2])
     test = reader.read(sys.argv[3])

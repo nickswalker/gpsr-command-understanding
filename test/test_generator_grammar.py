@@ -18,7 +18,8 @@ class TestGenerator(unittest.TestCase):
 
     def setUp(self):
         self.__grammar_parser = Lark(GENERATOR_GRAMMARS[2018],
-                                start=['rule_start', 'expression_start'], parser="lalr", transformer=TypeConverter())
+                                     start=['rule_start', 'expression_start'], parser="lalr",
+                                     transformer=TypeConverter())
         self.rule_parser = ParseForward(self.__grammar_parser, "rule_start")
         self.sequence_parser = ParseForward(self.__grammar_parser, "expression_start")
 
@@ -82,10 +83,14 @@ class TestGenerator(unittest.TestCase):
         # Check meta choice
         meta_choice = '{name meta: {pron sub} is (sitting | standing | lying | waving ) at the {beacon}}'
         parsed = self.sequence_parser.parse(meta_choice).children[0]
+        self.assertFalse(parsed.obfuscated)
+        self.assertEqual(parsed.name, "name")
+        self.assertEqual(len(parsed.metadata), 6)
 
     def test_parse_willdcard_integration(self):
         test = self.sequence_parser.parse(
-            "Go to the {location placement 1} and get the {kobject}. Then give it to {name 1} who is next to {name 2} at the {location beacon 1} in the {location room}")
+            "Go to the {location placement 1} and get the {kobject}. "
+            "Then give it to {name 1} who is next to {name 2} at the {location beacon 1} in the {location room}")
         print(test.pretty())
 
     def test_parse_wildcard_condition(self):
@@ -144,7 +149,9 @@ class TestGenerator(unittest.TestCase):
         self.assertEqual(len(complex_choice.children[0].children), 2)
 
     def test_parse_void(self):
-        test_rule = '{void meta: The Professional Walker must leave the arena and walk through a crowd of at least 5 people, say "$whattosay", find a t-shirt, the Professional Walker must lead the robot to {room 2} }'
+        test_rule = '{void meta: The Professional Walker must leave the arena and walk through ' \
+                    'a crowd of at least 5 people, say "$whattosay", find a t-shirt, ' \
+                    'the Professional Walker must lead the robot to {room 2} }'
         test = self.sequence_parser.parse(test_rule)
         self.assertEqual(len(test.children), 1)
         self.assertEqual(len(test.children[0].metadata), 36)

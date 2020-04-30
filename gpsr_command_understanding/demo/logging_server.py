@@ -42,7 +42,7 @@ class ServerError(Exception):
         return error_dict
 
 
-def make_app(predictor: Predictor,
+def make_app(predictor: Predictor,  # noqa: C901
              static_dir: str = None,
              sanitizer: Callable[[JsonDict], JsonDict] = None,
              title: str = "Command Understanding Demo") -> Flask:
@@ -177,7 +177,6 @@ def main(args):
         import_module_and_submodules(package_name)
 
     predictor = _get_predictor(args)
-
 
     app = make_app(predictor=predictor,
                    static_dir=args.static_dir,

@@ -1,22 +1,16 @@
 import copy
 import re
 from collections import defaultdict
-from operator import index
 from string import printable
 
 import importlib_resources
 from lark import Lark, Tree, exceptions
 
 from gpsr_command_understanding.generator.grammar import TypeConverter, expand_shorthand, NonTerminal, \
-    CombineExpressions, DiscardVoid, ROOT_SYMBOL, ComplexWildCard
+    CombineExpressions, DiscardVoid, ComplexWildCard
 from gpsr_command_understanding.util import replace_child_in_tree, \
     get_wildcards, has_nonterminals, ParseForward
-from gpsr_command_understanding.generator.grammar import tree_printer
 
-try:
-    from itertools import izip_longest as zip_longest
-except ImportError:
-    from itertools import zip_longest
 
 GENERATOR_GRAMMARS = {2018: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark"),
                       2019: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark")}
@@ -84,14 +78,16 @@ class Generator:
         return next(self.generate_groundings(tree, **kwargs))
 
     def generate_groundings(self, tree, random_generator=None, ignore_types=False):
-        assignments = self.generate_grounding_assignments(tree, random_generator=random_generator, ignore_types=ignore_types)
+        assignments = self.generate_grounding_assignments(tree, random_generator=random_generator,
+                                                          ignore_types=ignore_types)
         for assignment in assignments:
             grounded = copy.deepcopy(tree)
             for token, replacement in assignment.items():
                 replace_child_in_tree(grounded, token, replacement)
             yield grounded
 
-    def generate_grounding_assignments(self, tree, random_generator=None, ignore_types=False):
+    def generate_grounding_assignments(self, tree, random_generator=None, ignore_types=False):  # noqa: C901
+
         wildcards = get_wildcards(tree)
         assignment = {}
 
@@ -124,7 +120,7 @@ class Generator:
                     constraints[wildcard].add(("type", wildcard.type))
                 elif wildcard.name == "location" and wildcard.type:
                     # Location types are a shorthand for an attribute: ex isplacment
-                    constraints[wildcard].add(("is"+wildcard.type, True))
+                    constraints[wildcard].add(("is" + wildcard.type, True))
                 # TODO(nickswalker): Respect obfuscation
                 # TODO(nickswalker): Object category constraints (EGPSR)
                 if wildcard.conditions:
@@ -133,7 +129,7 @@ class Generator:
 
         yield from self.__populate_with_constraints(tree, constraints, random_generator=random_generator)
 
-    def __populate_with_constraints(self, tree, constraints, random_generator=None):
+    def __populate_with_constraints(self, tree, constraints, random_generator=None):  # noqa: C901
         wildcards = get_wildcards(tree)
         if not wildcards:
             assert len(constraints.values()) == len(constraints)
@@ -167,7 +163,8 @@ class Generator:
                     attribute_name, value = constraint
                     attributes_for_type = self.knowledge_base.attributes[wildcard.name]
                     if attribute_name not in attributes_for_type.keys():
-                        raise RuntimeError(attribute_name + " is not a valid attribute for wildcard type " + wildcard.name)
+                        raise RuntimeError(
+                            attribute_name + " is not a valid attribute for wildcard type " + wildcard.name)
                     if attributes_for_type[attribute_name].get(candidate) != value:
                         valid = False
             if not valid:

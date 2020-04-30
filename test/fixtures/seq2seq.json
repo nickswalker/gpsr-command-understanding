@@ -67,7 +67,7 @@
       "model_size": 200
     },
     "num_epochs": 15,
-    "patience" : 5,
+    "patience": 5,
     "validation_metric": "+seq_acc"
   }
 }

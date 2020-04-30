@@ -31,7 +31,9 @@ def load_paired_2018_by_cat(grammar_dir):
 
     with importlib_resources.open_text(grammar_dir, "gpsr_category_1_semantics.txt") as cat1:
         cat1_gen.load_semantics_rules(cat1)
-    with importlib_resources.open_text(grammar_dir, "gpsr_category_1_semantics.txt") as cat1, importlib_resources.open_text(grammar_dir, "gpsr_category_2_semantics.txt") as cat2:
+    with importlib_resources.open_text(grammar_dir,
+                                       "gpsr_category_1_semantics.txt") as cat1, importlib_resources.open_text(
+            grammar_dir, "gpsr_category_2_semantics.txt") as cat2:
         cat2_gen.load_semantics_rules([cat1, cat2])
     with importlib_resources.open_text(grammar_dir, "gpsr_category_3_semantics.txt") as cat3:
         cat3_gen.load_semantics_rules([cat3])

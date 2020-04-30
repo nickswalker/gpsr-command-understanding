@@ -8,7 +8,6 @@ from torch.nn.modules import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.rnn import LSTMCell
 
-from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import START_SYMBOL, END_SYMBOL
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.modules import Attention, TextFieldEmbedder, Seq2SeqEncoder
@@ -92,7 +91,8 @@ class Seq2Seq(Model):
         self._end_index = self.vocab.get_token_index(END_SYMBOL, self._target_namespace)
 
         if use_bleu:
-            pad_index = self.vocab.get_token_index(self.vocab._padding_token, self._target_namespace)  # pylint: disable=protected-access
+            pad_index = self.vocab.get_token_index(self.vocab._padding_token,
+                                                   self._target_namespace)  # pylint: disable=protected-access
             self._bleu = BLEU(exclude_indices={pad_index, self._end_index, self._start_index})
         else:
             self._bleu = None
@@ -266,17 +266,17 @@ class Seq2Seq(Model):
         encoder_outputs = self._encoder(embedded_input, source_mask)
         encoder_outputs = self._emb_dropout(encoder_outputs)
         return {
-                "source_mask": source_mask,
-                "encoder_outputs": encoder_outputs,
+            "source_mask": source_mask,
+            "encoder_outputs": encoder_outputs,
         }
 
     def _init_decoder_state(self, state: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         batch_size = state["source_mask"].size(0)
         # shape: (batch_size, encoder_output_dim)
         final_encoder_output = util.get_final_encoder_states(
-                state["encoder_outputs"],
-                state["source_mask"],
-                self._encoder.is_bidirectional())
+            state["encoder_outputs"],
+            state["source_mask"],
+            self._encoder.is_bidirectional())
         # Initialize the decoder hidden state with the final output of the encoder.
         # shape: (batch_size, decoder_output_dim)
         state["decoder_hidden"] = final_encoder_output
@@ -372,17 +372,17 @@ class Seq2Seq(Model):
         # shape (all_top_k_predictions): (batch_size, beam_size, num_decoding_steps)
         # shape (log_probabilities): (batch_size, beam_size)
         all_top_k_predictions, log_probabilities = self._beam_search.search(
-                start_predictions, state, self.take_step)
+            start_predictions, state, self.take_step)
 
         output_dict = {
-                "class_log_probabilities": log_probabilities,
-                "predictions": all_top_k_predictions,
+            "class_log_probabilities": log_probabilities,
+            "predictions": all_top_k_predictions,
         }
         return output_dict
 
     def _prepare_output_projections(self,
                                     last_predictions: torch.Tensor,
-                                    state: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:  # pylint: disable=line-too-long
+                                    state: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:  # noqa
         """
         Decode current state and last prediction to produce produce projections
         into the target space, which can then be used to get probabilities of
@@ -417,8 +417,8 @@ class Seq2Seq(Model):
         # shape (decoder_hidden): (batch_size, decoder_output_dim)
         # shape (decoder_context): (batch_size, decoder_output_dim)
         decoder_hidden, decoder_context = self._decoder_cell(
-                decoder_input,
-                (decoder_hidden, decoder_context))
+            decoder_input,
+            (decoder_hidden, decoder_context))
 
         state["decoder_hidden"] = decoder_hidden
         state["decoder_context"] = decoder_context
@@ -440,7 +440,7 @@ class Seq2Seq(Model):
 
         # shape: (batch_size, max_input_sequence_length)
         input_weights = self._attention(
-                decoder_hidden_state, encoder_outputs, encoder_outputs_mask)
+            decoder_hidden_state, encoder_outputs, encoder_outputs_mask)
 
         # shape: (batch_size, encoder_output_dim)
         attended_input = util.weighted_sum(encoder_outputs, input_weights)

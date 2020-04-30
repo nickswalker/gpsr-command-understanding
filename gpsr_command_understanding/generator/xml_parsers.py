@@ -24,16 +24,17 @@ class ObjectParser:
         return all_categories
 
     '''return dictionary mapping categories to items'''
+
     def get_categories_to_objects(self):
         root = self.tree.getroot()
 
         categories = {}
         for cat in root.findall("./category"):
-             cat_name = cat.attrib['name'].lower()
-             cat_objs = []
-             for obj in cat.findall("object"):
-                 cat_objs.append(obj.attrib['name'].lower()) 
-             categories[cat_name] = cat_objs
+            cat_name = cat.attrib['name'].lower()
+            cat_objs = []
+            for obj in cat.findall("object"):
+                cat_objs.append(obj.attrib['name'].lower())
+            categories[cat_name] = cat_objs
         return categories
 
     def get_objects_to_categories(self):
@@ -54,7 +55,7 @@ class ObjectParser:
 
     def get_attributes(self):
         all_obj = self.tree.findall("//object")
-        attributes = defaultdict(lambda : defaultdict(None))
+        attributes = defaultdict(lambda: defaultdict(None))
         for obj in all_obj:
             obj_name = obj.attrib["name"]
             obj_attr = obj.attrib
@@ -76,6 +77,7 @@ class LocationParser(object):
         self.tree = ET.parse(self.location_file)
 
     '''return dictionary of room:location_list'''
+
     def get_room_locations(self):
         room_locations = {}
         root = self.tree.getroot()

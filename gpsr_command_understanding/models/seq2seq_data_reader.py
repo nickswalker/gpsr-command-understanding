@@ -12,7 +12,6 @@ from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Token, Tokenizer, SpacyTokenizer
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 
-import itertools
 import more_itertools
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
@@ -45,6 +44,7 @@ class Seq2SeqDatasetReader(DatasetReader):
     source_add_start_token : bool, (optional, default=True)
         Whether or not to add `START_SYMBOL` to the beginning of the source sequence.
     """
+
     def __init__(self,
                  source_tokenizer: Tokenizer = None,
                  target_tokenizer: Tokenizer = None,

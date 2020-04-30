@@ -66,7 +66,8 @@ class ComplexWildCard(WildCard):
         else:
             conditions_str = None
         # Get the args in the right order as strings
-        args_to_map = filter(lambda x: x is not None, [self.name, self.type, self.id, obfuscated_str, conditions_str, meta_str])
+        args_to_map = filter(lambda x: x is not None,
+                             [self.name, self.type, self.id, obfuscated_str, conditions_str, meta_str])
         args_str = map(str, args_to_map)
         return '{' + " ".join(args_str) + '}'
 
@@ -81,7 +82,9 @@ class ComplexWildCard(WildCard):
 
     def __eq__(self, other):
         return isinstance(other,
-                          WildCard) and self.name == other.name and self.type == other.type and self.id == other.id and self.obfuscated == other.obfuscated and self.conditions == other.conditions
+                          WildCard) and self.name == other.name and \
+                          self.type == other.type and self.id == other.id and \
+                          self.obfuscated == other.obfuscated and self.conditions == other.conditions
 
 
 # The GPSR grammars all have this as their root

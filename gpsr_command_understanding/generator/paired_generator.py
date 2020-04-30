@@ -16,7 +16,6 @@ try:
     from queue import Queue as queue
 except ImportError:
     from Queue import queue
-    from yieldfrom import yieldfrom, From
 
 SEMANTIC_FORMS = {"lambda": importlib_resources.read_text("gpsr_command_understanding.resources", "lambda_ebnf.lark")}
 
@@ -120,16 +119,16 @@ class PairedGenerator(Generator):
 
         return i
 
-    def generate(self, start_pair, yield_requires_semantics=True,
-                                      branch_cap=None, random_generator=None):
+    def generate(self, start_pair, yield_requires_semantics=True,  # noqa: C901
+                 branch_cap=None, random_generator=None):
         """
         Expand the start_symbols in breadth first order. At each expansion, see if we have an associated semantic template.
         If the current expansion has a semantics associated, also apply the expansion to the semantics.
         This is an efficient method of pairing the two grammars, but it only covers annotations that are carefully
         constructed to keep their head rule in the list of breadth first expansions of the utterance grammar.
-        :param start_tree:
-        :param production_rules:
-        :param semantics_rules: dict mapping a sequence of tokens to a semantic template
+        :param start_pair: the pair of sentence and semantics to have expansions applied to
+        :param branch_cap: if there are too many expansions, set a fixed cap which will be applied
+        :param random_generator: random number generator used to determine expansions, shuffling
         :param yield_requires_semantics: if true, will yield sentences that don't have associated semantics. Helpful for debugging.
         """
 
@@ -151,7 +150,7 @@ class PairedGenerator(Generator):
                 # Let's see if the  expansion is associated with any semantics
                 semantics = self.semantics.get(sentence)
             expansions = list(self.expand_pair(sentence, semantics, branch_cap=branch_cap,
-                                          random_generator=random_generator))
+                                               random_generator=random_generator))
             if not expansions:
                 assert not has_nonterminals(sentence)
                 # If we couldn't replace anything else, this sentence is done!
@@ -203,7 +202,7 @@ class PairedGenerator(Generator):
 
     def expand_pair_full(self, sentence, semantics, branch_cap=None, random_generator=None):
         return self.generate(sentence, {}, start_semantics=semantics,
-                                             branch_cap=branch_cap, random_generator=random_generator)
+                             branch_cap=branch_cap, random_generator=random_generator)
 
     def expand_pair(self, sentence, semantics, branch_cap=None, random_generator=None):
         replace_tokens = list(sentence.scan_values(lambda x: x in self.rules.keys()))
@@ -255,13 +254,14 @@ class PairedGenerator(Generator):
 
     def generate_groundings(self, pair, random_generator=None, ignore_types=False):
         utt, logical = pair
-        assignments = self.generate_grounding_assignments(utt, random_generator=random_generator, ignore_types=ignore_types)
+        assignments = self.generate_grounding_assignments(utt, random_generator=random_generator,
+                                                          ignore_types=ignore_types)
         for assignment in assignments:
             grounded_utt = copy.deepcopy(utt)
             grounded_logical = copy.deepcopy(logical)
             for token, replacement in assignment.items():
                 replace_child_in_tree(grounded_utt, token, replacement)
-                replace_child_in_tree(grounded_logical, token, Token("ESCAPED_STRING", "\""+replacement+"\""))
+                replace_child_in_tree(grounded_logical, token, Token("ESCAPED_STRING", "\"" + replacement + "\""))
             yield grounded_utt, grounded_logical
 
     def _print_semantics_rules(self):

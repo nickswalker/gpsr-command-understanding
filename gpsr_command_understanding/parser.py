@@ -48,7 +48,7 @@ class ToEBNF(Transformer):
             else:
                 output += "\"" + child + "\""
             output += " | "
-        return ("choice",output[:-3] + ")")
+        return ("choice", output[:-3] + ")")
 
     def rule(self, children):
         return "{}: {}".format(children[0], children[1])
@@ -56,11 +56,13 @@ class ToEBNF(Transformer):
     def constant_placeholder(self, children):
         return "\"" + " ".join(children) + "\""
 
-    def __call__(self,  production):
+    def __call__(self, production):
         return self.transform(production)
+
 
 def expr_builder(item):
     return Tree("expression", [item])
+
 
 class GrammarBasedParser(object):
     """
@@ -104,7 +106,7 @@ class GrammarBasedParser(object):
                     # Void rules are for producing metadata during generation, they don't help during parsing
                     # because we'll never see this metadata as input
                     continue
-                non_term_name = "wild_"+non_term.to_snake_case()
+                non_term_name = "wild_" + non_term.to_snake_case()
                 # Question marks aren't allowed in non-term names
                 non_term_name = non_term_name.replace("?", "obf")
             line = "!" + non_term_name + ": ("
@@ -120,12 +122,12 @@ class GrammarBasedParser(object):
         %import common.WS
         %ignore WS
 """
-        self._parser = Lark(as_ebnf,  start='main')
+        self._parser = Lark(as_ebnf, start='main')
 
     def __call__(self, utterance):
         try:
             return self._parser.parse(utterance)
-        except lark.exceptions.LarkError as e:
+        except lark.exceptions.LarkError as e:  # noqa: F841
             # If you want to see what part didn't fall in the grammar
             # print(e)
             return None
@@ -177,6 +179,7 @@ class MappingParser(object):
     """
     Map parser output to some other value specified in a predefined lookup table
     """
+
     def __init__(self, parser, mapping):
         self.parser = parser
         self.mapping = mapping
@@ -190,8 +193,8 @@ class AnonymizingParser(object):
     """
     Pass input utterances through an anonymizer before parsing
     """
-    def __init__(self, parser, anonymizer):
 
+    def __init__(self, parser, anonymizer):
         self.parser = parser
         self.anonymizer = anonymizer
 

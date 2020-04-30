@@ -11,6 +11,7 @@ class NoOpTokenizer(Tokenizer):
     """
     Just returns the unsplit line. Helpful for reusing a datasetreader for just dumping lines out of a file
     """
+
     def __init__(self, ) -> None:
         pass
 

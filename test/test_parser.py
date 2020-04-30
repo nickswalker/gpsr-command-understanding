@@ -5,14 +5,12 @@ import random
 import unittest
 
 from gpsr_command_understanding.generator.generator import Generator
-from gpsr_command_understanding.generator.grammar import tree_printer, DiscardMeta
-from gpsr_command_understanding.generator.loading_helpers import load_paired, GRAMMAR_DIR_2018, GRAMMAR_DIR_2019, \
-    load_paired_2018, load_2018
+from gpsr_command_understanding.generator.grammar import tree_printer
+from gpsr_command_understanding.generator.loading_helpers import load_paired, GRAMMAR_DIR_2018, GRAMMAR_DIR_2019, load_2018
 from gpsr_command_understanding.generator.paired_generator import PairedGenerator
 from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
 from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
-
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
@@ -79,7 +77,8 @@ class TestParsers(unittest.TestCase):
         self.assertEqual(expected_parse, nearest_neighbor_parser(tweaked))
 
     def test_anonymizer(self):
-        entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"],["Bill", "bob"], ["the car", "corridor", "counter"],["bedroom", "kitchen", "living room"], ["waving"])
+        entities = (["ottoman", "apple", "bannana", "chocolates"], ["fruit", "container"], ["Bill", "bob"],
+                    ["the car", "corridor", "counter"], ["bedroom", "kitchen", "living room"], ["waving"])
         numbering_anonymizer = NumberingAnonymizer(*entities)
         anonymizer = Anonymizer(*entities)
         no_duplicates = "Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"
@@ -99,7 +98,7 @@ class TestParsers(unittest.TestCase):
         load_paired(generator, "gpsr", GRAMMAR_DIR_2019)
 
         pairs = generator.generate(ROOT_SYMBOL, yield_requires_semantics=False,
-                                                  random_generator=random.Random(1))
+                                   random_generator=random.Random(1))
 
         [generator.extract_metadata(sentence) for sentence, semantics in pairs]
         parser = GrammarBasedParser(generator.rules)

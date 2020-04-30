@@ -1,5 +1,4 @@
 import copy
-import re
 
 from lark import Token
 
@@ -107,7 +106,7 @@ def main():
 
     try:
         os.mkdir(pairs_out_path)
-    except FileExistsError as e:
+    except FileExistsError:
         print("Output path {} already exists. Remove manually if you want to regenerate.".format(pairs_out_path))
         exit(1)
     generator = load_paired_2018(GRAMMAR_DIR_2018)
@@ -146,7 +145,7 @@ def main():
                 count = replace_child_in_tree(anon_utt, token, replacement)
                 assert count > 0
             for token, replacement in logical_grounding_assignment.items():
-                count = replace_child_in_tree(anon_logical, token, Token("ESCAPED_STRING", "\"" +replacement + "\""))
+                count = replace_child_in_tree(anon_logical, token, Token("ESCAPED_STRING", "\"" + replacement + "\""))
                 assert count > 0
 
             if args.groundings:
@@ -214,7 +213,7 @@ def main():
                 print(commands[0])
                 print(form)
                 print("\n")
-                #exit(1)
+                # exit(1)
                 continue
                 # assert False
             target.append((form, commands))

@@ -7,10 +7,10 @@ from random import Random
 from lark import Tree
 
 from gpsr_command_understanding.generator.generator import Generator
-from gpsr_command_understanding.generator.grammar import NonTerminal, ROOT_SYMBOL, tree_printer, ComplexWildCard
+from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
+from gpsr_command_understanding.generator.grammar import NonTerminal, ComplexWildCard
 from gpsr_command_understanding.generator.knowledge import KnowledgeBase
-from gpsr_command_understanding.generator.loading_helpers import load_paired_2018_by_cat, \
-    GRAMMAR_DIR_2018, \
+from gpsr_command_understanding.generator.loading_helpers import GRAMMAR_DIR_2018, \
     GRAMMAR_DIR_2019, load_2018, load
 
 FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -19,7 +19,8 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestGenerator(unittest.TestCase):
 
     def setUp(self):
-        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"], "location": ["l1", "l2"], "object": ["o1", "o2"]}, {"object": {"canPourIn":{"o1": True}}})
+        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"], "location": ["l1", "l2"], "object": ["o1", "o2"]},
+                           {"object": {"canPourIn": {"o1": True}}})
         self.generator = Generator(kb, grammar_format_version=2018)
         with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as fixture_grammar_file:
             num_rules = self.generator.load_rules(fixture_grammar_file)
@@ -63,7 +64,8 @@ class TestGenerator(unittest.TestCase):
         def expr_builder(string):
             return Tree("expression", string.split(" "))
 
-        test_tree = Tree("expression", ["Say", "hi", "to", ComplexWildCard("name", wildcard_id=1), "and", ComplexWildCard("name", wildcard_id=2)])
+        test_tree = Tree("expression", ["Say", "hi", "to", ComplexWildCard("name", wildcard_id=1), "and",
+                                        ComplexWildCard("name", wildcard_id=2)])
         expected = expr_builder("Say hi to n1 and n2")
         self.assertEqual(expected, self.generator.ground(test_tree))
 
@@ -75,20 +77,24 @@ class TestGenerator(unittest.TestCase):
             self.assertNotEqual(first, second)
 
         # ID namespaces are separate
-        test_tree = Tree("expression", [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2)])
+        test_tree = Tree("expression",
+                         [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2)])
         expected = expr_builder("l1 and n1")
         self.assertEqual(expected, self.generator.ground(test_tree))
 
         # Same ID yields same replacement
-        test_tree = Tree("expression", [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2), "again", ComplexWildCard("name", wildcard_id=2)
-                                        ])
+        test_tree = Tree("expression",
+                         [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2),
+                          "again", ComplexWildCard("name", wildcard_id=2)
+                          ])
         expected = expr_builder("l1 and n1 again n1")
         self.assertEqual(expected, self.generator.ground(test_tree))
 
         # Throw when out of objects
-        test_tree = Tree("expression", [ComplexWildCard("location", wildcard_id=1), ComplexWildCard("location", wildcard_id=2),
-                                        ComplexWildCard("location", wildcard_id=3)
-                                        ])
+        test_tree = Tree("expression",
+                         [ComplexWildCard("location", wildcard_id=1), ComplexWildCard("location", wildcard_id=2),
+                          ComplexWildCard("location", wildcard_id=3)
+                          ])
         with self.assertRaises(StopIteration):
             self.generator.ground(test_tree)
 
@@ -103,7 +109,3 @@ class TestGenerator(unittest.TestCase):
                                         ])
         with self.assertRaises(RuntimeError):
             self.generator.ground(test_tree)
-
-
-
-

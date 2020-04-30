@@ -1,7 +1,7 @@
 import sys
 
-def main():
 
+def main():
     f_in = open(sys.argv[1], 'r')
     f_name = sys.argv[1].split('.')[0]
 
@@ -9,7 +9,7 @@ def main():
 
     line = f_in.readline()
     while line:
-        #f_out.write(line + "\n\n")
+        # f_out.write(line + "\n\n")
         line = line.replace(",", " ,")
         line = line.replace(". ", " . ")
         sentence_tokens = line.split(" ")

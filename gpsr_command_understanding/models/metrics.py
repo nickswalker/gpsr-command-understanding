@@ -1,7 +1,6 @@
 from typing import List, Dict
 
 import lark
-from lark import ParseError
 from overrides import overrides
 
 from allennlp.training.metrics import Metric

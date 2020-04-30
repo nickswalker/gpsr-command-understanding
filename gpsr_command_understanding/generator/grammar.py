@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from gpsr_command_understanding.util import replace_child, to_num
 
-from gpsr_command_understanding.generator.tokens import *
+from gpsr_command_understanding.generator.tokens import NonTerminal, WildCard, ComplexWildCard
 
 from lark import Tree, Transformer, Visitor, Token
 
@@ -12,6 +12,7 @@ class TypeConverter(Transformer):
     Tree post-processor which takes Lark grammar rules as hints to wrap up
     special types of terminals
     """
+
     def bare_choice(self, children):
         return Tree("choice", children)
 
@@ -24,7 +25,7 @@ class TypeConverter(Transformer):
     def non_terminal(self, children):
         return NonTerminal(children[0])
 
-    def wildcard(self, children):
+    def wildcard(self, children):  # noqa: C901
         # We bundle expected args into the first child via the typed wildcard branches of the grammar
         typed = children[0]
         meta = None
@@ -63,13 +64,10 @@ class TypeConverter(Transformer):
             return ComplexWildCard("object", type, obfuscated=obfuscated, wildcard_id=wildcard_id, meta=meta,
                                    conditions=conditions)
         elif "loc" in typed.data:
-            # the type token (e.g. placement) is elided from the tree, so the extra
-            # will be the only element in this list
-            extra = typed.children[0] if len(typed.children) > 0 else None
             if "beacon" in typed.data:
                 type = "beacon"
             elif "placement" in typed.data:
-                type ="placement"
+                type = "placement"
             elif "room" in typed.data:
                 type = "room"
             return ComplexWildCard("location", type, obfuscated=obfuscated, wildcard_id=wildcard_id, meta=meta,
@@ -105,6 +103,7 @@ class DiscardVoid(Visitor):
     """
     Throw away generator annotations meant for the referee
     """
+
     def expression(self, tree):
         tree.children = list(filter(lambda x: not (isinstance(x, WildCard) and x.name == "void"), tree.children))
 
@@ -113,6 +112,7 @@ class DiscardMeta(Visitor):
     """
     Throw away generator annotations meant for the referee
     """
+
     def expression(self, tree):
         for child in tree.children:
             if isinstance(child, ComplexWildCard):
@@ -195,6 +195,7 @@ class CombineExpressions(Visitor):
     :param tokens:
     :return: a list of tokens with no adjacent text fragments
     """
+
     def top_expression(self, tree):
         tree.data = "expression"
         self.expression(tree)
@@ -228,7 +229,7 @@ class CombineExpressions(Visitor):
             while i < len(cleaned):
                 child = cleaned[i]
                 if isinstance(child, Tree) and child.data == "expression":
-                    cleaned = cleaned[:i] + child.children + cleaned[i+1:]
+                    cleaned = cleaned[:i] + child.children + cleaned[i + 1:]
                     break
                 i += 1
             all_expanded = True
@@ -260,14 +261,17 @@ def expand_shorthand(tree):
             combiner.visit(current)
             output.append(current)
             continue
-       # Make the choice in every way
+        # Make the choice in every way
         for option in choice.children:
             choice_made_tree = deepcopy(current)
             # Is this choice the root of the tree? No parent in this case
             if choice_made_tree == choice:
                 in_progress.append(option)
             else:
-                choice_parent = list(choice_made_tree.find_pred(lambda subtree: any([child == choice for child in subtree.children])))[0]
+                choice_parent = \
+                    list(choice_made_tree.find_pred(
+                        lambda subtree: any([child == choice for child in subtree.children])))[
+                        0]
                 replace_child(choice_parent, choice, option, only_once=True)
                 in_progress.append(choice_made_tree)
 
