@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# The commands used to produce the distributed dataset. The "all" set wasn't distributed because it can
+# be made just by concatenating the other two sets.
+
+seed=0
+
+gen_cmd="python -m gpsr_command_understanding.data.make_dataset -f"
+
+# Just gen (Column 1)
+${gen_cmd} --name gen -a --seed $seed
+${gen_cmd} --name gen_logical -a -s .68 .12 .20 --use-logical-split --seed $seed
+
+# Just paraphrase (Column 3)
+${gen_cmd} --name para --paraphrasings data/paraphrasings.txt --seed $seed
+${gen_cmd} --name para_logical --paraphrasings data/paraphrasings.txt --use-logical-split --match-logical-split data/gen_logical --seed $seed
+
+# Gen + para (Column 4)
+${gen_cmd} --name all --paraphrasings data/paraphrasings.txt -a --seed $seed
+${gen_cmd} --name all_logical --paraphrasings data/paraphrasings.txt -a --use-logical-split --match-logical-split data/gen_logical --seed $seed

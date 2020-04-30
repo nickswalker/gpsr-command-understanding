@@ -2,17 +2,6 @@
 A `Flask <http://flask.pocoo.org/>`_ server for serving predictions
 from a single AllenNLP model. It also includes a very, very bare-bones
 web front-end for exploring predictions (or you can provide your own).
-
-For example, if you have your own predictor and model in the `my_stuff` package,
-and you want to use the default HTML, you could run this like
-
-```
-python -m allennlp.service.server_simple \
-    --archive-path allennlp/tests/fixtures/bidaf/serialization/model.tar.gz \
-    --predictor machine-comprehension \
-    --title "Demo of the Machine Comprehension Text Fixture" \
-    --field-name question --field-name passage
-```
 """
 import time
 from typing import List, Callable
@@ -54,10 +43,9 @@ class ServerError(Exception):
 
 
 def make_app(predictor: Predictor,
-             field_names: List[str] = None,
              static_dir: str = None,
              sanitizer: Callable[[JsonDict], JsonDict] = None,
-             title: str = "AllenNLP Demo") -> Flask:
+             title: str = "Command Understanding Demo") -> Flask:
     """
     Creates a Flask app that serves up the provided ``Predictor``
     along with a front-end for interacting with it.
@@ -81,9 +69,6 @@ def make_app(predictor: Predictor,
         if not os.path.exists(static_dir):
             logger.error("app directory %s does not exist, aborting", static_dir)
             sys.exit(-1)
-    elif static_dir is None and field_names is None:
-        print("Neither build_dir nor field_names passed. Demo won't render on this port.\n"
-              "You must use nodejs + react app to interact with the server.")
 
     app = Flask(__name__)  # pylint: disable=invalid-name
 
@@ -98,7 +83,7 @@ def make_app(predictor: Predictor,
         if static_dir is not None:
             return send_file(os.path.join(static_dir, 'index.html'))
         else:
-            html = _html(title, field_names)
+            html = _html(title, ["command"])
             return Response(response=html, status=200)
 
     @app.route('/predict', methods=['POST', 'OPTIONS'])
@@ -177,8 +162,6 @@ def main(args):
                         help='a JSON structure used to override the experiment configuration')
     parser.add_argument('--static-dir', type=str, help='serve index.html from this directory')
     parser.add_argument('--title', type=str, help='change the default page title', default="AllenNLP Demo")
-    parser.add_argument('--field-name', type=str, action='append',
-                        help='field names to include in the demo')
     parser.add_argument('--port', type=int, default=8000, help='port to serve the demo on')
 
     parser.add_argument('--include-package',
@@ -195,10 +178,8 @@ def main(args):
 
     predictor = _get_predictor(args)
 
-    field_names = args.field_name
 
     app = make_app(predictor=predictor,
-                   field_names=field_names,
                    static_dir=args.static_dir,
                    title=args.title)
     CORS(app)

@@ -60,7 +60,7 @@ def main():
     if not len(sys.argv) == 4:
         print("Pass train, validation and test file paths")
         exit(1)
-    reader = Seq2SeqDatasetReader(source_tokenizer=NoOpTokenizer(), target_tokenizer=NoOpTokenizer())
+    reader = Seq2SeqDatasetReader(source_tokenizer=NoOpTokenizer(), target_tokenizer=NoOpTokenizer(), source_add_start_token=False, source_add_end_token=False)
     train = reader.read(sys.argv[1])
     val = reader.read(sys.argv[2])
     test = reader.read(sys.argv[3])

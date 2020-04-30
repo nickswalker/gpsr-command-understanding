@@ -24,7 +24,7 @@ easily use them with ROS.
 
 The latest grammar and knowledgebase files (pulled from [the generator](https://github.com/kyordhel/GPSRCmdGen)) are provided in the resources directory. The grammar [format specification](https://github.com/kyordhel/GPSRCmdGen/wiki/Grammar-Format-Specification) will clarify how to interpret the files.
 
-To produce the dataset, see `make_dataset.py`.
+To produce the dataset, see `data/make_dataset.py`.
 
 ### Training
 
@@ -40,10 +40,9 @@ You can run them with
 
 You can monitor training with Tensorboard, just point it at the log directory.
     
-The `train_all_models` script will train every config back to back. It will pass through arguments that come after the `--`,
-so you can configure the experiment
+The `train_all_models` script will train every config back to back.
 
-    ./scripts/train_all_models experiments -- -o "{train_data_path: 'data/1_2/train.txt', validation_data_path: 'data/1_2/val.txt'}"
+    ./scripts/train_all_models gen_demo experiments -t data/gen/train.txt -v data/gen/val.txt
 
 ### Testing
 
@@ -53,10 +52,7 @@ To see a model's output on a data file, use the `predict command`
 
 You can poke at a trained model through the browser using AllenNLP as well
 
-    python -m allennlp.service.server_simple \
+    python -m gpsr_command_understanding.demo.logging_server \
         --archive-path results/seq2seq/model.tar.gz \
         --predictor  command_parser\
-        --include-package gpsr_command_understanding \
-        --title "GPSR Semantic Parser" \
-        --field-name command \
-        --static-dir demo
+        --include-package gpsr_command_understanding

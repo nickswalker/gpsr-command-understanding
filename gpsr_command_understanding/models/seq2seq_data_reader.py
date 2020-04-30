@@ -50,16 +50,16 @@ class Seq2SeqDatasetReader(DatasetReader):
                  target_tokenizer: Tokenizer = None,
                  source_token_indexers: Dict[str, TokenIndexer] = None,
                  target_token_indexers: Dict[str, TokenIndexer] = None,
+                 source_add_start_token: bool = True,
+                 source_add_end_token: bool = True,
                  lazy: bool = False) -> None:
         super().__init__(lazy)
         self._source_tokenizer = source_tokenizer or SpacyTokenizer()
-        from allennlp.data.tokenizers import PretrainedTransformerTokenizer
-        import transformers
-        if isinstance(self._source_tokenizer,PretrainedTransformerTokenizer) and isinstance(self._source_tokenizer.tokenizer, transformers.GPT2Tokenizer):
-            self._source_tokenizer.tokenizer._pad_token = "@"
         self._target_tokenizer = target_tokenizer or SpacyTokenizer()
         self._source_token_indexers = source_token_indexers or {"tokens": SingleIdTokenIndexer()}
         self._target_token_indexers = target_token_indexers or self._source_token_indexers
+        self._source_add_start_token = source_add_start_token
+        self._source_add_end_token = source_add_end_token
 
     @overrides
     def _read(self, file_path):
@@ -84,6 +84,11 @@ class Seq2SeqDatasetReader(DatasetReader):
     def text_to_instance(self, source_string: str, target_string: str = None) -> Instance:  # type: ignore
         # pylint: disable=arguments-differ
         tokenized_source = self._source_tokenizer.tokenize(source_string)
+        if self._source_add_start_token:
+            tokenized_source.insert(0, Token(START_SYMBOL))
+        if self._source_add_end_token:
+            tokenized_source.append(Token(END_SYMBOL))
+
         source_field = TextField(tokenized_source, self._source_token_indexers)
         meta_fields = {"source_tokens": tokenized_source.copy()}
         fields_dict = {"source_tokens": source_field}

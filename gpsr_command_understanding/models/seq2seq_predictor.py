@@ -10,6 +10,9 @@ class CommandParser(Predictor):
     """Predictor wrapper for the CommandParser"""
 
     def predict_instance(self, instance: Instance) -> JsonDict:
+        self._model.vocab.extend_from_instances([instance])
+        # Pretrained transformer embedders don't have an extend method, so this won't do anything to them
+        self._model.extend_embedder_vocab({'_source_embedder.token_embedder_source_tokens':'https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.100d.txt.gz'})
         outputs = self._model.forward_on_instance(instance)
         out_dict = sanitize(outputs)
         digest = " ".join(out_dict["predicted_tokens"])

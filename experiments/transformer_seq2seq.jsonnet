@@ -18,12 +18,10 @@ local get_transformer_size(name) =
 std.mergePatch(common_parameters,
 {
  dataset_reader: {
+   source_add_start_token: false,
+   source_add_end_token: false,
    source_token_indexers: {
      source_tokens: {
-       type: 'single_id',
-       namespace: 'source_tokens',
-     },
-     bert: {
        type: 'pretrained_transformer',
        model_name: transformer_model,
      },
@@ -37,8 +35,7 @@ std.mergePatch(common_parameters,
    type: 'seq2seq',
    source_embedder: {
      token_embedders: {
-       source_tokens: glove_embedding,
-       bert: {
+       source_tokens: {
          type: 'pretrained_transformer',
          model_name: transformer_model,
        },
@@ -46,7 +43,7 @@ std.mergePatch(common_parameters,
    },
    encoder: {
      type: 'lstm',
-     input_size: 100 + get_transformer_size(transformer_model),
+     input_size: get_transformer_size(transformer_model),
      hidden_size: 200,
    },
  },
