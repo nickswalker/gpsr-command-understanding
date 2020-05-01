@@ -82,16 +82,14 @@ class TestParsers(unittest.TestCase):
         numbering_anonymizer = NumberingAnonymizer(*entities)
         anonymizer = Anonymizer(*entities)
         no_duplicates = "Bring me the apple from the kitchen and give it to Bill (who is waving) in the corridor"
-        self.assertEqual(anonymizer(no_duplicates
-                                    ),
-                         "Bring me the <object> from the <room> and give it to <name> (who is <gesture>) in the <location>")
-        self.assertEqual(anonymizer(no_duplicates), numbering_anonymizer(no_duplicates))
+        self.assertEqual("Bring me the object from the room and give it to name (who is gesture) in the location",
+                         anonymizer(no_duplicates))
         duplicates = "Bring the apple from the kitchen and put it next to the other apple in the bedroom"
         self.assertEqual(anonymizer(duplicates),
-                         "Bring the <object> from the <room> and put it next to the other <object> in the <room>")
+                         "Bring the object from the room and put it next to the other object in the room")
         self.assertEqual(
             numbering_anonymizer(duplicates),
-            "Bring the <object 1> from the <room 1> and put it next to the other <object 2> in the <room 2>")
+            "Bring the object0 from the room0 and put it next to the other object1 in the room1")
 
     def test_parse_all_2019_ungrounded(self):
         generator = PairedGenerator(None, grammar_format_version=2019)

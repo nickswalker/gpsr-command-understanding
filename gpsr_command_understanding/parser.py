@@ -124,12 +124,13 @@ class GrammarBasedParser(object):
 """
         self._parser = Lark(as_ebnf, start='main')
 
-    def __call__(self, utterance):
+    def __call__(self, utterance, verbose=False):
         try:
             return self._parser.parse(utterance)
         except lark.exceptions.LarkError as e:  # noqa: F841
             # If you want to see what part didn't fall in the grammar
-            # print(e)
+            if verbose:
+                print(e)
             return None
 
 
@@ -198,5 +199,7 @@ class AnonymizingParser(object):
         self.parser = parser
         self.anonymizer = anonymizer
 
-    def __call__(self, utterance):
-        return self.parser(self.anonymizer(utterance))
+    def __call__(self, utterance, **kwargs):
+        if "verbose" in kwargs and kwargs["verbose"]:
+            print("Anonymized to " + self.anonymizer(utterance))
+        return self.parser(self.anonymizer(utterance), **kwargs)

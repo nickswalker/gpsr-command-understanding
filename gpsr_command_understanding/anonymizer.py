@@ -39,11 +39,11 @@ class Anonymizer(object):
             replacements[category] = "category"
 
         self.rep = replacements
-        escaped = dict((re.escape(k), v) for k, v in replacements.items())
+        escaped = {re.escape(k): v for k, v in replacements.items()}
         self.pattern = re.compile("\\b(" + "|".join(escaped.keys()) + ")\\b")
 
     def __call__(self, utterance):
-        return self.pattern.sub(lambda m: "<" + self.rep[m.group(0)] + ">", utterance)
+        return self.pattern.sub(lambda m: self.rep[m.group(0)], utterance)
 
     @staticmethod
     def from_knowledge_base(kb):
@@ -58,6 +58,11 @@ class Anonymizer(object):
 
 
 class NumberingAnonymizer(Anonymizer):
+    @staticmethod
+    def from_knowledge_base(kb):
+        plain = Anonymizer.from_knowledge_base(kb)
+        return NumberingAnonymizer(plain.objects, plain.categories, plain.names, plain.locations, plain.rooms, plain.gestures)
+
     def __call__(self, utterance):
         type_count = defaultdict(lambda: 0)
         scrubbed = utterance
@@ -72,12 +77,11 @@ class NumberingAnonymizer(Anonymizer):
                 break
             string = match.groups()[0]
             replacement_type = self.rep[string]
-            if type_count[replacement_type] > 1:
-                current_num = num_type_anon_so_far[replacement_type] + 1
-                replacement_string = "<" + self.rep[string] + " " + str(current_num) + ">"
-                num_type_anon_so_far[replacement_type] += 1
-            else:
-                replacement_string = "<" + self.rep[string] + ">"
+
+            current_num = num_type_anon_so_far[replacement_type]
+            replacement_string = self.rep[string] + str(current_num)
+            num_type_anon_so_far[replacement_type] += 1
+
             scrubbed = scrubbed.replace(string, replacement_string, 1)
 
         return scrubbed

@@ -1,11 +1,5 @@
-allennlp>=1.0.0rc3;python_version  > '3.0'
+allennlp>=1.0.0rc3
 editdistance
-future;python_version < '3.0'
 importlib_resources
 lark-parser>=0.8.1
 lxml
-nltk
-pandas
-tensorboard
-xmltodict
-yieldfrom

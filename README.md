@@ -16,9 +16,6 @@ Set up a virtual environment using at least Python 3.6:
     python3.7 -m virtualenv venv
     source venv/bin/activate
     pip install -r requirements.txt
-    
-Baseline models (fuzzy parsers constructed directly from the generator grammar) will work under Python 2.7 so you can
-easily use them with ROS.
 
 ### Generation
 
