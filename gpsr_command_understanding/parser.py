@@ -70,8 +70,9 @@ class GrammarBasedParser(object):
     "Hard"; only parses things that are exactly in the grammar.
     """
 
-    def __init__(self, grammar_rules):
+    def __init__(self, grammar_rules, case_sensitive=False):
         assert isinstance(grammar_rules, dict)
+        self.case_sensitive = case_sensitive
         # We need to destructively modify the rules a bit
         rules = deepcopy(grammar_rules)
         rch_to_ebnf = ToEBNF()
@@ -115,6 +116,8 @@ class GrammarBasedParser(object):
                 line += rch_to_ebnf(production) + "\n\t| "
 
             line = line[:-4] + " )\n"
+            if not self.case_sensitive:
+                line = line.lower()
             as_ebnf += line
 
         # print(as_ebnf)
@@ -126,7 +129,10 @@ class GrammarBasedParser(object):
 
     def __call__(self, utterance, verbose=False):
         try:
-            return self._parser.parse(utterance)
+            if self.case_sensitive:
+                return self._parser.parse(utterance)
+            else:
+                return self._parser.parse(utterance.lower())
         except lark.exceptions.LarkError as e:  # noqa: F841
             # If you want to see what part didn't fall in the grammar
             if verbose:

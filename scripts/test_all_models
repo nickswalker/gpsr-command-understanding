@@ -65,7 +65,7 @@ if [[ ${use_cpu} = "true" ]]; then
     gpu_arg=""
 fi
 set -x;
-python -m gpsr_command_understanding.data.evaluate_baseline_parsers "${dataset_dir_path}/train.txt" "${dataset_dir_path}/val.txt" "${dataset_dir_path}/test.txt" > "${results_path}/${dataset_name}_baselines.txt"
+python -m gpsr_command_understanding.data.evaluate_baseline_parsers -t "${dataset_dir_path}/train.txt" -v "${dataset_dir_path}/val.txt" -te "${dataset_dir_path}/test.txt" -o "${results_path}/baseline_evaluation_${dataset_name}.json"> "${results_path}/baselines_log_${dataset_name}.txt"
 set +x;
 for dir in $results_dirs; do
     # Filter out non-directory files
@@ -80,8 +80,8 @@ for dir in $results_dirs; do
       continue
     fi
     set -x
-    allennlp evaluate "${model_path}" "${test_path}" --output-file "${dir}/evaluation_${dataset_name}.txt" --include-package gpsr_command_understanding $gpu_arg > /dev/null 2>&1
-    allennlp predict "${model_path}" "${test_path}"   --output-file "${dir}/predictions_${dataset_name}.txt" --use-dataset-reader --predictor command_parser --include-package gpsr_command_understanding --batch-size 64 $gpu_arg > /dev/null 2>&1
+    allennlp evaluate "${model_path}" "${test_path}" --output-file "${dir}/evaluation_${dataset_name}.json" --include-package gpsr_command_understanding $gpu_arg > /dev/null 2>&1
+    allennlp predict "${model_path}" "${test_path}"   --output-file "${dir}/predictions_${dataset_name}.json" --use-dataset-reader --predictor command_parser --include-package gpsr_command_understanding --batch-size 64 $gpu_arg > /dev/null 2>&1
 
     set +x
     echo -e "\n ${model_name}" >> "${summary_path}"

@@ -9,10 +9,11 @@ if [[ $# == 1 ]]; then
 fi
 
 # Catch misspecified out directory early
-if [[ -z "${OUT_DIR}" && -d "${OUT_DIR}" ]]; then
-  echo "${OUT_DIR} is not a directory"
+if [[ -n "${OUT_DIR}" && -d "${OUT_DIR}" ]]; then
+  echo "${OUT_DIR} already exists"
   exit 1
 fi
+mkdir -p "${OUT_DIR}"
 
 function run_with_data {
     local data="$1"
@@ -27,7 +28,7 @@ function run_with_data {
     ./scripts/test_all_models "${results_dir}" "${test_data}"
     pkill tensorboard
     # Model archives can take up a lot of space. Use OUT_DIR to move them elsewhere
-    if [[ -d "${OUT_DIR}" ]]; then
+    if [[ -n "${OUT_DIR}" ]]; then
       set -x;
       mv -b --suffix=.bak "${results_dir}" "${OUT_DIR}"
       set -x;

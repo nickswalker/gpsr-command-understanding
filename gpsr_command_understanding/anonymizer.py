@@ -2,6 +2,14 @@ import re
 from collections import defaultdict
 
 
+class CaseInsensitiveDict(dict):
+    def __setitem__(self, key, value):
+        super(CaseInsensitiveDict, self).__setitem__(key.lower(), value)
+
+    def __getitem__(self, key):
+        return super(CaseInsensitiveDict, self).__getitem__(key.lower())
+
+
 class Anonymizer(object):
     def __init__(self, objects, categories, names, locations, rooms, gestures):
         self.names = names
@@ -10,7 +18,7 @@ class Anonymizer(object):
         self.rooms = rooms
         self.objects = objects
         self.gestures = gestures
-        replacements = {}
+        replacements = CaseInsensitiveDict()
         for name in self.names:
             replacements[name] = "name"
 
