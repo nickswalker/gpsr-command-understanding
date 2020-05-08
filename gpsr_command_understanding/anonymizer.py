@@ -48,7 +48,7 @@ class Anonymizer(object):
 
         self.rep = replacements
         escaped = {re.escape(k): v for k, v in replacements.items()}
-        self.pattern = re.compile("\\b(" + "|".join(escaped.keys()) + ")\\b")
+        self.pattern = re.compile("\\b(" + "|".join(escaped.keys()) + ")\\b", re.IGNORECASE)
 
     def __call__(self, utterance):
         return self.pattern.sub(lambda m: self.rep[m.group(0)], utterance)
