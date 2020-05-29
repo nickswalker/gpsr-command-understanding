@@ -1,5 +1,5 @@
-allennlp>=1.0.0rc3
+allennlp>=1.0.0rc5
 editdistance
 importlib_resources
-lark-parser>=0.8.1
+lark-parser>=0.8.5
 lxml

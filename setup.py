@@ -26,7 +26,7 @@ setup(
     url='http://github.com/nickswalker/gpsr-command-understanding',
     license='MIT',
     author='Nick Walker',
-    install_requires=['allennlp',
+    install_requires=['allennlp>=v1.0.0rc5',
                       'lark-parser',
 
                       ],
