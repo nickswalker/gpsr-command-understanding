@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+recursive-include gpsr_command_understanding *
+global-exclude .DS_Store *.py[cod]
+prune **/__pycache__
+prune **/.mypy_cache

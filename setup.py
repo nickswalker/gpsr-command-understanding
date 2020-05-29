@@ -28,12 +28,11 @@ setup(
     author='Nick Walker',
     install_requires=['allennlp>=v1.0.0rc5',
                       'lark-parser',
-
                       ],
     author_email='nswalker@cs.washington.edu',
     description='Automated REST APIs for existing database-driven systems',
     long_description=long_description,
-    packages=['gpsr_command_understanding'],
+    packages=find_packages(),
     include_package_data=True,
     platforms='any',
     classifiers = [
