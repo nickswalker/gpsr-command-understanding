@@ -20,7 +20,9 @@ class TestGenerator(unittest.TestCase):
 
     def setUp(self):
         kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"], "location": ["l1", "l2"], "object": ["o1", "o2"]},
-                           {"object": {"canPourIn": {"o1": True}}})
+                           {"object": {"canPourIn": {"o1": True},
+                                       "category": {"o1": "c1",
+                                                    "o2": "c2"}}})
         self.generator = Generator(kb, grammar_format_version=2018)
         with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as fixture_grammar_file:
             num_rules = self.generator.load_rules(fixture_grammar_file)
@@ -104,8 +106,21 @@ class TestGenerator(unittest.TestCase):
         expected = expr_builder("o1")
         self.assertEqual(expected, self.generator.ground(test_tree))
 
+        test_tree = Tree("expression", [ComplexWildCard("object", wildcard_id=1, conditions={"category": "c2"})
+                                        ])
+        expected = expr_builder("o2")
+        self.assertEqual(expected, self.generator.ground(test_tree))
+
         # Throw on unknown condition
         test_tree = Tree("expression", [ComplexWildCard("object", wildcard_id=1, conditions={"UNKNOWNCONDITION": True})
                                         ])
         with self.assertRaises(RuntimeError):
             self.generator.ground(test_tree)
+
+        # Obfuscation works
+        test_tree = Tree("expression", [ComplexWildCard("object", wildcard_id=1, obfuscated=True),
+                                        ComplexWildCard("object", wildcard_id=1, obfuscated=False),
+                                        ComplexWildCard("object", wildcard_id=2, obfuscated=True)
+                                        ])
+        expected = expr_builder("c1 o1 c2")
+        self.assertEqual(expected, self.generator.ground(test_tree))

@@ -1,6 +1,6 @@
 import operator
 
-from copy import deepcopy
+from copy import deepcopy, copy
 from itertools import count
 
 import editdistance
@@ -10,7 +10,7 @@ from lark import Transformer, Lark, Tree
 from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import DiscardVoid, DiscardMeta
 from gpsr_command_understanding.generator.knowledge import AnonymizedKnowledgebase
-from gpsr_command_understanding.generator.tokens import NonTerminal, WildCard
+from gpsr_command_understanding.generator.tokens import NonTerminal, WildCard, ComplexWildCard
 from gpsr_command_understanding.util import get_wildcards_forest
 
 from queue import PriorityQueue
@@ -90,14 +90,21 @@ class GrammarBasedParser(object):
             wildcards = get_wildcards_forest(all_rule_trees)
             # We're gonna hallucinate some rules for the wildcards
             # * They can appear just as their string representation (should be what comes out of the generator)
+            # * They can appear obfuscated
             # * They can appear anonymized, like location0 or name0, but we can't know how they'd be numbered
             #   - If placement and beacon both appeared in a sentence, they'd be mapped to location0 and 1
             #   - We'll overaccept to counter this
             anon_kb = AnonymizedKnowledgebase()
             gen = Generator(anon_kb)
             for wildcard in wildcards:
-                anon_replacements = list(gen.generate_groundings(expr_builder(wildcard), ignore_types=True))
-                rules[wildcard] = [expr_builder(wildcard.to_human_readable())] + anon_replacements
+                anon_replacements = set(
+                    gen.generate_groundings(expr_builder(wildcard), ignore_types=True, apply_obfuscation=False))
+                if isinstance(wildcard, ComplexWildCard):
+                    obf_copy = copy(wildcard)
+                    obf_copy.obfuscated = True
+                    obfuscated_groundings = set(gen.generate_groundings(expr_builder(obf_copy), ignore_types=True))
+                    anon_replacements.union(obfuscated_groundings)
+                rules[wildcard] = [expr_builder(wildcard.to_human_readable())] + list(anon_replacements)
 
         for non_term, productions in rules.items():
             # TODO: bake this into WildCard and NonTerminal types
@@ -121,6 +128,7 @@ class GrammarBasedParser(object):
             as_ebnf += line
 
         # print(as_ebnf)
+        # We're whitespace insensitive
         as_ebnf += """
         %import common.WS
         %ignore WS
@@ -208,4 +216,8 @@ class AnonymizingParser(object):
     def __call__(self, utterance, **kwargs):
         if "verbose" in kwargs and kwargs["verbose"]:
             print("Anonymized to " + self.anonymizer(utterance))
-        return self.parser(self.anonymizer(utterance), **kwargs)
+        anon_parse = self.parser(self.anonymizer(utterance), **kwargs)
+        if anon_parse:
+            return anon_parse
+        # Maybe anonymization is catching a word it shouldn't and moving the sentence outside the grammar. Try without
+        return self.parser(utterance, **kwargs)

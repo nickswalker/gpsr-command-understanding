@@ -39,6 +39,7 @@ class KnowledgeBase:
         attributes = {"object": object_parser.get_attributes(), "location": locations_parser.get_attributes()}
 
         attributes["object"]["category"] = object_parser.get_objects_to_categories()
+        attributes["location"]["in"] = locations_parser.get_room_locations_are_in()
 
         by_name = {
             "object": objects,
@@ -67,9 +68,11 @@ class AnonymizedKnowledgebase:
         rooms = ["room" + str(i) for i in range(3)]
         self.by_name = {name: [name + str(i) for i in range(3)] for name in names}
         self.by_name["location"] += rooms
-        self.attributes = {"object": {"type": defaultdict(lambda x: True)},
-                           "location": {"isplacement": defaultdict(lambda x: True),
-                                        "isbeacon": defaultdict(lambda x: True),
-                                        "isroom": defaultdict(lambda x: False)}}
+        self.attributes = {"object": {"type": defaultdict(lambda: True),
+                                      "category": defaultdict(lambda: "c1")},
+                           "location": {"isplacement": defaultdict(lambda: True),
+                                        "isbeacon": defaultdict(lambda: True),
+                                        "isroom": defaultdict(lambda: False),
+                                        "in": defaultdict(lambda: "room1")}}
         for room in rooms:
             self.attributes["location"]["isroom"][room] = True

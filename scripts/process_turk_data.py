@@ -4,7 +4,7 @@ import re
 from nltk.metrics.distance import edit_distance, jaccard_distance
 import pandas as pd
 
-rephrasings = []
+paraphrasings = []
 new = []
 
 
@@ -38,34 +38,36 @@ def process_turk_files(paths, filter_rejected=True):
     return rephrasings, new, other_data
 
 
-rephrasings, new, other_data = process_turk_files(glob.glob("../data/raw_turk/batch_*.csv"))
+paraphrasings, new, other_data = process_turk_files(glob.glob("../data/raw_turk/batch_*.csv"))
 
-rephrasings["EditDistanceNormalized"] = rephrasings.apply(
+paraphrasings["EditDistanceNormalized"] = paraphrasings.apply(
     lambda row: edit_distance(row["Input.command"], row["Answer.utterance"]) / len(row["Input.command"]), axis=1)
-rephrasings["EditDistance"] = rephrasings.apply(
+paraphrasings["EditDistance"] = paraphrasings.apply(
     lambda row: edit_distance(row["Input.command"], row["Answer.utterance"]), axis=1)
-rephrasings["JaccardDistance"] = rephrasings.apply(
+paraphrasings["JaccardDistance"] = paraphrasings.apply(
     lambda row: jaccard_distance(set(row["Input.command"].split()), set(row["Answer.utterance"].split())), axis=1)
 
-print("{:.2f} {:.2f} {:.2f}".format(rephrasings["EditDistanceNormalized"].mean(), rephrasings["EditDistance"].mean(),
-                                    rephrasings["JaccardDistance"].mean()))
-by_worker = rephrasings.groupby(rephrasings["WorkerId"])
+print(
+    "{:.2f} {:.2f} {:.2f}".format(paraphrasings["EditDistanceNormalized"].mean(), paraphrasings["EditDistance"].mean(),
+                                  paraphrasings["JaccardDistance"].mean()))
+by_worker = paraphrasings.groupby(paraphrasings["WorkerId"])
 for name, group in by_worker:
     print(name)
-    for i, (original, rephrasing) in group[["Input.command", "Answer.utterance"]].iterrows():
+    for i, (original, paraphrase) in group[["Input.command", "Answer.utterance"]].iterrows():
         print(original)
-        print(rephrasing)
+        print(paraphrase)
         print("")
 
 turker_performance = pd.DataFrame()
 turker_performance["HITTime"] = other_data.groupby("WorkerId")["WorkTimeInSeconds"].mean()
-turker_performance["MeanNormalizedEditDistance"] = rephrasings.groupby("WorkerId")["EditDistanceNormalized"].mean()
-turker_performance["MeanJaccardDistance"] = rephrasings.groupby("WorkerId")["JaccardDistance"].mean()
+turker_performance["MeanNormalizedEditDistance"] = paraphrasings.groupby("WorkerId")["EditDistanceNormalized"].mean()
+turker_performance["MeanJaccardDistance"] = paraphrasings.groupby("WorkerId")["JaccardDistance"].mean()
 turker_performance["Comment"] = other_data.groupby("WorkerId")["Answer.comment"]
-for _, (original, parse, rephrasing, edit, jaccard) in rephrasings[["Input.command", "Input.parse", "Answer.utterance", "EditDistance", "JaccardDistance"]].iterrows(): # noqa
+for _, (original, parse, paraphrase, edit, jaccard) in paraphrasings[
+    ["Input.command", "Input.parse", "Answer.utterance", "EditDistance", "JaccardDistance"]].iterrows():  # noqa
     print(original)
     print(parse)
-    print(rephrasing)
+    print(paraphrase)
     print("dist: ed{:.2f} ja{:.2f}".format(edit, jaccard))
     print("")
 
@@ -77,11 +79,18 @@ for name, group in new_by_worker:
         print(custom_utt)
         print("")
 
-print("{} workers provided {} rephrasings and {} new commands".format(len(by_worker), len(rephrasings), len(new)))
+print("{} workers provided {} rephrasings and {} new commands".format(len(by_worker), len(paraphrasings), len(new)))
 
 rephrasings_dict = {}
 with open("../data/paraphrasings.txt", 'w') as outfile:
-    for _, (utt, parse) in rephrasings[["Answer.utterance", "Input.parse"]].sort_values(
+    for _, (utt, parse) in paraphrasings[["Answer.utterance", "Input.parse"]].sort_values(
+            by="Answer.utterance").iterrows():
+        outfile.write(utt + "\n")
+        outfile.write(parse + "\n")
+        rephrasings_dict[utt] = parse
+
+with open("../data/paraphrasings_grounded.txt", 'w') as outfile:
+    for _, (utt, parse) in paraphrasings[["Answer.utterance", "Input.parse_ground"]].sort_values(
             by="Answer.utterance").iterrows():
         outfile.write(utt + "\n")
         outfile.write(parse + "\n")

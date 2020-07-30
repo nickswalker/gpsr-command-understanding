@@ -75,19 +75,44 @@ class Generator:
         return i
 
     def ground(self, tree, **kwargs):
+        """
+        Get a grounding for a tree
+        :param tree:
+        :return: a tree with wildcards replaced with a valid assignment
+        """
         return next(self.generate_groundings(tree, **kwargs))
 
-    def generate_groundings(self, tree, random_generator=None, ignore_types=False):
+    def generate_groundings(self, tree, random_generator=None, ignore_types=False, apply_obfuscation=True):
         assignments = self.generate_grounding_assignments(tree, random_generator=random_generator,
                                                           ignore_types=ignore_types)
         for assignment in assignments:
             grounded = copy.deepcopy(tree)
-            for token, replacement in assignment.items():
-                replace_child_in_tree(grounded, token, replacement)
+            for wildcard, replacement in assignment.items():
+                if apply_obfuscation and isinstance(wildcard, ComplexWildCard) and wildcard.obfuscated:
+                    replacement = self.obfuscate(wildcard, replacement)
+                replace_child_in_tree(grounded, wildcard, replacement)
             yield grounded
 
-    def generate_grounding_assignments(self, tree, random_generator=None, ignore_types=False):  # noqa: C901
+    def obfuscate(self, wildcard, grounding):
+        if wildcard.name == "object":
+            # What's the category of this object?
+            return self.knowledge_base.attributes["object"]["category"][grounding]
+        elif wildcard.name == "category":
+            return "objects"
+        elif wildcard.name == "location":
+            if wildcard.type == "room":
+                return "room"
+            else:
+                # What room is this beacon or placement in?
+                return self.knowledge_base.attributes["location"]["in"][grounding]
 
+    def generate_grounding_assignments(self, tree, random_generator=None, ignore_types=False):  # noqa: C901
+        """
+        Generate maps from a tree's wildcards to valid entities in the knowledgebase
+        :param tree:
+        :param random_generator:
+        :param ignore_types:
+        """
         wildcards = get_wildcards(tree)
         assignment = {}
 
@@ -119,10 +144,8 @@ class Generator:
                 if wildcard.name == "object" and wildcard.type:
                     constraints[wildcard].add(("type", wildcard.type))
                 elif wildcard.name == "location" and wildcard.type:
-                    # Location types are a shorthand for an attribute: ex isplacment
+                    # Location types are a shorthand for an attribute: ex isplacement
                     constraints[wildcard].add(("is" + wildcard.type, True))
-                # TODO(nickswalker): Respect obfuscation
-                # TODO(nickswalker): Object category constraints (EGPSR)
                 if wildcard.conditions:
                     for key, value in wildcard.conditions.items():
                         constraints[wildcard].add((key, value))
@@ -132,6 +155,7 @@ class Generator:
     def __populate_with_constraints(self, tree, constraints, random_generator=None):  # noqa: C901
         wildcards = get_wildcards(tree)
         if not wildcards:
+            # Should've assigned something for every constraint
             assert len(constraints.values()) == len(constraints)
             yield constraints
             return
@@ -145,8 +169,8 @@ class Generator:
         else:
             candidates = self.knowledge_base.by_name[wildcard.name]
         if random_generator:
-            if random_generator:
-                random_generator.shuffle(candidates)
+            random_generator.shuffle(candidates)
+        # Now we'll try to fill in the wildcard with the candidate
         for candidate in candidates:
             if not isinstance(item_constraints, set):
                 # We should have already replaced this wildcard if it has a fixed constraint
@@ -169,7 +193,7 @@ class Generator:
                         valid = False
             if not valid:
                 continue
-
+            # This candidate doesn't violate a constraint -> recurse on it
             fixed = copy.deepcopy(constraints)
             fresh_tree = copy.deepcopy(tree)
             fixed[wildcard].clear()
@@ -186,7 +210,8 @@ class Generator:
         """
         A generator that produces completely expanded sentences in depth-first order
         :param start_tree: the list of tokens to begin expanding
-        :param production_rules: the rules to use for expanding the tokens
+        :param random_generator: optional source of randomness to use in branching decisions. Deterministic otherwise
+        :param branch_cap: limit on the number of different branches to pursue
         """
         # Make sure the start point is a Tree
         if isinstance(start_tree, NonTerminal):

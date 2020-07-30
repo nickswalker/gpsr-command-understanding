@@ -6,7 +6,8 @@ import unittest
 
 from gpsr_command_understanding.generator.generator import Generator
 from gpsr_command_understanding.generator.grammar import tree_printer
-from gpsr_command_understanding.generator.loading_helpers import load_paired, GRAMMAR_DIR_2018, GRAMMAR_DIR_2019, load_2018
+from gpsr_command_understanding.generator.loading_helpers import load_paired, GRAMMAR_DIR_2018, GRAMMAR_DIR_2019, \
+    load_2018, load
 from gpsr_command_understanding.generator.paired_generator import PairedGenerator
 from gpsr_command_understanding.parser import GrammarBasedParser, AnonymizingParser, KNearestNeighborParser
 from gpsr_command_understanding.anonymizer import Anonymizer, NumberingAnonymizer
@@ -18,6 +19,7 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestParsers(unittest.TestCase):
 
     def test_parse_utterance(self):
+        # Make sure we can handle a small grammar
         generator = Generator(None, grammar_format_version=2019)
         with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as grammar_file:
             generator.load_rules(grammar_file, expand_shorthand=False)
@@ -48,18 +50,20 @@ class TestParsers(unittest.TestCase):
         generator = Generator(None, grammar_format_version=2018)
 
         load_paired(generator, "gpsr", GRAMMAR_DIR_2019)
-
+        # Take a subset for speed
         sentences = list(itertools.islice(generator.generate(ROOT_SYMBOL, random_generator=random.Random(0)), 1000))
+        # Throw out metadata
         [generator.extract_metadata(sen) for sen in sentences]
         parser = GrammarBasedParser(generator.rules)
         sentences = set([tree_printer(x) for x in sentences])
+        # Make sure that sentences are unique even without metadata
         self.assertEqual(1000, len(sentences))
         succeeded = 0
         for sentence in sentences:
             parsed = parser(sentence)
             if parsed:
                 succeeded += 1
-
+        # Make sure every single sentence maps to something
         self.assertEqual(len(sentences), succeeded)
 
     def test_nearest_neighbor_parser(self):
@@ -71,9 +75,11 @@ class TestParsers(unittest.TestCase):
         neighbors = [(sentence, parser(sentence)) for sentence in sentences]
         nearest_neighbor_parser = KNearestNeighborParser(neighbors)
         some_sentence = sentences[0]
+        # Chop off a token
         tweaked = some_sentence[:-1]
         expected_parse = parser(some_sentence)
         self.assertEqual(expected_parse, nearest_neighbor_parser(some_sentence))
+        # Should tolerate a small change
         self.assertEqual(expected_parse, nearest_neighbor_parser(tweaked))
 
     def test_anonymizer(self):
@@ -91,17 +97,15 @@ class TestParsers(unittest.TestCase):
             numbering_anonymizer(duplicates),
             "Bring the object0 from the room0 and put it next to the other object1 in the room1")
 
-    def test_parse_all_2019_ungrounded(self):
+    def test_parse_2019_ungrounded(self):
         generator = PairedGenerator(None, grammar_format_version=2019)
         load_paired(generator, "gpsr", GRAMMAR_DIR_2019)
 
-        pairs = generator.generate(ROOT_SYMBOL, yield_requires_semantics=False,
-                                   random_generator=random.Random(1))
+        pairs = list(generator.generate(ROOT_SYMBOL, yield_requires_semantics=False,
+                                        random_generator=random.Random(1)))
 
         [generator.extract_metadata(sentence) for sentence, semantics in pairs]
         parser = GrammarBasedParser(generator.rules)
-        # TODO: Finish writing this test
-        return
 
         # Bring me the apple from the fridge to the kitchen
         # ---straight anon to clusters--->
@@ -115,7 +119,7 @@ class TestParsers(unittest.TestCase):
         # ---Grammar based parser--->
         # (Failure; wrong numbers, or maybe)
 
-        anonymizer = Anonymizer.from_knowledge_base(generator.knowledge_base)
+        anonymizer = NumberingAnonymizer.from_knowledge_base(generator.knowledge_base)
         parser = AnonymizingParser(parser, anonymizer)
         num_tested = 1000
         succeeded = 0
@@ -130,4 +134,34 @@ class TestParsers(unittest.TestCase):
                 print()
                 print(parser(anonymizer(sentence)))
 
-        self.assertEqual(succeeded, num_tested)
+        self.assertEqual(num_tested, succeeded)
+
+    def test_parse_2019_grounded(self):
+        generator = PairedGenerator(None, grammar_format_version=2019)
+        load(generator, "gpsr", GRAMMAR_DIR_2019)
+
+        pairs = list(generator.generate(ROOT_SYMBOL, yield_requires_semantics=False,
+                                        random_generator=random.Random(1)))
+
+        [generator.extract_metadata(sentence) for sentence, semantics in pairs]
+        parser = GrammarBasedParser(generator.rules)
+
+        anonymizer = NumberingAnonymizer.from_knowledge_base(generator.knowledge_base)
+        parser = AnonymizingParser(parser, anonymizer)
+        num_tested = 1000
+        succeeded = 0
+        for tree, parse in itertools.islice(pairs, num_tested):
+            ground_sen, _ = generator.ground((tree, parse))
+            sentence = tree_printer(ground_sen)
+            parsed = parser(sentence)
+            if parsed:
+                succeeded += 1
+            else:
+                print(sentence)
+                print(anonymizer(sentence))
+                print()
+                print(parser(anonymizer(sentence)))
+
+        # Sometimes we over anonymize, creating sentences that fall outside the grammar
+        # Might be able to avoid this trying permutations of anonymizations
+        self.assertEqual(912, succeeded)

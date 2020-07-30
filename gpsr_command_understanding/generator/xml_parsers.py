@@ -78,7 +78,7 @@ class LocationParser(object):
 
     '''return dictionary of room:location_list'''
 
-    def get_room_locations(self):
+    def get_locations_in_room(self):
         room_locations = {}
         root = self.tree.getroot()
         for room in root.findall("./room"):
@@ -88,6 +88,15 @@ class LocationParser(object):
                 location_list.append(thing.attrib['name'].lower())
             room_locations[room_name] = location_list
         return room_locations
+
+    def get_room_locations_are_in(self):
+        mapping = {}
+        root = self.tree.getroot()
+        for room in root.findall("./room"):
+            room_name = room.attrib['name'].lower()
+            for thing in room:
+                mapping[thing.attrib['name'].lower()] = room_name
+        return mapping
 
     def get_all_locations(self):
         locations = []

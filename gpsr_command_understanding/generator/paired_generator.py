@@ -261,7 +261,9 @@ class PairedGenerator(Generator):
             grounded_logical = copy.deepcopy(logical)
             for token, replacement in assignment.items():
                 replace_child_in_tree(grounded_utt, token, replacement)
-                replace_child_in_tree(grounded_logical, token, Token("ESCAPED_STRING", "\"" + replacement + "\""))
+                # We may not have had semantics
+                if grounded_logical:
+                    replace_child_in_tree(grounded_logical, token, Token("ESCAPED_STRING", "\"" + replacement + "\""))
             yield grounded_utt, grounded_logical
 
     def _print_semantics_rules(self):

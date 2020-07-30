@@ -10,7 +10,7 @@ from gpsr_command_understanding.generator.loading_helpers import load_paired_201
 from gpsr_command_understanding.models.noop_tokenizer import NoOpTokenizer
 from gpsr_command_understanding.models.seq2seq_data_reader import Seq2SeqDatasetReader
 from gpsr_command_understanding.parser import AnonymizingParser, KNearestNeighborParser, GrammarBasedParser
-from gpsr_command_understanding.anonymizer import  NumberingAnonymizer
+from gpsr_command_understanding.anonymizer import NumberingAnonymizer
 from nltk.metrics.distance import jaccard_distance
 
 
