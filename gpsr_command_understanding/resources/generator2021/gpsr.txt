@@ -21,10 +21,10 @@ $task     = $partyhost
 #
 ##############################################################################
 ; Define an object type
-$object   = {object} | bowl | cloth | tray
+$object   = {object}
 
 ; Rule for finding a specific (named) person
-$findp    = $vbfind a $pgenders
+$findp    = $vbfind (a person | someone)
 $findp    = $vbfind a person {gesture}
 $findp    = $vbfind a person $pose
 
@@ -72,20 +72,20 @@ $cmanobjsrc  = from the {placement 2 meta: Place at least 5 objects in the {plac
 ##############################################################################
 $fndobj   = $vbfind the {aobject?} in the {room}
 $fndobj   = Tell me how many {category} there are on the {placement}
-$fndobj   = Tell me what's the $oprop object on the {placement}
-$fndobj   = Tell me what's the $oprop {category} on the {placement}
+$fndobj   = Tell me what the $oprop object on the {placement} is
+$fndobj   = Tell me what the $oprop {category} on the {placement} is
 $fndobj   = $vbfind the {category} in the {room}
 $fndobj   = tell me which are the three $oprop (objects | {category}) on the {placement 1 meta: Place at least 5 objects on the {placement 1}}
 $fndobj   = $vbfind three {category} in the {room meta: Place only 3 objects in the room}
-
+$fndobj = (can you help me ) $vbfind my {object where category="personal"}
 
 ##############################################################################
 #
 # Find people
 #
 ##############################################################################
-$fndppl   = Tell me the (name | gender | pose) of the person at the {beacon}
-$fndppl   = Tell me the (name | gender | pose) of the person in the {room}
+$fndppl   = Tell me the (name | pose) of the person at the {beacon}
+$fndppl   = Tell me the (name | pose) of the person in the {room}
 $fndppl   = tell me how many people in the {room} are ($pgenderp | $pose)
 
 
@@ -142,8 +142,8 @@ $relpos      = at the (left | right) of
 $relpos      = on top of
 $relpos      = above | behind | under
 $garbage     = litter | garbage | trash | waste | debris | junk
-$luggage     = bag | baggage | valise | suitcase | trolley
-$taxi        = taxi | cab | uber
+$luggage     = bag | baggage | valise | suitcase | trolley | (duffle bag) | backpack
+$taxi        = taxi | cab | uber | car | van
 $door        = ( front | back | main | rear ) (entrance | door)
 
 
@@ -153,6 +153,6 @@ $door        = ( front | back | main | rear ) (entrance | door)
 #
 ##############################################################################
 $vbtakeout   = (take out) | dump
-$vbcleanup   = (clean out) | (clean up) | (tidy op) | neaten | order
+$vbcleanup   = (clean out) | (clean up) | (tidy up) | neaten | order
 $vbserve     = serve | arrange | deliver | distribute | give | provide
 $vbmeet      = contact | face | find | greet

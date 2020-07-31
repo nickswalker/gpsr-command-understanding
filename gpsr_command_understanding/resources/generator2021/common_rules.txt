@@ -117,10 +117,8 @@ $speak    = $vbspeak $whattosay
 # What to say
 #
 ##############################################################################
-$whattosay = something about yourself
 $whattosay = the time
-$whattosay = what day is (today | tomorrow)
-$whattosay = your team's (name | country | affiliation)
+$whattosay = what day (it is | tomorrow is)
 $whattosay = the day of the (week | month)
 $whattosay = a joke
 

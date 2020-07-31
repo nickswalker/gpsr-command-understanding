@@ -6,12 +6,20 @@
         <object name="towel" difficulty="high" type="alike"/>
         <object name="sponge" difficulty="high"/>
         <object name="toothpaste" difficulty="moderate"/>
+        <object name="cloth" difficulty="high"/>
+        <object name="toilet paper" difficulty="easy"/>
+        <object name="tissue" difficulty="easy"/>
+        <object name="toothbrush" difficulty="easy"/>
+        <object name="prescription bottle" difficulty="easy"/>
+        <object name="tampon" difficulty="easy"/>
+        <object name="painkiller" difficulty="easy"/>
     </category>
     <category name="snacks" defaultLocation="center table" room="living room">
         <object name="chips" difficulty="moderate"/>
         <object name="chocolate" difficulty="moderate"/>
-        <object name="pringles" difficulty="easy"/>
         <object name="cookies" difficulty="easy"/>
+        <object name="edamame" difficulty="easy"/>
+        <object name="crackers" difficulty="easy"/>
     </category>
     <category name="fruits" defaultLocation="dining table" room="dining room">
         <object name="apple" difficulty="moderate" type="alike" fruit="true"/>
@@ -22,23 +30,43 @@
     </category>
     <category name="food" defaultLocation="cabinet" room="kitchen">
         <object name="pasta" difficulty="easy"/>
+        <object name="rice" difficulty="easy"/>
         <object name="noodles" difficulty="easy"/>
-        <object name="tuna fish" difficulty="moderate"/>
+        <object name="canned tuna" difficulty="moderate"/>
         <object name="pickles" difficulty="high"/>
+        <object name="canned beans" difficulty="easy"/>
+        <object name="canned soup" difficulty="easy"/>
+        <object name="peanut butter" difficulty="easy"/>
+        <object name="jelly" difficulty="easy"/>
+        <object name="mixed nuts" difficulty="easy"/>
     </category>
     <category name="food" defaultLocation="cupboard" room="kitchen">
-        <object name="choco flakes" difficulty="high" type="known" canPour="true"/>
-        <!-- Modified Cereal name to not be a potentially confusing pun/joke -->
         <object name="cereal" difficulty="high" type="known" canPour="true"/>
         <object name="spaghetti" difficulty="high" type="known" canPour="true"/>
+        <object name="bread" difficulty="high" type="known" canPour="true"/>
     </category>
-
     <category name="drinks" defaultLocation="fridge" room="kitchen">
         <object name="tea" difficulty="easy" canPour="true"/>
+        <object name="coffee" difficulty="easy" canPour="true"/>
         <object name="beer" difficulty="easy" alcoholic="true"/>
-        <object name="coke" difficulty="easy" canPour="true"/>
+        <object name="wine" difficulty="easy" alcoholic="true"/>
+        <object name="soda" difficulty="easy" canPour="true"/>
         <object name="water" difficulty="easy" canPour="true"/>
         <object name="milk" difficulty="easy" canPour="true"/>
+    </category>
+    <category name="food" defaultLocation="fridge" room="kitchen">
+        <object name="pizza" difficulty="easy"/>
+        <object name="curry" difficulty="easy"/>
+        <object name="tofu" difficulty="easy"/>
+        <object name="butter" difficulty="easy"/>
+    </category>
+    <category name="food" defaultLocation="freezer" room="kitchen">
+        <object name="ice cream" difficulty="easy"/>
+        <object name="vegetables" difficulty="easy"/>
+        <object name="spinach" difficulty="easy"/>
+        <object name="broccoli" difficulty="easy"/>
+        <object name="dumplings" difficulty="easy"/>
+        <object name="wontons" difficulty="easy"/>
     </category>
     <category name="cutlery" defaultLocation="cutlery drawer" room="dining room">
         <object name="tea spoon" difficulty="high" type="known"/>
@@ -46,6 +74,7 @@
         <object name="fork" difficulty="high" type="known"/>
         <object name="knife" difficulty="high" type="known"/>
         <object name="napkin" difficulty="high" type="known"/>
+        <object name="scissors" difficulty="high" type="known"/>
     </category>
     <category name="tableware" defaultLocation="sideboard" room="dining room">
         <object name="big dish" difficulty="moderate" type="known" canPlaceOn="true"/>
@@ -58,6 +87,31 @@
         <object name="tray" difficulty="high" type="special" canPlaceOn="true" twoHands="true"/>
         <object name="box" difficulty="high" type="special" canPlaceIn="true" twoHands="true"/>
         <object name="bag" difficulty="easy" type="special" canPlaceIn="true"/>
+        <object name="water bottle" difficulty="easy"/>
+    </category>
+    <category name="personal" defaultLocation="counter" room="kitchen">
+        <object name="laptop" difficulty="high"/>
+        <object name="tablet" difficulty="high"/>
+        <object name="purse" difficulty="high"/>
+    </category>
+    <category name="personal" defaultLocation="nightstand" room="bedroom">
+        <object name="keys" difficulty="high"/>
+        <object name="wallet" difficulty="high"/>
+        <object name="phone" difficulty="high"/>
+        <object name="watch" difficulty="high"/>
+        <object name="glasses" difficulty="high"/>
+    </category>
+    <category name="personal" defaultLocation="shoe rack" room="corridor">
+        <object name="running shoes" difficulty="high"/>
+    </category>
+    <category name="toys" defaultLocation="center table" room="living room">
+        <object name="board game" difficulty="easy"/>
+        <object name="blocks" difficulty="easy"/>
+        <object name="pacifier" difficulty="easy"/>
+    </category>
+    <category name="personal" defaultLocation="bookshelf" room="living room">
+        <object name="notebook" difficulty="easy"/>
+        <object name="book" difficulty="easy"/>
     </category>
 </categories>
 

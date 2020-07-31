@@ -10,6 +10,7 @@
         <location name="armchair" isBeacon="true"/>
         <location name="drawer" isPlacement="true"/>
         <location name="desk" isBeacon="true" isPlacement="true"/>
+        <location name="shelves" isBeacon="true" isPlacement="true"/>
     </room>
     <room name="dining room">
         <location name="side table" isPlacement="true"/>
@@ -26,6 +27,9 @@
         <location name="bar" isPlacement="true"/>
         <location name="fireplace" isPlacement="true"/>
         <location name="tv couch" isBeacon="true"/>
+        <location name="fan" isBeacon="true"/>
+        <location name="piano" isBeacon="true"/>
+        <location name="plant" isBeacon="true"/>
     </room>
     <room name="kitchen">
         <location name="microwave" isPlacement="true"/>
@@ -38,9 +42,12 @@
         <location name="freezer" isPlacement="true"/>
         <location name="washing machine" isPlacement="true"/>
         <location name="dishwasher" isPlacement="true"/>
+        <location name="flowers" isBeacon="true"/>
     </room>
     <room name="corridor">
         <location name="cabinet" isBeacon="true" isPlacement="true"/>
+        <location name="shoe rack" isBeacon="true" isPlacement="true"/>
+        <location name="painting" isBeacon="true" isPlacement="true"/>
     </room>
     <room name="bathroom">
         <location name="shower" isBeacon="true"/>
