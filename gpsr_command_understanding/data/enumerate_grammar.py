@@ -7,7 +7,7 @@ from os.path import join
 import re
 
 from gpsr_command_understanding.generator.grammar import tree_printer
-from gpsr_command_understanding.generator.loading_helpers import load, GRAMMAR_DIR_2019
+from gpsr_command_understanding.generator.loading_helpers import load, GRAMMAR_YEAR_TO_MODULE
 from gpsr_command_understanding.generator.tokens import ROOT_SYMBOL
 from gpsr_command_understanding.generator.paired_generator import pairs_without_placeholders, PairedGenerator
 
@@ -32,11 +32,10 @@ def main():
     out_root = os.path.abspath(os.path.dirname(__file__) + "/../../data/")
 
     generator = PairedGenerator(None, grammar_format_version=year)
-    load(generator, task, GRAMMAR_DIR_2019)
+    load(generator, task, GRAMMAR_YEAR_TO_MODULE[year])
 
     sentences = [pair[0] for pair in
-                 generator.generate(ROOT_SYMBOL, yield_requires_semantics=False, random_generator=Random(0),
-                                    branch_cap=3)]
+                 generator.generate(ROOT_SYMBOL, yield_requires_semantics=False)]
     [generator.extract_metadata(sentence) for sentence in sentences]
     sentences = set(sentences)
 

@@ -6,7 +6,9 @@ from gpsr_command_understanding.generator.paired_generator import PairedGenerato
 
 GRAMMAR_DIR_2018 = "gpsr_command_understanding.resources.generator2018"
 GRAMMAR_DIR_2019 = "gpsr_command_understanding.resources.generator2019"
+GRAMMAR_DIR_2021 = "gpsr_command_understanding.resources.generator2021"
 
+GRAMMAR_YEAR_TO_MODULE = {2018: GRAMMAR_DIR_2018, 2019: GRAMMAR_DIR_2019, 2021: GRAMMAR_DIR_2021}
 
 def load_2018_by_cat(grammar_dir):
     kb = KnowledgeBase.from_xml_dir(grammar_dir)

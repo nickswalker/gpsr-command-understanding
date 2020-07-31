@@ -13,7 +13,8 @@ from gpsr_command_understanding.util import replace_child_in_tree, \
 
 
 GENERATOR_GRAMMARS = {2018: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark"),
-                      2019: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark")}
+                      2019: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark"),
+                      2021: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark")}
 
 
 # TODO(nickswalker): Document these methods
