@@ -30,12 +30,11 @@ $deliver  = $goplace, $vbfind the $object, and $place
 
 ##############################################################################
 #
-# Find people
+# Tell people things
 #
 ##############################################################################
-$fndppl   = $talk to $whowhere
-$fndppl   = $findp in the {room} and $talk
-$fndppl   = $goroom, $findp, and $talk
+$fndppl   = $findp in the {room} and $speak
+$fndppl   = $goroom, $findp, and $speak
 
 
 
@@ -44,7 +43,7 @@ $fndppl   = $goroom, $findp, and $talk
 # Find objects
 #
 ##############################################################################
-$fndobj   = Tell me how many $object there are on the {placement}
+$fndobj   = tell me how many $object there are on the {placement}
 $fndobj   = $vbfind the $object in the {room}
 
 
@@ -75,7 +74,7 @@ $gdcmd    = $gobeacon, meet {name 1}, and $guideto
 $gdcmd    = $vbguide {name 1} to the {beacon 2}, $gdwhere
 
 $guideto  = $vbguide {pron} to the {beacon 2}
-$gdwhere  = you (may | can | will) find {pron} at the {beacon 1}
+$gdwhere  = (you (may | can | will) find {pron} at | they're (by | beside)  | they might be near) the {beacon 1}
 $gdmeta   = {void meta: The person being guided must deviate when indicated by the referee before reaching the {beacon 2}}
 
 ##############################################################################
@@ -107,9 +106,7 @@ $delivto  = $vbdeliver it to {name}
 $delivat  = $vbdeliver it to {name} at the {beacon}
 
 ; Speak
-$talk     = $answer | $speak
-$answer   = answer a {question}
-$speak    = $vbspeak $whattosay
+$speak    = $vbtell $whattotell
 
 
 ##############################################################################
@@ -117,28 +114,38 @@ $speak    = $vbspeak $whattosay
 # What to say
 #
 ##############################################################################
-$whattosay = the time
-$whattosay = what day (it is | tomorrow is)
-$whattosay = the day of the (week | month)
-$whattosay = a joke
+$whattotell = the time
+$whattotell = what day (it is | tomorrow is)
+$whattotell = the day of the week
+$whattotell = a joke
+$whattotell = it's dinner time
+$whattotell = (they're late | it's time to go)
+$whattotell = (to clean up their mess)
+$whattotell = (i'm hungry)
 
 ##############################################################################
 #
 # Verbs
 #
 ##############################################################################
-$vbbtake   = bring | take
-$vbplace   = put | place
+
 $vbbring   = bring | give
 $vbclean   = clean
+$vbtidy   = (tidy up) | neaten | order | organize | (clean out) | (clean up)
 $vbdeliver = $vbbring | deliver
-$vbtake    = get | grasp | take | pick up
-$vbspeak   = tell | say
+$vbfind    = find | locate | look for
+$vbfollow  = follow | ((come | go) (behind | after)) | accompany
 $vbgopl    = go | navigate
 $vbgor     = $vbgopl | enter
-$vbfind    = find | locate | look for
 $vbguide   = guide | escort | take | lead | accompany
-$vbfollow  = follow
+$vbpickup    = get | grasp | take | retrieve | pick up
+$vbplace   = put | place
+$vbpour    = pour | serve
+$vbserve     = serve | arrange | deliver | distribute | give | provide
+$vbtake   = bring | carry | take
+$vbtell  =  tell them
+$vbtakeout   = (take out) | dump
+$vbmeet      = meet | find | greet | (get to know) | (get acquainted with)
 
 
 ##############################################################################
@@ -146,7 +153,7 @@ $vbfollow  = follow
 # Polite
 #
 ##############################################################################
-$polite   = {void} | Please
-$polite   = Could you
-$polite   = Robot please
-$polite   = Could you please
+$polite   = {void} | please
+$polite   = could you
+$polite   = robot please
+$polite   = could you please

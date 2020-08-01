@@ -7,11 +7,12 @@ $ptask    = $polite $task
 
 $task     = $fndppl
 $task     = $fndobj
+$task     = $tell
 $task     = $guide
 $task     = $follow
 $task     = $followout
 $task     = $incomplete
-$task     = $man
+$task     = $deliver
 $task     = $complexman
 $task     = $partyhost
 
@@ -38,13 +39,15 @@ $whowhere = the person {gesture} in the {room}
 # Manipulation
 #
 ##############################################################################
-$man      = $deliver
-$deliver  = $vbbtake the {aobject} from the {room} to the {placement 2}
+$deliver  = $vbtake the {aobject} from the {room} to the {placement 2}
 
 $deliver  = $vbbring me the {aobject} from the {placement}
+$deliver = $vbbring the $object here
 $deliver  = $takefrom and ($delivme | $delivat)
 $deliver  = $takefrom and $place
-$deliver  = $vbbtake my $luggage to the $taxi
+$deliver  = $vbtake (this | my) $luggage to the $taxi
+
+$deliver = $vbplace this on the {placement}
 
 
 ##############################################################################
@@ -54,7 +57,7 @@ $deliver  = $vbbtake my $luggage to the $taxi
 ##############################################################################
 $complexman  = $cmanwarn $cmancmd
 
-$cmancmd     = $vbbtake the {kobject} to the {placement 2 meta: Block access to {placement 2} with a movable object or furniture}
+$cmancmd     = $vbtake the {kobject} to the {placement 2 meta: Block access to {placement 2} with a movable object or furniture}
 $cmancmd     = $vbbring me the $abspos object $cmanobjsrc
 $cmancmd     = $vbbring me the object $relpos the {object}  $cmanobjsrc
 $cmancmd     = $vbbring me the $oprop (object | {category}) $cmanobjsrc
@@ -64,30 +67,48 @@ $cmanwarn    = {void meta: This command is for DSPL and OPL only}
 $cmanobjsrc  = from the {placement 2 meta: Place at least 5 objects in the {placement 2}}
 
 
-
 ##############################################################################
 #
 # Find objects
 #
 ##############################################################################
 $fndobj   = $vbfind the {aobject?} in the {room}
-$fndobj   = Tell me how many {category} there are on the {placement}
-$fndobj   = Tell me what the $oprop object on the {placement} is
-$fndobj   = Tell me what the $oprop {category} on the {placement} is
+
 $fndobj   = $vbfind the {category} in the {room}
-$fndobj   = tell me which are the three $oprop (objects | {category}) on the {placement 1 meta: Place at least 5 objects on the {placement 1}}
 $fndobj   = $vbfind three {category} in the {room meta: Place only 3 objects in the room}
-$fndobj = (can you help me ) $vbfind my {object where category="personal"}
+$fndobj   = $vbfind my {object where category="personal"} (. i think it could be in the {room} | . )
+
 
 ##############################################################################
 #
-# Find people
+# Get information
 #
 ##############################################################################
-$fndppl   = Tell me the (name | pose) of the person at the {beacon}
-$fndppl   = Tell me the (name | pose) of the person in the {room}
+#  Count things
+
+$fndobj   = tell me how many {category} there are on the {placement}
+$fndobj   = tell me what the three $oprop (objects | {category}) on the {placement 1 meta: Place at least 5 objects on the {placement 1}}
+
+# Find things
+
+$fndobj   = tell me what the $oprop object on the {placement} is
+$fndobj   = tell me what the $oprop {category} on the {placement} is
+$fndobj   = figure out where I put my {object where category="personal"}
+
+# Find people
+
+$fndppl   = (who is  | tell me the (name | pose) of) the person at the {beacon}
+$fndppl   = (who is | tell me the (name | pose) of ) the person in the {room}
 $fndppl   = tell me how many people in the {room} are ($pgenderp | $pose)
 
+
+##############################################################################
+#
+# Convey information
+#
+##############################################################################
+
+$tell = tell $whowhere $whattotell
 
 ##############################################################################
 #
@@ -145,14 +166,3 @@ $garbage     = litter | garbage | trash | waste | debris | junk
 $luggage     = bag | baggage | valise | suitcase | trolley | (duffle bag) | backpack
 $taxi        = taxi | cab | uber | car | van
 $door        = ( front | back | main | rear ) (entrance | door)
-
-
-##############################################################################
-#
-# verbs
-#
-##############################################################################
-$vbtakeout   = (take out) | dump
-$vbcleanup   = (clean out) | (clean up) | (tidy up) | neaten | order
-$vbserve     = serve | arrange | deliver | distribute | give | provide
-$vbmeet      = contact | face | find | greet

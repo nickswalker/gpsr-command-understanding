@@ -272,9 +272,9 @@ $findordI = $vbgor to the {room}, $vbfind the {object?}
 $findorsI = $vbfind (a | the) {object meta: Robot must place it on the {placement}}
 
 ; Take an object
-$take     = $vbtake the {aobject} from the {placement}
-$takeI    = $vbtake the {aobject? meta: Place to } from the {placement}
-$takeI    = $vbtake the {aobject meta: Robot will find it on the {placement}}
+$take     = $vbpickup the {aobject} from the {placement}
+$takeI    = $vbpickup the {aobject? meta: Place to } from the {placement}
+$takeI    = $vbpickup the {aobject meta: Robot will find it on the {placement}}
 
 ; Place an object
 $place    = $vbplace it on the {placement}
@@ -351,17 +351,13 @@ $please = please
 ####################################################################
 $vbdeliver = bring | deliver to | give | hand
 $vbfind    = find | locate | spot | pinpoint | look for
-$vbfollow  = follow | ((come | go) (behind | after)) | accompany
-$vbgopl    = go | navigate
+
 $vbgor     = $vbgopl | enter
 $vbgreet   = greet | salute | handshake
 $vbguide   = guide | escort | take | lead | accompany | conduct
-$vbmeet    = meet | contact | (get to know) | (get acquainted with)
 $vbplace   = put | place | leave | set
-$vbpour    = pour | serve
 $vbreport  = inform | report to
 $vbspeak   = tell | say
-$vbtake    = get | grasp | take | retrieve | pick up
 
 
 
