@@ -1,4 +1,4 @@
-allennlp>=1.0.0rc5
+allennlp>=1.0.0
 editdistance
 importlib_resources
 lark-parser>=0.8.5
