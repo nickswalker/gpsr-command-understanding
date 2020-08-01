@@ -158,6 +158,9 @@ class ToString(Transformer):
                 # If we read in from a tokenized string, there'll be spaces between the quotes and the text. Strip them
                 as_str += " \" " + child.value[1:-1].strip() + " \""
             else:
+                # Sometimes we get empty string tokens
+                if len(child) == 0:
+                    continue
                 as_str += " " + str(child)
         return as_str[1:]
 
