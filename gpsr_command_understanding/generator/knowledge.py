@@ -13,8 +13,8 @@ class KnowledgeBase:
 
     @staticmethod
     def from_xml_dir(xml_path):
-        raw_ontology_xml = tuple(map(lambda x: importlib_resources.open_text(xml_path, x),
-                                     ["objects.xml", "locations.xml", "names.xml", "gestures.xml", "questions.xml"]))
+        raw_ontology_xml = list(map(lambda x: importlib_resources.open_text(xml_path, x),
+                                     ["objects.xml", "locations.xml", "names.xml", "gestures.xml", "questions.xml", "whattosay.txt"]))
         kb = KnowledgeBase.from_xml(*raw_ontology_xml)
         # Clean up IO to avoid warnings
         for stream in raw_ontology_xml:
@@ -23,12 +23,16 @@ class KnowledgeBase:
 
     @staticmethod
     def from_xml(objects_xml_file, locations_xml_file, names_xml_file, gestures_xml_file,
-                 questions_xml_file):
+                 questions_xml_file, sayings_file = None):
         object_parser = ObjectParser(objects_xml_file)
         locations_parser = LocationParser(locations_xml_file)
         names_parser = NameParser(names_xml_file)
         gestures_parser = GesturesParser(gestures_xml_file)
         question_parser = QuestionParser(questions_xml_file)
+        sayings = ["a joke"]
+        if sayings_file:
+                sayings = sayings_file.readlines()
+                sayings = list(map(str.strip, sayings))
 
         objects = object_parser.all_objects()
         categories = object_parser.all_categories()
@@ -48,8 +52,7 @@ class KnowledgeBase:
             "location": locations,
             "gesture": gestures,
             "question": questions,
-            # FIXME: Load these from somewhere
-            "whattosay": ["a joke"]
+            "whattosay": sayings
         }
         return KnowledgeBase(by_name, attributes)
 

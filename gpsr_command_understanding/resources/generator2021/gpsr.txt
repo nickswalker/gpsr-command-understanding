@@ -57,7 +57,7 @@ $deliver = $vbplace this on the {placement}
 ##############################################################################
 $complexman  = $cmanwarn $cmancmd
 
-$cmancmd     = $vbtake the {kobject} to the {placement 2 meta: Block access to {placement 2} with a movable object or furniture}
+$cmancmd     = $vbtake the {object} to the {placement 2 meta: Block access to {placement 2} with a movable object or furniture}
 $cmancmd     = $vbbring me the $abspos object $cmanobjsrc
 $cmancmd     = $vbbring me the object $relpos the {object}  $cmanobjsrc
 $cmancmd     = $vbbring me the $oprop (object | {category}) $cmanobjsrc
@@ -108,7 +108,7 @@ $fndppl   = tell me how many people in the {room} are ($pgenderp | $pose)
 #
 ##############################################################################
 
-$tell = tell $whowhere $whattotell
+$tell = tell $whowhere {whattosay}
 
 ##############################################################################
 #
@@ -162,7 +162,7 @@ $abspos      = (left | right) most
 $relpos      = at the (left | right) of
 $relpos      = on top of
 $relpos      = above | behind | under
-$garbage     = litter | garbage | trash | waste | debris | junk
-$luggage     = bag | baggage | valise | suitcase | trolley | (duffle bag) | backpack
+$garbage     =  garbage | trash | waste
+$luggage     = bag | suitcase | (duffle bag) | backpack
 $taxi        = taxi | cab | uber | car | van
 $door        = ( front | back | main | rear ) (entrance | door)

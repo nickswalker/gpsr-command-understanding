@@ -106,22 +106,8 @@ $delivto  = $vbdeliver it to {name}
 $delivat  = $vbdeliver it to {name} at the {beacon}
 
 ; Speak
-$speak    = $vbtell $whattotell
+$speak    = $vbtell {whattosay}
 
-
-##############################################################################
-#
-# What to say
-#
-##############################################################################
-$whattotell = the time
-$whattotell = what day (it is | tomorrow is)
-$whattotell = the day of the week
-$whattotell = a joke
-$whattotell = it's dinner time
-$whattotell = (they're late | it's time to go)
-$whattotell = (to clean up their mess)
-$whattotell = (i'm hungry)
 
 ##############################################################################
 #
@@ -134,7 +120,7 @@ $vbclean   = clean
 $vbtidy   = (tidy up) | neaten | order | organize | (clean out) | (clean up)
 $vbdeliver = $vbbring | deliver
 $vbfind    = find | locate | look for
-$vbfollow  = follow | ((come | go) (behind | after)) | accompany
+$vbfollow  = follow | follow (behind | after ) | trail |  accompany
 $vbgopl    = go | navigate
 $vbgor     = $vbgopl | enter
 $vbguide   = guide | escort | take | lead | accompany
