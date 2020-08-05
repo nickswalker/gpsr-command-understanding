@@ -1,0 +1,15 @@
+name plural, name singular
+cleaning supplies, cleaning supply
+cutlery, utensil
+containers, container
+drinks, drink
+food, food
+household items, item
+fruits, fruit
+kitchen items, kitchen item
+personal items, personal
+snacks, snack
+tableware,  tableware
+toiletries, toiletry
+tools, tool
+toys, toy

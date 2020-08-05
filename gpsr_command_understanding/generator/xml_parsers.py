@@ -16,13 +16,6 @@ class ObjectParser:
         all_objects.reverse()
         return all_objects
 
-    def all_categories(self):
-        all_categories = []
-        root = self.tree.getroot()
-        for cat in root.findall("./category"):
-            all_categories.append(cat.attrib['name'])
-        return all_categories
-
     '''return dictionary mapping categories to items'''
 
     def get_categories_to_objects(self):

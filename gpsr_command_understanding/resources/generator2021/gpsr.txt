@@ -76,7 +76,7 @@ $fndobj   = $vbfind the {aobject?} in the {room}
 
 $fndobj   = $vbfind the {category} in the {room}
 $fndobj   = $vbfind three {category} in the {room meta: Place only 3 objects in the room}
-$fndobj   = $vbfind my {object where category="personal"} (. i think it could be in the {room} | . )
+$fndobj   = $vbfind my {object where category="personal items"} (. i think it could be in the {room} | . )
 
 
 ##############################################################################
@@ -92,8 +92,8 @@ $fndobj   = tell me what the three $oprop (objects | {category}) on the {placeme
 # Find things
 
 $fndobj   = tell me what the $oprop object on the {placement} is
-$fndobj   = tell me what the $oprop {category} on the {placement} is
-$fndobj   = figure out where I put my {object where category="personal"}
+$fndobj   = tell me what the $oprop of the {category} on the {placement} is
+$fndobj   = figure out where I put my {object where category="personal items"}
 
 # Find people
 

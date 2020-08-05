@@ -11,7 +11,7 @@ GRAMMAR_DIR_2021 = "gpsr_command_understanding.resources.generator2021"
 GRAMMAR_YEAR_TO_MODULE = {2018: GRAMMAR_DIR_2018, 2019: GRAMMAR_DIR_2019, 2021: GRAMMAR_DIR_2021}
 
 def load_2018_by_cat(grammar_dir):
-    kb = KnowledgeBase.from_xml_dir(grammar_dir)
+    kb = KnowledgeBase.from_dir(grammar_dir)
     with importlib_resources.open_text(grammar_dir, "common_rules.txt") as common_file:
         common = common_file.readlines()
 
@@ -44,7 +44,7 @@ def load_paired_2018_by_cat(grammar_dir):
 
 
 def load_2018(grammar_dir):
-    kb = KnowledgeBase.from_xml_dir(grammar_dir)
+    kb = KnowledgeBase.from_dir(grammar_dir)
     generator = Generator(kb, grammar_format_version=2018)
 
     common_path = importlib_resources.open_text(grammar_dir, "common_rules.txt")
@@ -71,7 +71,7 @@ def load_paired_2018(grammar_dir):
 
 
 def load(generator, task, grammar_dir, expand_shorthand=True):
-    generator.knowledge_base = KnowledgeBase.from_xml_dir(grammar_dir)
+    generator.knowledge_base = KnowledgeBase.from_dir(grammar_dir)
     with importlib_resources.open_text(grammar_dir, task + ".txt") as task_rules_file:
         task_rules = task_rules_file.readlines()
     # Only load common rules if they're imported in this task's grammar

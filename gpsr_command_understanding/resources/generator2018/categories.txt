@@ -1,0 +1,9 @@
+name plural, name singular
+cutlery, utensil
+containers, container
+drinks, drink
+food, food
+fruits, fruit
+snacks, snack
+tableware,  tableware
+toiletries, toiletry

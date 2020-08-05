@@ -19,10 +19,15 @@ FIXTURE_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 class TestGenerator(unittest.TestCase):
 
     def setUp(self):
-        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"], "location": ["l1", "l2"], "object": ["o1", "o2"]},
+        kb = KnowledgeBase({"name": ["n1", "n2", "n3", "n4"], "location": ["l1", "l2", "l3", "l4"], "object": ["o1", "o2"]},
                            {"object": {"canPourIn": {"o1": True},
                                        "category": {"o1": "c1",
-                                                    "o2": "c2"}}})
+                                                    "o2": "c2"}
+                                       },
+                            "location": {"isbeacon":{"l1": False, "l2": True, "l3": False},
+                                         "isroom":{"l1": True, "l2": False, "l3": False, "l4":True},
+                                         "isplacement":{"l1": False, "l2": True, "l3":True}},
+                            "category":{"singular": {"c1": "sc1", "c2": "sc2"}}})
         self.generator = Generator(kb, grammar_format_version=2018)
         with open(os.path.join(FIXTURE_DIR, "grammar.txt")) as fixture_grammar_file:
             num_rules = self.generator.load_rules(fixture_grammar_file)
@@ -78,11 +83,24 @@ class TestGenerator(unittest.TestCase):
             first, second = grounding.children
             self.assertNotEqual(first, second)
 
+        test_tree = Tree("expression", [ComplexWildCard("name"), ComplexWildCard("name", wildcard_id=1)])
+        groundings = self.generator.generate_groundings(test_tree)
+        for grounding in groundings:
+            first, second = grounding.children
+            self.assertNotEqual(first, second)
+
         # ID namespaces are separate
         test_tree = Tree("expression",
                          [ComplexWildCard("location", wildcard_id=2), "and", ComplexWildCard("name", wildcard_id=2)])
         expected = expr_builder("l1 and n1")
         self.assertEqual(expected, self.generator.ground(test_tree))
+
+        # IDs are specific to type
+        test_tree = Tree("expression", [ComplexWildCard("location", "room", wildcard_id=1), ComplexWildCard("location", "beacon", wildcard_id=1)])
+        groundings = self.generator.generate_groundings(test_tree)
+        for grounding in groundings:
+            first, second = grounding.children
+            self.assertNotEqual(first, second)
 
         # Same ID yields same replacement
         test_tree = Tree("expression",
@@ -94,9 +112,7 @@ class TestGenerator(unittest.TestCase):
 
         # Throw when out of objects
         test_tree = Tree("expression",
-                         [ComplexWildCard("location", wildcard_id=1), ComplexWildCard("location", wildcard_id=2),
-                          ComplexWildCard("location", wildcard_id=3)
-                          ])
+                         [ComplexWildCard("location", wildcard_id=i) for i in range(6)])
         with self.assertRaises(StopIteration):
             self.generator.ground(test_tree)
 
@@ -122,5 +138,5 @@ class TestGenerator(unittest.TestCase):
                                         ComplexWildCard("object", wildcard_id=1, obfuscated=False),
                                         ComplexWildCard("object", wildcard_id=2, obfuscated=True)
                                         ])
-        expected = expr_builder("c1 o1 c2")
+        expected = expr_builder("sc1 o1 sc2")
         self.assertEqual(expected, self.generator.ground(test_tree))

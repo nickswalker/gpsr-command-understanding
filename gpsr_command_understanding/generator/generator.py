@@ -34,6 +34,7 @@ class Generator:
         try:
             parsed = self.rule_parser.parse(line)
         except exceptions.LarkError as e:
+            print("Couldn't load line: " + line)
             raise e
 
         if len(parsed.children) == 0:
@@ -97,7 +98,9 @@ class Generator:
     def obfuscate(self, wildcard, grounding):
         if wildcard.name == "object":
             # What's the category of this object?
-            return self.knowledge_base.attributes["object"]["category"][grounding]
+            obj_category_name = self.knowledge_base.attributes["object"]["category"][grounding]
+            obj_cat_singular = self.knowledge_base.attributes["category"]["singular"][obj_category_name]
+            return obj_cat_singular
         elif wildcard.name == "category":
             return "objects"
         elif wildcard.name == "location":
