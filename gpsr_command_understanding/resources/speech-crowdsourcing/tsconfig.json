@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "es6",
+    "moduleResolution": "node",
+    "target": "es2016",
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceRoot": "./",
+    "rootDir": "./",
+    "outDir": "./",
+    "declaration": true,
+    "noImplicitAny": true,
+    "sourceMap": true
+  },
+  "exclude": [
+    "build"
+  ]
+}

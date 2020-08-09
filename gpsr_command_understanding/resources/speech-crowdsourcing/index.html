@@ -1,0 +1,406 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+<script src="record-element.js" type="module"></script>
+<script src="paged-navigation.js"></script>
+
+<script>
+    function submitPage(evt) {
+        evt.preventDefault();
+        next();
+        return false;
+    }
+
+</script>
+
+<style>
+    .green {
+        color: darkgreen;
+    }
+
+    .red {
+        color: darkred;
+    }
+
+    #task crowd-input {
+        margin-top: -16px;
+        margin-bottom: 16px;
+    }
+
+    #controls > * {
+        display: inline-block;
+    }
+    .original-command {
+        transition: .5s;
+    }
+
+    .original-command.hidden {
+        opacity: 0;
+    }
+    p, crowd-input{
+        max-width: 700px;
+    }
+
+</style>
+
+<template id="paraphrase">
+<div class="page paraphrase">
+    <p>Rephrase this command:</p>
+    <p><strong>Original Command: </strong><span class="original-command"></span></p>
+    <audio-recorder></audio-recorder>
+
+</div>
+</template>
+
+<template id="transcribe">
+    <div class="page transcribe">
+        <p>Transcribe the command you spoke earlier:</p>
+        <audio controls></audio>
+            <crowd-input class="transcribe-input"
+                         placeholder="Type the transcript here." required></crowd-input>
+        </p>
+    </div>
+</template>
+
+<template id="new-command">
+    <div class="page new-command">
+        <p>Speak a new command you think the robot could do:</p>
+        <audio-recorder></audio-recorder>
+    </div>
+</template>
+
+
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<crowd-form answer-format="flatten-objects">
+
+    <div id="task">
+
+        <div class="page welcome">
+            <p>We have robot commands that we'd like you to paraphrase and speak. After you've used the browser tool to record yourself paraphrasing each command, we'll ask you to listen to the recordings and transcribe the words you spoke. This HIT has 5 commands for you to paraphrase, then 1 entry for your own custom command. At the end, we'll collect demographic information. It should take about 10 minutes to complete.</p>
+            <p>This HIT is designed to be compatible with recent version of desktop Chrome and Firefox. <b>It does not support mobile devices or Safari</b>.</p>
+            <p>Please read the instructions, as failure to apply the guidelines will lead to your work being
+                rejected! If you've completed this HIT before, the instructions remain the same.</p>
+            <p>Use the "next" button to continue.</p>
+            </div>
+
+            <div class="page qualification">
+        <h2>Qualification</h2>
+        <p>Are you an employee of the University of Washington, family member of a UW employee, or UW student involved in this particular research? </p>
+        <crowd-radio-group id="qualification">
+            <crowd-radio-button name="qualification1" value="yes">I am</crowd-radio-button>
+            <crowd-radio-button name="qualification2" value="no">I am not</crowd-radio-button>
+        </crowd-radio-group>
+    </div>
+
+        <div class="page irb">
+            <h3>UNIVERSITY OF WASHINGTON<br/>
+            CONSENT FORM <br/>
+                SPOKEN ROBOT COMMANDS</h3>
+            <h4>Researchers' statement</h4>
+            <p>We are asking you to be in a research study. The purpose of this consent form is to give you the information you will need to help you decide whether to be in the study or not. Please read the form carefully. You may ask questions about the purpose of the research, what we would ask you to do, the possible risks and benefits, your rights as a volunteer, and anything else about the research or this form that is not clear. When we have answered all your questions, you can decide if you want to be in the study or not. This process is called "informed consent."</p>
+            <h4>PURPOSE OF THE STUDY</h4>
+            This project aims to better understand how people provide commands to home helper robots. We are collecting data to improve the performance of our robots.
+
+            <h4>STUDY PROCEDURES</h4>
+            In this study, you will be asked to paraphrase robot commands. A command will display on the screen, then you will use the interface to record yourself saying the command out loud. At the end, we’ll ask you come up with one new command and record it. The study will take about 15 minutes total.
+
+            <h4>RISKS, STRESS, OR DISCOMFORT</h4>
+            This study does not present any risks that are greater than those of daily activities that involve using a personal computer or laptop.
+            We plan to submit the audio recordings we collect to a public repository. You will have the opportunity to review all of the recordings you make before you decide to submit them to us.
+            <h4>BENEFITS OF THE STUDY</h4>
+            This research will inform the design of intelligent robots. You will not individually benefit from participation in the study.
+
+            <h4>SOURCE OF FUNDING</h4>
+            The study team and/or the University of Washington is receiving financial support from Honda Research Institute.
+            <h4>USE OF INFORMATION AND SPECIMENS</h4>
+            <h5>Commercial Profit</h5>
+            The data we collect as part of this research may be used for commercial profit. There is no plan to share this profit with you.
+
+            <h5>Using Your Data in Future Research</h5>
+            The information that we obtain from you for this study might be used for future studies. We may remove anything that might identify you from the information and specimens. If we do so, that information and specimens may then be used for future research studies or given to another investigator without getting additional permission from you.
+
+            The audio recordings collected will be submitted to a public data repository and might be used for future research studies. The demographic information you provide will be included, but no other identifying information will be released.
+
+            <h4>OTHER INFORMATION</h4>
+            You may refuse to participate and you are free to withdraw from this study at any time without penalty or loss of benefits to which you are otherwise entitled.
+
+            <h4>CONFIDENTIALITY OF RESEARCH INFORMATION</h4>
+            All of the information you provide will be confidential. There will be no association between your name and the data collected. The recordings will be analyzed by our research team and submitted to a public data repository for use by other researchers.
+        </div>
+
+        <div class="page mic-test" >
+            <h2>Compatibility check</h2>
+            <p>This HIT is designed to be compatible with recent version of desktop Chrome and Firefox. It does not support mobile devices or Safari.</p>
+            <p>Please ensure that you can record and playback audio:</p>
+            <p><strong>Original Command:</strong><span class="original-command">In the parts of the task that involve paraphrasing, the command to paraphrase will appear here. It'll disappear while you are recording.</span></p>
+            <audio-recorder></audio-recorder>
+
+            <p>Continue after testing</p>
+
+        </div>
+
+        <div class="page instructions">
+            <h2>Paraphrase recording guidelines</h2>
+                <p>Given a command that someone said to a household helper robot, speak it in your own words.
+                    Don't try to be overly formal, simply say what you would say if you wanted the robot to accomplish the
+                    same command. It's okay if you have pauses, or say "uh" and "um", as long as the command is understandable from the recording.</p>
+
+                <img id="instructions-image" src="https://live.staticflickr.com/1917/44967325532_0a1f438899_z_d.jpg" alt="Two robots with cylindrical torsos and articulated heads with camera lens as eyes. Both have a single arm with a gripper attached to the front of the torso."/>
+                <p><i>A pair of the type of robots that can carry out these commands. Commands are for one robot only.</i>
+                </p>
+                <p>Try to
+                <ul>
+                    <li>Capture all of the same information as the original command</li>
+                    <li>Say something different than the original command</li>
+                    <li>Use natural english</li>
+                    <li>Consider varying sentence structure and using different words that mean roughly the same thing</li>
+                    <li>Ensure the recording is good enough that you'll be able to transcribe it afterwards.</li>
+                    <li>Start speaking after you press "Record", and press "Stop" soon after stop speaking</li>
+                </ul>
+                </p>
+
+                <h3>Examples</h3>
+                <p>Original: Pick up the apple from the table and place it on the counter<br/>
+                    Good rephrasing: <span class="green">Move the apple that's on the table to the counter please</span></p>
+
+                <p>Original: Take Fred from the bedroom to the kitchen<br/>
+                    Good rephrasing: <span class="green"> Get Fred from the bedroom to the kitchen</span></p>
+
+                <p>Original: Tell me the gender of the person in the bedroom<br/>
+                    Good rephrasing: <span class="green">What gender is the person in the bathroom?</span></p>
+
+                <p>Original: Guide Michael to the armchair , you will find them at the dishwasher<br/>
+                    Good rephrasing: <span class="green">show Micheal the way to the armchair, they're over by the dishwasher</span>
+                </p>
+
+
+                <p>Original: Go to the foyer, meet Alice, and lead her to the living room.<br/>
+                    Bad Rephrasing: <span class="red">Guide Alice to the living room.</span><br/>
+                    <strong>Reason: </strong> The rephrased command doesn't include all of the information from the original
+                    command. Specifically, it doesn't include that Alice can be found in the foyer.</p>
+
+                <p>Original: Find a person in the bedroom and tell them the time.<br/>
+                    Bad rephrasing: <span class="red"> Tell the time then find someone in the bedroom.</span><br/>
+                    <strong>Reason: </strong> The rephrased command changes the meaning of the command. Specifically, it
+                    tells the robot to tell the user the time, when it should tell the robot to tell someone in the bedroom
+                    the time.</p>
+        </div>
+
+        <div id="recording-insertion-point"></div>
+
+            <div class="page instructions">
+                <h2>Transcription guidelines</h2>
+                <p>Now we'll ask you to transcribe your recordings.</p>
+                <p>Try to
+                <ul>
+                    <li>Write every word you say in the recording, even if you didn't mean to say it</li>
+                    <li>Include filler words you may have said, like "uh", "um" and "er"</li>
+                </ul>
+                </p>
+                <p>If you discover that a recording isn't understandable, you can navigate back and press "Reset" to clear it and then "Record" to rerecord.</p>
+            </div>
+
+
+        <div id="transcription-insertion-point"></div>
+
+        <div class="page demographics">
+            <h2>Demographics</h2>
+            <crowd-input autovalidate required name="age" placeholder="Age" type="number"></crowd-input>
+            <crowd-input autovalidate required name="gender" placeholder="Gender"></crowd-input>
+            <p>Rate your proficiency in English on scale of 0 ('lowest level') to 10 ('native or native-like level')</p>
+            <crowd-slider name="proficiency" min="0" max="10" step="1" pin="true" editable autovalidate required></crowd-slider>
+
+        </div>
+
+        <div class="page thanks">
+            <p>Thank you for doing our HIT!</p>
+            <p><strong>Comment (optional):</strong>
+                <crowd-input name="comment"
+                             placeholder="Let us know any comments or feedback you have on this HIT"></crowd-input>
+            </p>
+            <p><b>Note: The submit button won't work unless you've filled out every required input!</b></p>
+            <crowd-button form-action="submit" variant="primary">Submit</crowd-button>
+        </div>
+
+    </div>
+
+
+    <div id="controls">
+        <input onclick="back()" type="button" value="Back" name="noop"/>
+        <p id="page-number">1</p>
+        <input onclick="submitPage(event)" type="button" value="Next" name="noop1"/>
+    </div>
+</crowd-form>
+
+<script>
+    function populateParaphraseTemplate(template, i, command, recordingId) {
+        let instance = template.content.cloneNode(true)
+        const dataTag = "paraphrase" + i.toString()
+        const recorder = instance.querySelector("audio-recorder")
+        recorder.setAttribute("recording-id", recordingId)
+        recorder.setAttribute("id", dataTag)
+        instance.querySelector(".original-command").innerText = command
+        instance.querySelector(".page").setAttribute("data-tag", dataTag)
+        return instance
+    }
+    function populateNewCommandTemplate(template, i, recordingId) {
+        let instance = template.content.cloneNode(true)
+        const dataTag = "newcommand" + i.toString()
+        const recorder = instance.querySelector("audio-recorder")
+        recorder.setAttribute("recording-id", recordingId)
+        recorder.setAttribute("id", dataTag)
+        instance.querySelector(".page").setAttribute("data-tag", dataTag)
+        return instance
+    }
+    function populateTranscribeTemplate(template, i, audioRecorder, isNewCommand=false) {
+        let instance = template.content.cloneNode(true)
+        let audioPlayback = instance.querySelector("audio")
+        namePrefix = "paraphrase"
+        if (isNewCommand) {
+            namePrefix = "newcommand"
+        }
+        // The datatag exactly matches the page that recorded the audio
+        const dataTag = namePrefix + i.toString()
+        instance.querySelector(".page").setAttribute("data-tag", dataTag)
+        instance.querySelector("crowd-input").setAttribute("name", dataTag)
+        // Always reflect the most recently recorded audio in the transcription page's playback
+        audioRecorder.addEventListener("recordingchanged", (e)=>{audioPlayback.src = audioRecorder.recording})
+        return instance
+    }
+    function nextValidator(page) {
+        if (page.classList.contains("mic-test")) {
+            let recorder = page.querySelector("audio-recorder")
+            if(recorder.isRecording) {
+                return "Please stop the recording before continuing"
+            }
+        }
+        else if (page.classList.contains("paraphrase")) {
+            let recorder = page.querySelector("audio-recorder")
+            if (recorder.recording === null) {
+                return "Please record before continuing"
+            }
+            if(recorder.isRecording) {
+                return "Please stop the recording before continuing"
+            }
+        } else if (page.classList.contains("new-command")){
+            let recorder = page.querySelector("audio-recorder")
+            if (recorder.recording === null) {
+                return "Please record before continuing"
+            }
+        } else if (page.classList.contains("transcribe")) {
+            // Make sure descriptions are actually sentence length
+            let transcriptInput = page.querySelector("crowd-input")
+            if (transcriptInput.value.length < 4) {
+                    return  "Please transcribe the audio before continuing";
+            }
+            // Datatag just helps us easily get the matching audio-recorder for some key
+            const dataTag = page.getAttribute("data-tag")
+            // Upload Audio now that user is presumably final on it
+            let sourceRecorder = document.querySelector("#"+dataTag);
+            let recordingId = sourceRecorder.getAttribute("recording-id")
+            let audioBlob = sourceRecorder.recordedBlob;
+            let formData = new FormData();
+            formData.append("audio", audioBlob);
+            formData.append("name", recordingId)
+            fetch('https://mturk.nickwalker.us/spoken-commands/upload.php', {method: "POST", body: formData})
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Response:', data);
+                })
+        } else if (page.classList.contains("qualification")) {
+            let radioGroup = page.querySelector("crowd-radio-group");
+            let options = radioGroup.querySelectorAll("crowd-radio-button")
+            let rowValid = false;
+            for (let i = 0; i < options.length; i++) {
+                let option = options[i]
+                if (option.checked) rowValid = true;
+                if (i === 0 && option.checked) {
+                    return "You are not eligible for this HIT. Please return it."
+                }
+            }
+            if (!rowValid){
+                return "Please select an answer"
+            }
+
+        }
+        return null
+
+    }
+
+    async function digestMessage(message) {
+        const msgUint8 = new TextEncoder().encode(message);                           // encode as (utf-8) Uint8Array
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);           // hash the message
+        const hashArray = Array.from(new Uint8Array(hashBuffer));                     // convert buffer to byte array
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+        return hashHex;
+    }
+
+    function getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+    }
+
+    async function assemblePages() {
+
+        let commands = ["Bring me the apple from the kitchen"]
+        let hitID = getRandomInt(10000, 100000);
+        // MTurk won't populate these if we create them dynamically in Javascript, so you're stuck
+        //  specifying everything
+        //let commands = ["${command0}", "${command1}", "${command2}", "${command3}", "${command4}"]
+        // let hitID = "${hitid}"
+        let numParaphrases = commands.length;
+        let numNewCommands = 1;
+
+        let rephrasingTemplate = document.getElementById("paraphrase")
+        let newCommandTemplate = document.getElementById("new-command")
+        let transcribeTemplate = document.getElementById("transcribe")
+
+
+        let paraphrasePages = []
+        for (let i = 0; i < numParaphrases; i++) {
+            const digest = await digestMessage(commands[i]);
+            const recordingId = hitID + "-" + digest.substring(0, 6)
+            let newPage = populateParaphraseTemplate(rephrasingTemplate, i, commands[i], recordingId);
+            paraphrasePages.push(newPage)
+        }
+        for (let i = 0; i < numNewCommands; i++) {
+            const recordingId = hitID + "-newcommand" + i
+            let newPage = populateNewCommandTemplate(newCommandTemplate, i, recordingId)
+            paraphrasePages.push(newPage)
+        }
+        let transcriptionPages = []
+        for (let i = 0; i < numParaphrases; i++) {
+            let toTranscribe = paraphrasePages[i].querySelector("audio-recorder")
+            let newPage = populateTranscribeTemplate(transcribeTemplate, i, toTranscribe)
+            transcriptionPages.push(newPage)
+        }
+        for (let i = 0; i < numNewCommands; i++) {
+            let toTranscribe = paraphrasePages[numParaphrases + i].querySelector("audio-recorder")
+            let newPage = populateTranscribeTemplate(transcribeTemplate, i, toTranscribe, true)
+            transcriptionPages.push(newPage)
+        }
+        return [paraphrasePages, transcriptionPages]
+    }
+    let recordingInsertionPoint = document.getElementById("recording-insertion-point")
+    let transcriptionInsertionPoint = document.getElementById("transcription-insertion-point")
+    assemblePages().then((pages) =>{
+        const recordingPages = pages[0]
+        const transcriptionPages = pages[1]
+        recordingInsertionPoint.after(...recordingPages)
+        transcriptionInsertionPoint.after(...transcriptionPages)
+        setUpPages(document.getElementById("task"), nextValidator)
+    })
+
+    document.addEventListener("recordingStarted", (e) =>{
+        document.querySelectorAll(".original-command").forEach((element) => {
+            element.classList.add("hidden")
+        })
+    })
+
+    document.addEventListener("recordingStopped", (e) =>{
+        document.querySelectorAll(".original-command").forEach((element) => {
+            element.classList.remove("hidden")
+        })
+    })
+
+</script>
