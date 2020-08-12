@@ -60,7 +60,7 @@ $complexman  = $cmanwarn $cmancmd
 $cmancmd     = $vbtake the {object} to the {placement 2 meta: Block access to {placement 2} with a movable object or furniture}
 $cmancmd     = $vbbring me the $abspos object $cmanobjsrc
 $cmancmd     = $vbbring me the object $relpos the {object}  $cmanobjsrc
-$cmancmd     = $vbbring me the $oprop (object | {category}) $cmanobjsrc
+$cmancmd     = $vbbring me the $oprop (object | of the {category}) $cmanobjsrc
 $cmancmd     = $vbclean the {room meta: Place 3 objects randomly, at least one on the floor.}
 $cmancmd     = $vbtakeout the $garbage
 $cmanwarn    = {void meta: This command is for DSPL and OPL only}
@@ -87,7 +87,7 @@ $fndobj   = $vbfind my {object where category="personal items"} (. i think it co
 #  Count things
 
 $fndobj   = tell me how many {category} there are on the {placement}
-$fndobj   = tell me what the three $oprop (objects | {category}) on the {placement 1 meta: Place at least 5 objects on the {placement 1}}
+$fndobj   = tell me what the three $oprop (objects | {category}) on the {placement 1 meta: Place at least 5 objects on the {placement 1}} are
 
 # Find things
 
@@ -155,8 +155,8 @@ $phpeopler   = $phpeople in the {room meta: There are two people here}.
 #
 ##############################################################################
 ; Find people
-$pgenders = man | woman | boy | girl | (male person) | (female person)
-$pgenderp = men | women | boys | girls | male | female
+$pgenders = man | woman | boy | girl
+$pgenderp = men | women | boys | girls
 $pose     = sitting | standing | lying down
 $abspos      = (left | right) most
 $relpos      = at the (left | right) of
