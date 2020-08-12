@@ -11,7 +11,6 @@ from gpsr_command_understanding.generator.grammar import TypeConverter, expand_s
 from gpsr_command_understanding.util import replace_child_in_tree, \
     get_wildcards, has_nonterminals, ParseForward
 
-
 GENERATOR_GRAMMARS = {2018: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark"),
                       2019: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark"),
                       2021: importlib_resources.read_text("gpsr_command_understanding.resources", "generator.lark")}
@@ -88,12 +87,15 @@ class Generator:
         assignments = self.generate_grounding_assignments(tree, random_generator=random_generator,
                                                           ignore_types=ignore_types)
         for assignment in assignments:
-            grounded = copy.deepcopy(tree)
-            for wildcard, replacement in assignment.items():
-                if apply_obfuscation and isinstance(wildcard, ComplexWildCard) and wildcard.obfuscated:
-                    replacement = self.obfuscate(wildcard, replacement)
-                replace_child_in_tree(grounded, wildcard, replacement)
-            yield grounded
+            yield self.apply_grounding_assignment(tree, assignment, apply_obfuscation=apply_obfuscation)
+
+    def apply_grounding_assignment(self, tree, assignment, apply_obfuscation=True):
+        grounded = copy.deepcopy(tree)
+        for wildcard, replacement in assignment.items():
+            if apply_obfuscation and isinstance(wildcard, ComplexWildCard) and wildcard.obfuscated:
+                replacement = self.obfuscate(wildcard, replacement)
+            replace_child_in_tree(grounded, wildcard, replacement)
+        return grounded
 
     def obfuscate(self, wildcard, grounding):
         if wildcard.name == "object":
@@ -154,7 +156,8 @@ class Generator:
                     for key, value in wildcard.conditions.items():
                         constraints[wildcard].add((key, value))
 
-        yield from self.__populate_with_constraints(tree, constraints, random_generator=random_generator)
+        yield from self.__populate_with_constraints(tree, constraints, random_generator=random_generator,
+                                                    ignore_types=ignore_types)
 
     def __populate_with_constraints(self, tree, constraints, random_generator=None):  # noqa: C901
         wildcards = get_wildcards(tree)
@@ -203,12 +206,12 @@ class Generator:
             fixed[wildcard].clear()
             fixed[wildcard] = candidate
             replace_child_in_tree(fresh_tree, wildcard, candidate)
-            yield from self.__populate_with_constraints(fresh_tree, fixed)
+            yield from self.__populate_with_constraints(fresh_tree, fixed, random_generator=random_generator)
 
-    def generate_random(self, start_symbols, random_generator=None, **kwargs):
+    def generate_random(self, start_symbols, random_generator=None):
         return next(
             self.generate(start_symbols,
-                          branch_cap=1, random_generator=random_generator, **kwargs))
+                          branch_cap=1, random_generator=random_generator))
 
     def generate(self, start_tree, branch_cap=None, random_generator=None):
         """

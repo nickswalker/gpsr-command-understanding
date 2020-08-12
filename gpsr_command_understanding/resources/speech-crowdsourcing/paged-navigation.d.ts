@@ -1,0 +1,12 @@
+declare var current: number;
+declare var moved: number[];
+declare var movedto: number[];
+declare let numPages: number;
+declare let pagesContainer: HTMLElement;
+declare let pageNumber: HTMLElement;
+declare let preNextValidator: (arg0: HTMLElement) => boolean;
+declare function setUpPages(container: HTMLElement, nextValidator: (arg0: HTMLElement) => boolean): void;
+declare function effectivePage(pagenum: number): number;
+declare function swap(vanish: number, appear: number): void;
+declare function next(): void;
+declare function back(): void;
