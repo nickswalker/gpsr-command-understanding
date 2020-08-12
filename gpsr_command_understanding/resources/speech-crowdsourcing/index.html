@@ -31,10 +31,14 @@
     }
     .original-command {
         transition: .5s;
+        color: black
     }
 
     .original-command.hidden {
-        opacity: 0;
+        color: white;
+    }
+    .original-command.hidden .highlight {
+        color: #222;
     }
     p, crowd-input{
         max-width: 700px;
@@ -44,10 +48,9 @@
 
 <template id="paraphrase">
 <div class="page paraphrase">
-    <p>Rephrase this command:</p>
+    <p>Paraphrase this command:</p>
     <p><strong>Original Command: </strong><span class="original-command"></span></p>
     <audio-recorder></audio-recorder>
-
 </div>
 </template>
 
@@ -75,7 +78,7 @@
     <div id="task">
 
         <div class="page welcome">
-            <p>We have robot commands that we'd like you to paraphrase and speak. After you've used the browser tool to record yourself paraphrasing each command, we'll ask you to listen to the recordings and transcribe the words you spoke. This HIT has 5 commands for you to paraphrase, then 1 entry for your own custom command. At the end, we'll collect demographic information. It should take about 10 minutes to complete.</p>
+            <p>We have robot commands that we'd like you to paraphrase and speak. After you've used the browser tool to record yourself paraphrasing each command, we'll ask you to listen to the recordings and transcribe the words you spoke. This HIT has 6 commands for you to paraphrase, then 1 entry for your own custom command. At the end, we'll collect demographic information. It should take about 15 minutes to complete.</p>
             <p>This HIT is designed to be compatible with recent version of desktop Chrome and Firefox. <b>It does not support mobile devices or Safari</b>.</p>
             <p>Please read the instructions, as failure to apply the guidelines will lead to your work being
                 rejected! If you've completed this HIT before, the instructions remain the same.</p>
@@ -130,8 +133,8 @@
         <div class="page mic-test" >
             <h2>Compatibility check</h2>
             <p>This HIT is designed to be compatible with recent version of desktop Chrome and Firefox. It does not support mobile devices or Safari.</p>
-            <p>Please ensure that you can record and playback audio:</p>
-            <p><strong>Original Command:</strong><span class="original-command">In the parts of the task that involve paraphrasing, the command to paraphrase will appear here. It'll disappear while you are recording.</span></p>
+            <p>Please ensure that you can record and play back audio:</p>
+            <p><strong>Original Command:</strong><span class="original-command">In the parts of the task that involve paraphrasing, the command to paraphrase will appear here. It'll disappear while you are recording. Some key words will remain visible to help you remember long commands, but <span class="highlight">you can paraphrase these words if you like too</span></span></p>
             <audio-recorder></audio-recorder>
 
             <p>Continue after testing</p>
@@ -154,8 +157,15 @@
                     <li>Use natural english</li>
                     <li>Consider varying sentence structure and using different words that mean roughly the same thing</li>
                     <li>Ensure the recording is good enough that you'll be able to transcribe it afterwards.</li>
-                    <li>Start speaking after you press "Record", and press "Stop" soon after stop speaking</li>
+                    <li>Start speaking after you press "Record", and press "Stop" soon after you stop speaking</li>
                 </ul>
+
+                <p>
+                    <ul>
+                        <li>Don't speak the original command verbatim</li>
+                        <li>Don't overly prepare your paraphrase. Minor flubs or mistakes are natural and okay.</li>
+                        <li>Don't write down your response and read it out loud.</li>
+                    </ul>
                 </p>
 
                 <h3>Examples</h3>
@@ -232,14 +242,25 @@
 </crowd-form>
 
 <script>
-    function populateParaphraseTemplate(template, i, command, recordingId) {
+    function highlight(text, element) {
+        var innerHTML = element.innerHTML;
+        var index = innerHTML.indexOf(text);
+        if (index >= 0) {
+            innerHTML = innerHTML.substring(0,index) + "<span class='highlight'>" + innerHTML.substring(index,index+text.length) + "</span>" + innerHTML.substring(index + text.length);
+            element.innerHTML = innerHTML;
+        }
+    }
+    function populateParaphraseTemplate(template, i, command, groundingHint, recordingId) {
         let instance = template.content.cloneNode(true)
         const dataTag = "paraphrase" + i.toString()
         const recorder = instance.querySelector("audio-recorder")
         recorder.setAttribute("recording-id", recordingId)
         recorder.setAttribute("id", dataTag)
-        instance.querySelector(".original-command").innerText = command
+        const originalCommand = instance.querySelector(".original-command")
+        originalCommand.innerText = command
         instance.querySelector(".page").setAttribute("data-tag", dataTag)
+        let toHighlight = groundingHint.split(",")
+        toHighlight.map((highLightText) => {highlight(highLightText, originalCommand)})
         return instance
     }
     function populateNewCommandTemplate(template, i, recordingId) {
@@ -343,10 +364,12 @@
     async function assemblePages() {
 
         let commands = ["Bring me the apple from the kitchen"]
+        let groundingHints = ["apple, kitchen"]
         let hitID = getRandomInt(10000, 100000);
         // MTurk won't populate these if we create them dynamically in Javascript, so you're stuck
         //  specifying everything
-        //let commands = ["${command0}", "${command1}", "${command2}", "${command3}", "${command4}"]
+        //let commands = ["${command0}", "${command1}", "${command2}", "${command3}", "${command4}", "${command5}"]
+        //let groundingHints = ["${groundinghint0}", "${groundinghint1}", "${groundinghint2}", "${groundinghint3}", "${groundinghint4}", "${groundinghint5}"]
         // let hitID = "${hitid}"
         let numParaphrases = commands.length;
         let numNewCommands = 1;
@@ -360,7 +383,7 @@
         for (let i = 0; i < numParaphrases; i++) {
             const digest = await digestMessage(commands[i]);
             const recordingId = hitID + "-" + digest.substring(0, 6)
-            let newPage = populateParaphraseTemplate(rephrasingTemplate, i, commands[i], recordingId);
+            let newPage = populateParaphraseTemplate(rephrasingTemplate, i, commands[i], groundingHints[i], recordingId);
             paraphrasePages.push(newPage)
         }
         for (let i = 0; i < numNewCommands; i++) {
